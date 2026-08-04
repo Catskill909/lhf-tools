@@ -13,6 +13,7 @@ Swap to FastAPI later without touching the front end — the JSON contract
 
 import argparse
 import csv
+import gzip
 import io
 import json
 import os
@@ -364,8 +365,24 @@ class Handler(BaseHTTPRequestHandler):
 
     def _send(self, code, body, ctype="application/json; charset=utf-8"):
         payload = body if isinstance(body, bytes) else body.encode("utf-8")
+
+        # This content compresses extremely well — a default search response
+        # goes from 216 KB to about 51 KB, the page itself from 93 KB to 25 KB.
+        # On a phone those bytes cost far more than the CPU to produce them.
+        # Level 6 rather than 9: nearly the same size for a fraction of the work.
+        # Small bodies are left alone; below a kilobyte the header and the CPU
+        # outweigh anything saved.
+        gz = len(payload) > 1024 and "gzip" in self.headers.get("Accept-Encoding", "")
+        if gz:
+            payload = gzip.compress(payload, 6)
+
         self.send_response(code)
         self.send_header("Content-Type", ctype)
+        if gz:
+            self.send_header("Content-Encoding", "gzip")
+            # Any cache between here and the browser must key on this, or it
+            # will hand compressed bytes to a client that didn't ask for them.
+            self.send_header("Vary", "Accept-Encoding")
         self.send_header("Content-Length", str(len(payload)))
         # Without this the server sends no cache headers at all and browsers
         # cache heuristically, so a deploy can leave someone running the old

@@ -28,6 +28,20 @@ conn.close()
 PY
 }
 
+# Keeps the archive current in a single-container deploy. Coolify deploys the
+# Dockerfile, not the compose file, so without this the site is frozen at
+# whatever the feeds held on deploy day — the one thing an archive of a weekly
+# show must not be. Set LHF_AUTO_REFRESH=0 when a dedicated worker is running,
+# or two processes will ingest the same feeds into one SQLite file.
+refresh_loop_in_background() {
+  [ "${LHF_AUTO_REFRESH:-1}" = "0" ] && return 0
+  (
+    while [ ! -f "$MARK" ]; do sleep 15; done
+    echo "Update loop started — checking the feeds every 24h."
+    exec python3 /app/refresh.py --loop 24h --quiet-if-nothing-new
+  ) &
+}
+
 build_in_background() {
   (
     if python3 /app/refresh.py; then
@@ -54,6 +68,7 @@ case "${1:-serve}" in
       # the refresh worker would wait for it forever.
       [ -f "$MARK" ] || touch "$MARK"
     fi
+    refresh_loop_in_background
     exec python3 /app/serve.py
     ;;
   refresh)

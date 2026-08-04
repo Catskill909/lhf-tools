@@ -231,6 +231,27 @@ tags and 14 detected re-airs.
   `?q=` is the integration point for a search box on laborheritage.org.
 - Light/dark, keyboard shortcuts, help modal with runnable examples
 
+## Weight on the wire
+
+Responses are gzipped (level 6) when the client asks, and everything sends
+`Cache-Control: no-cache`.
+
+| | raw | sent |
+|---|---|---|
+| `/` (whole UI, no build step) | 93 KB | **25 KB** |
+| `/api/search` — all 200 episodes | 216 KB | **52 KB** |
+| `/api/search?q=labor` — worst case | 292 KB | **63 KB** |
+
+A first visit is roughly **90 KB**, and a full 200-row render is about 3,500
+DOM elements — comfortable on a phone.
+
+**There is no pagination or infinite scroll, deliberately.** At this size the
+whole result set is cheaper to send than the machinery to avoid sending it, and
+having every result present means find-in-page and Export match what's on
+screen. Revisit if the Podbean backlog triples the archive: ~600 episodes would
+be ~150 KB gzipped and ~10,000 elements, which is the point where it starts to
+be worth measuring again.
+
 ## Tests
 
 ```bash

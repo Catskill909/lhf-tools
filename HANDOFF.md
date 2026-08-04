@@ -511,6 +511,19 @@ and — the one that matters — that the clip's bytes appear **verbatim** in th
 source at the expected offset. That single check proves the cut is both
 correctly positioned and genuinely lossless.
 
+### Keeping the archive current
+
+`serve` starts its own daily refresh loop unless `LHF_AUTO_REFRESH=0`.
+
+This matters because **Coolify deploys the Dockerfile, not the compose file**,
+so it runs one container. The refresh worker in `docker-compose.yml` never
+started, and the deployed archive was frozen at whatever the feeds held on
+deploy day — the one thing an archive of a weekly show must not be. The
+compose web service sets `LHF_AUTO_REFRESH=0` because the dedicated worker
+owns updates there; two loops on one SQLite file would race.
+
+The loop waits for the first build to finish before its first tick.
+
 ### Deploys and stale browsers
 
 `serve.py` sends `Cache-Control: no-cache` on everything. There is no build
