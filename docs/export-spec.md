@@ -14,24 +14,34 @@ which is the only rule that doesn't need explaining.
 
 ---
 
-## The Google Sheets question
+## Spreadsheet format
 
-You asked for a Sheets-style export. There are three ways, and the obvious one
-is the worst:
+No direct Google Sheets integration — no API, no OAuth, no credential to
+maintain. Just a file that imports cleanly.
 
-| Approach | Reality |
+**CSV is that file.** Google Sheets imports it natively (File ▸ Import, or drag
+it onto a sheet), as do Excel and Numbers. One format, universally understood,
+nothing to configure.
+
+What separates a CSV that imports *well* from one that imports badly is
+entirely in the details:
+
+| Detail | Why it matters here |
 |---|---|
-| **Google Sheets API** | Needs a Google Cloud project, OAuth consent screen, a service account, and per-user authorisation. Weeks of faff and a permanent credential to maintain — for a feature that saves one paste. |
-| **Download CSV → File ▸ Import** | Works, universally understood, but it's four steps and lands in a *new* sheet rather than where they're working. |
-| **✅ "Copy for Sheets" — TSV to clipboard** | One click. Paste into any open sheet and it lands in columns correctly, because Sheets and Excel both parse tab-separated clipboard content natively. Zero auth, zero config, zero dependencies, works in Excel and Numbers too. |
+| **UTF-8 with BOM** | Titles contain "No Pasarán", "Workers' Revolt" with smart quotes. Without the BOM, Excel renders these as mojibake. Sheets is fine either way; Excel is not. |
+| **ISO dates** (`2026-07-30`) | Parsed as real dates, so they sort and filter properly. `Jul 30 2026` imports as text and sorts alphabetically. |
+| **Durations as plain numbers** (`54`, not `54 min`) | Sortable, and you can sum a column to total a run of segments. Header carries the unit: `duration_min`. |
+| **RFC 4180 quoting** | Descriptions contain commas and quotes. Python's `csv` module handles this correctly by default — just don't hand-roll it. |
+| **Booleans as `TRUE`/`FALSE`** | Sheets recognises these as booleans and gives you checkbox filtering. `1`/`0` imports as numbers. |
+| **One row per episode** | Keeps it pivotable. Tags go in one semicolon-joined cell. |
 
-**Recommendation: build the clipboard TSV option and label it "Copy for Google
-Sheets."** It is genuinely the better product, not just the cheaper one — it
-drops data into the sheet they already have open, which is what people actually
-want. Offer CSV download alongside for anyone who wants a file.
+Get those right and it drops into a sheet ready to filter and pivot, with no
+cleanup. Get them wrong and someone spends twenty minutes fixing columns every
+time they export.
 
-The Sheets API only becomes worth it if they later want a *live* sheet that
-stays in sync. That's a different feature and should be judged on its own.
+**Optional convenience:** a "Copy for Sheets" button that puts TSV on the
+clipboard, so a paste lands in columns without downloading anything. Nice to
+have, same data, ~10 lines. Not a substitute for the file.
 
 ---
 
@@ -43,8 +53,8 @@ has been quietly valuable throughout.
 
 | Format | For | Effort |
 |---|---|---|
-| **Copy for Sheets** (TSV → clipboard) | The default. Paste straight into a sheet. | small |
-| **CSV** | A file for Excel, or for anyone who prefers files | trivial |
+| **CSV** | The default. Imports into Sheets, Excel, Numbers. | trivial |
+| **Copy for Sheets** (TSV → clipboard) | Convenience — paste without downloading | small |
 | **JSON** | Machine use; already the API shape | trivial |
 | **Transcript bundle** (`.zip` of `.srt`) | Selected episodes' transcripts as files | small |
 | **Dublin Core XML** | The library-standard metadata answer. The LC people will ask. | ~20 lines |
@@ -188,7 +198,7 @@ point is that export and screen can't drift apart.
 
 0. **Store the raw `.srt`** — ~12 MB, removes the last CDN dependency. Do this
    first; it's cheap and it's the only irreversible gap.
-1. **Copy for Sheets + CSV** — covers most real demand in a couple of hours
+1. **CSV** — covers most real demand; an hour if the details above are respected
 2. **Transcript view route** (`/episode/<id>/transcript`) — needed for links,
    and valuable on its own
 3. **Column picker**
