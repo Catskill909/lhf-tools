@@ -511,6 +511,21 @@ and — the one that matters — that the clip's bytes appear **verbatim** in th
 source at the expected offset. That single check proves the cut is both
 correctly positioned and genuinely lossless.
 
+### Deploys and stale browsers
+
+`serve.py` sends `Cache-Control: no-cache` on everything. There is no build
+step and no fingerprinted filenames, so a file's URL never changes when its
+contents do — without revalidation a browser can keep running a months-old copy
+of the app after a deploy, with nothing to indicate it.
+
+This is not theoretical: a bug fixed and deployed appeared **unfixed locally**
+because one tab held a stale `index.html`. Twenty minutes went into debugging
+code that was already correct. The giveaway was a status string in a screenshot
+that had been deleted from the source two commits earlier.
+
+If a fix seems not to have landed, check for a stale page before checking the
+code — and `git log -S'some string from the screen'` will date it exactly.
+
 ### Known rough edges
 
 - `serve.py` is stdlib `http.server`. It now takes `--host`/`LHF_HOST` so a

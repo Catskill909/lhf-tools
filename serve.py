@@ -367,6 +367,17 @@ class Handler(BaseHTTPRequestHandler):
         self.send_response(code)
         self.send_header("Content-Type", ctype)
         self.send_header("Content-Length", str(len(payload)))
+        # Without this the server sends no cache headers at all and browsers
+        # cache heuristically, so a deploy can leave someone running the old
+        # app indefinitely with no way to tell. That cost real debugging time:
+        # a fixed bug looked unfixed locally because the page was months-stale
+        # in one tab and current in another. There is no build step and no
+        # fingerprinted filenames here, so the URL never changes when the
+        # contents do — revalidating every time is the only thing that works.
+        # These files are tens of kilobytes; a 304 costs nothing. Applied to
+        # everything, API responses included: the archive updates daily, and a
+        # heuristically cached search result is the same trap wearing a hat.
+        self.send_header("Cache-Control", "no-cache")
         self.end_headers()
         self.wfile.write(payload)
 
