@@ -797,6 +797,44 @@
   /* The zoomed view is where the work happens, so it gets the room. */
   .wave-box.zoom canvas { height: clamp(148px, 26vh, 320px); }
 
+  /* The wait is real — 30 to 105 MB — so the ring reports progress rather than
+     just spinning, and only falls back to spinning for the decode, which has
+     no measurable progress to report. */
+  .wave-load {
+    position: absolute; inset: 0; z-index: 3;
+    display: grid; place-items: center; align-content: center; gap: 0.6rem;
+    pointer-events: none;
+  }
+  .wave-load .ring { width: 46px; height: 46px; overflow: visible; }
+  .wave-load circle {
+    fill: none; stroke-width: 2.5;
+    transform: rotate(-90deg); transform-origin: 50% 50%;
+  }
+  .wave-load .trk { stroke: var(--rule-hard); }
+  .wave-load .val {
+    stroke: var(--spot); stroke-linecap: round;
+    stroke-dasharray: 119.4;              /* 2 * pi * 19 */
+    stroke-dashoffset: 119.4;
+    transition: stroke-dashoffset 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  .wave-load-txt {
+    margin: 0; font-size: 0.72rem; letter-spacing: 0.06em;
+    color: var(--ink-2); font-variant-numeric: tabular-nums;
+  }
+  /* No byte count to report yet, or decoding — spin a short arc instead. */
+  .wave-load.indet .val {
+    stroke-dasharray: 30 90; transition: none;
+    animation: ring-spin 0.9s linear infinite;
+  }
+  @keyframes ring-spin {
+    from { transform: rotate(-90deg); }
+    to   { transform: rotate(270deg); }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .wave-load.indet .val { animation-duration: 2.4s; }
+    .wave-load .val { transition: none; }
+  }
+
   /* Handles sit on the zoomed view where precision matters. */
   .handle {
     position: absolute; top: 0; bottom: 0; width: 11px;
@@ -997,6 +1035,13 @@
       </div>
       <div class="wave-box zoom" id="zoomBox">
         <canvas id="waveZoom"></canvas>
+        <div class="wave-load" id="waveLoad" hidden>
+          <svg class="ring" viewBox="0 0 44 44" aria-hidden="true">
+            <circle class="trk" cx="22" cy="22" r="19"></circle>
+            <circle class="val" cx="22" cy="22" r="19"></circle>
+          </svg>
+          <p class="wave-load-txt" id="waveLoadTxt" role="status">Loading audio</p>
+        </div>
         <button class="handle in"  id="hIn"  aria-label="In point"></button>
         <button class="handle out" id="hOut" aria-label="Out point"></button>
       </div>
@@ -1950,6 +1995,27 @@ function baseline(...canvases) {
   }
 }
 
+const RING = 119.4;                       // 2 * pi * r, matching the SVG
+const mb = n => (n / 1048576).toFixed(0);
+
+/* `frac` null means "no measurable progress" — spin instead of filling. */
+function showLoad(text, frac = null) {
+  const box = $("#waveLoad");
+  box.hidden = false;
+  $("#waveLoadTxt").textContent = text;
+  if (frac == null) {
+    box.classList.add("indet");
+    // Drop any offset left over from the determinate phase, or the spinning
+    // arc starts part-way round the circle.
+    box.querySelector(".val").style.strokeDashoffset = "";
+  } else {
+    box.classList.remove("indet");
+    const f = Math.max(0, Math.min(1, frac));
+    box.querySelector(".val").style.strokeDashoffset = RING * (1 - f);
+  }
+}
+const hideLoad = () => { $("#waveLoad").hidden = true; };
+
 function clipSay(msg, pct) {
   $("#clipStatus").innerHTML = msg
     ? msg + (pct != null ? `<span class="bar"><i style="width:${pct}%"></i></span>` : "")
@@ -1975,7 +2041,8 @@ async function openClip(ep, fromSec, toSec) {
   $("#clipClose").focus();
   // Open framed on the passage, with a little context either side.
   setZoom(Math.max(2, Math.min(6, (toSec - fromSec) / 2)));
-  clipSay("Loading waveform…", 0);
+  clipSay("");
+  showLoad("Loading audio");          // no byte count yet — spin
 
   // Cheap and independent of the waveform — gives us the true bitrate, so the
   // download size is right and the cut lands where it should.
@@ -1985,15 +2052,22 @@ async function openClip(ep, fromSec, toSec) {
   try {
     const { peaks, duration, cached } = await getPeaks(clip.url, `ep-${ep.id}`, {
       signal: clip.abort.signal,
-      onProgress: (l, t) => clipSay(
-        `Loading audio… ${(l / 1048576).toFixed(0)} MB`, t ? (l / t) * 100 : null),
+      onProgress: (l, t) => {
+        if (!t) return showLoad(`Loading audio · ${mb(l)} MB`);
+        // The download finishes well before the waveform does; decoding has no
+        // progress to report, so say what's happening rather than sit at 100%.
+        if (l >= t) return showLoad("Decoding audio");
+        showLoad(`${mb(l)} of ${mb(t)} MB`, l / t);
+      },
     });
     clip.peaks = peaks;
     clip.duration = duration || clip.duration;
     setZoom(clip.pad);
-    clipSay(cached ? "" : "Ready.");
+    hideLoad();
+    clipSay("");
     paintClip();
   } catch (e) {
+    hideLoad();
     if (clip && e.name !== "AbortError") clipSay("Couldn't load the audio: " + e.message);
   }
 }
@@ -2006,6 +2080,7 @@ function closeClip() {
     if (clip.audio) { clip.audio.pause(); clip.audio = null; }
   }
   clipModal.hidden = true;
+  hideLoad();
   clip = null;
   if (clipFocus) clipFocus.focus();
 }

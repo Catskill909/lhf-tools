@@ -86,6 +86,10 @@ search, jump-to-moment, re-air detection and tags. See the tier ladder in
   spot, rather than on every line of text above it. It seeds from the passage
   that opened the player, or from wherever you've scrubbed to if you've moved
   away — "edit what you're listening to".
+- A progress ring over the waveform reports the download in megabytes and
+  then switches to a spin for the decode, which has no measurable progress.
+  The wait is real — 30 to 105 MB — so it says how long rather than just
+  spinning.
 - Opening the editor **pauses the player**; the modal covers the transport, so
   audio left running is audible but unreachable.
 - Two waveforms — whole episode for context, zoomed selection for precision —
