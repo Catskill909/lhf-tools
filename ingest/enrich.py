@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-LHF Podcast Archive — deterministic enrichment. NO AI.
+LHF Digital Asset Manager — deterministic enrichment. NO AI.
 
 Everything here is extracted from structure the producers already created,
 so it's exact rather than inferred:

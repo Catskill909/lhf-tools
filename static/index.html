@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>LHF Podcast Archive</title>
+<title>LHF Digital Asset Manager</title>
 <style>
   /* ---------------------------------------------------------------
      Two-color letterpress logic: ink + one spot red on paper stock.
@@ -102,11 +102,18 @@
     width: fit-content; gap: 0.5rem;
   }
   .brand h1 {
-    font-size: clamp(1.5rem, 4vw, 2.05rem);
+    font-size: clamp(1.35rem, 3.4vw, 2rem);
     margin: 0;
     letter-spacing: -0.015em;
-    line-height: 1;
+    line-height: 1.05;
     white-space: nowrap;
+  }
+  /* The longer name can't stay on one line on a phone — let it wrap there,
+     and the rule above it still spans the block because .brand is
+     width:fit-content. */
+  @media (max-width: 560px) {
+    .brand h1 { white-space: normal; }
+    .brand { width: auto; }
   }
   .brand .rule-mark {
     display: block;
@@ -658,7 +665,7 @@
   <header class="masthead">
     <div class="brand">
       <span class="rule-mark"></span>
-      <h1 class="display">LHF Podcast Archive</h1>
+      <h1 class="display">LHF Digital Asset Manager</h1>
     </div>
     <div style="display:flex;align-items:center;gap:0.5rem;">
       <button id="helpBtn" title="Search help (?)" aria-haspopup="dialog">Help</button>

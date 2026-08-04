@@ -1,4 +1,4 @@
-# LHF Podcast Archive
+# LHF Digital Asset Manager
 
 Search interface over both Labor Heritage Foundation podcast feeds. Tier 1 of
 the build plan: no AI, no API keys, no dependencies.

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-LHF Podcast Archive — transcript ingest from the podcast feed.
+LHF Digital Asset Manager — transcript ingest from the podcast feed.
 
 145 of 200 episodes publish a full .srt via the Podcast 2.0
 <podcast:transcript> tag. This fetches and parses them into `segments`.

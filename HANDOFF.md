@@ -1,4 +1,4 @@
-# LHF Podcast Archive — Handoff
+# LHF Digital Asset Manager — Handoff
 
 **Status:** working prototype, real data, running locally. Feature-complete for
 everything achievable without AI.

@@ -1,4 +1,4 @@
--- LHF Podcast Archive — schema
+-- LHF Digital Asset Manager — schema
 -- SQLite + FTS5. Everything keys off the RSS <guid>, which is stable
 -- across Podbean edits (title and audio URL are not).
 

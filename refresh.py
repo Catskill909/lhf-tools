@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-LHF Podcast Archive — run the whole pipeline, in order.
+LHF Digital Asset Manager — run the whole pipeline, in order.
 
     python3 refresh.py                 # once, now
     python3 refresh.py --loop 24h      # now, then every 24h (stays running)

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-LHF Podcast Archive — local search server.
+LHF Digital Asset Manager — local search server.
 
 Stdlib only. No pip install, no venv:
 
@@ -344,7 +344,7 @@ def main():
     n = conn.execute("SELECT COUNT(*) c FROM episodes").fetchone()["c"]
     conn.close()
 
-    print(f"LHF Podcast Archive — {n} episodes")
+    print(f"LHF Digital Asset Manager — {n} episodes")
     print(f"  http://localhost:{args.port}")
     print("  ctrl-c to stop")
     ThreadingHTTPServer(("127.0.0.1", args.port), Handler).serve_forever()

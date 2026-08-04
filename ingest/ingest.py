@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-LHF Podcast Archive — RSS ingest.
+LHF Digital Asset Manager — RSS ingest.
 
 Pulls both Podbean feeds into SQLite. Idempotent: keys on the RSS <guid>,
 so re-running updates existing rows rather than duplicating them.
