@@ -28,7 +28,15 @@ EXPOSE 8000
 
 # Uses the app's own API, so it reports the database is readable rather than
 # merely that a process is listening.
-HEALTHCHECK --interval=30s --timeout=5s --start-period=5m --retries=3 \
+#
+# The start period is load-bearing, not padding. On a first deploy the container
+# builds the database before it listens at all — measured at 143s here, but it
+# is network bound and a VPS sharing its uplink with twenty other containers
+# will be slower. Failures inside the start period don't count, so too short a
+# grace would mark the container unhealthy mid-bootstrap, get it restarted, and
+# begin the build again — a deploy loop that never finishes. 15 minutes is six
+# times the measured run; it only delays the first healthy verdict.
+HEALTHCHECK --interval=30s --timeout=5s --start-period=15m --retries=3 \
   CMD python3 -c "import urllib.request,sys; \
 sys.exit(0 if urllib.request.urlopen('http://127.0.0.1:8000/api/facets', timeout=4).status == 200 else 1)"
 

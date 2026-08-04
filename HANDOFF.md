@@ -149,8 +149,6 @@ search, jump-to-moment, re-air detection and tags. See the tier ladder in
   been built**: there is no Docker on the dev machine, so Coolify will be the
   first thing to run it. Still the highest-value remaining task; the client has
   no URL.
-- **No git remote.** Commits are local only. Coolify deploys from a repo, so
-  this has to happen first — and it is the only off-machine copy of the work.
 - Off-box backups of the volume. It is the only copy of the scraped archive.
 - Failure notification on the refresh loop (it logs to stderr; nobody watches stderr)
 - A styled embed widget for laborheritage.org. The `?q=` deep link means a
@@ -517,7 +515,10 @@ correctly positioned and genuinely lossless.
   container can bind `0.0.0.0` (verified both ways: `0.0.0.0` answers on the
   LAN address, the default refuses it). Threaded and fine for this traffic, but
   it is not a hardened server — keep it behind Coolify's proxy.
-- No git *remote*. Commits are local only, so the work exists on one machine.
+- Repo: **https://github.com/Catskill909/lhf-tools** (`origin/main`). Check its
+  visibility — it was pushed to an existing empty repo and nobody has confirmed
+  whether it is public or private. Nothing sensitive is tracked (no database,
+  no keys) but it is a client project.
 - The Docker image has never been built. The entrypoint's branching was tested
   with a stubbed `python3` (all four paths, including the first-run bootstrap
   and the worker's wait-for-database), and Python 3.12 compatibility was checked

@@ -75,8 +75,8 @@ re-scrape for free; 882k words of transcript don't.
 docker compose up --build        # web on :8000, plus a daily refresh worker
 ```
 
-Or in Coolify: point it at the repo, add a **volume mounted at `/data`**, and
-deploy. Everything that must survive a redeploy lives there and nowhere else.
+Or in Coolify: point it at **https://github.com/Catskill909/lhf-tools**, add a
+**volume mounted at `/data`**, and deploy. Everything that must survive a redeploy lives there and nowhere else.
 
 | | |
 |---|---|
@@ -84,11 +84,19 @@ deploy. Everything that must survive a redeploy lives there and nowhere else.
 | `LHF_HOST` | `0.0.0.0` in a container, or the proxy can't reach the process |
 | `PORT` | `8000` |
 
-**First deploy takes a few minutes.** The volume starts empty, so the `web`
-container builds the database before serving — roughly 2½ minutes of feed and
-transcript fetching. Without that bootstrap the first deploy would crash-loop
-on a missing database, which looks like a broken build rather than an empty
-disk.
+**The first deploy builds the archive before it serves anything.** The volume
+starts empty, so the `web` container runs the whole pipeline first — feeds,
+144 transcript files, then enrichment. Measured end to end from nothing:
+**143 seconds**, producing 200 episodes, 14,937 passages, 701 tags and 28
+re-air links.
+
+That is network bound, so a busy VPS will be slower. The health check has a
+15-minute start period to cover it: failures inside the start period don't
+count, but too short a grace would mark the container unhealthy mid-build, get
+it restarted, and begin the build again, forever.
+
+Without the bootstrap at all, the first deploy would crash-loop on a missing
+database, which looks like a broken build rather than an empty disk.
 
 The `refresh` container **waits** for that database rather than building its
 own; two processes ingesting the same feeds into one SQLite file would race.
