@@ -8,32 +8,57 @@ export the clip. Everything in the browser; **our server does nothing at all**
 
 ---
 
-## The constraint that shapes everything
+## The numbers (measured, corrected)
 
-Measured against a real episode before designing anything:
+An earlier draft of this spec had the file size wrong by 2.2x and assumed
+stereo. Corrected against a real episode:
 
 | | |
 |---|---|
-| Episode length | 54.9 min |
-| File size | **170.8 MB** |
-| Bitrate | ~434 kbps (unusually high — near-lossless) |
-| Decoded to PCM | **1,110 MB** stereo Float32 |
+| Episode length | 55 min (3,300 s) |
+| File size | **75.5 MB** |
+| Format | **192 kbps mono, CBR** — same bitrate sampled at 10/30/50/90% |
+| Computed duration | 3,300 s vs 3,299 s in the feed — matches |
 
-**A whole episode cannot be decoded in a browser tab.** 1.1 GB of Float32 will
-either fail outright or make the machine crawl. wavesurfer's own documentation
-warns about exactly this. Any design that starts "load the audio file" is dead
-on arrival.
+Two consequences, both good:
 
-**A two-minute window, however, is 40 MB decoded — completely fine.**
+**1. The byte↔time mapping is exact.** Constant bitrate means
+`byte_offset = seconds × 24,000`, no estimation and no drift. A two-minute
+window is a 2.7 MB range request. (Verified: mid-file ranges return `HTTP 206`
+and carry an MP3 frame sync, so a chunk decodes standalone.)
 
-So the rule is: **never load the whole episode. Fetch a window around the
-moment.** Verified working — a range request into the middle of a file returns
-`HTTP 206`, and an MP3 frame sync was found 28 bytes into an arbitrary slice, so
-a mid-file chunk decodes without the preceding file.
+**2. A full-episode waveform is viable in the browser** — as long as you decode
+at a reduced sample rate:
 
-This is also what makes the "light server load" goal trivially achievable: the
-range request goes to Podbean's CDN, not to us. We serve a modal and some
-JavaScript.
+| Decode target | Memory | |
+|---|---|---|
+| Full episode @ 44.1 kHz | 555 MB | ❌ too much |
+| Full episode @ 16 kHz | 201 MB | ❌ marginal |
+| **Full episode @ 8 kHz** | **101 MB** | ✅ fine — and plenty for a waveform |
+| 2-min selection @ 44.1 kHz | 20 MB | ✅ full quality for export |
+
+---
+
+## Answering the question directly: no, you don't need the VPS
+
+Both halves work in the browser:
+
+**Full-episode waveform.** Fetch the 75 MB once, decode it through an
+`OfflineAudioContext` at 8 kHz, walk it to compute ~4,000 peak values, then
+throw the audio away. Peak memory ~101 MB, transient. A waveform needs
+amplitude envelopes, not fidelity — 8 kHz is far more than enough to draw one.
+
+**Clip extraction.** Range-fetch just the selection at full quality, decode,
+export. 2.7 MB and 20 MB of memory for a two-minute clip.
+
+Server load: **zero.** Every byte comes from Podbean's CDN direct to the
+browser. We serve a modal and some JavaScript.
+
+Worth caching the computed peaks in `IndexedDB` so re-opening an episode is
+instant. If that ever proves too slow on first open, the fallback is computing
+peaks once at ingest — but that would mean the VPS downloading 75 MB × 200
+episodes (~15 GB) and running ffmpeg, which is exactly what you're trying to
+avoid. Try the browser route first; the numbers say it works.
 
 ---
 
@@ -65,16 +90,18 @@ opens on a window around it:
         └ selection ┘        ← draggable handles
 ```
 
-- Fetch the byte range covering that window, decode, draw.
-- Handles drag to adjust in/out. Dragging near an edge extends the window
-  (fetch more, append) rather than being a hard wall.
-- Default window ±45s = ~90s = ~30 MB decoded and a ~5 MB fetch. Comfortable.
+The full episode is drawn from the low-rate decode; the **selection window** is
+range-fetched at full quality for playback and export.
 
-**Byte-range ↔ time mapping.** At a constant bitrate,
-`byte_offset ≈ seconds × (bitrate_bits / 8)`. Verify these files are CBR — if
-they're VBR the mapping drifts, so **pad the request generously (±5 s) and trim
-after decoding**, using the decoded sample count as truth rather than the
-estimate. Cheap insurance either way.
+- Whole waveform visible, with the search passage pre-marked inside it.
+- Handles drag anywhere along the episode — no window walls, because the
+  overview covers the whole file.
+- On export, range-fetch exactly the selected span at 44.1 kHz.
+
+**Byte↔time is exact** at CBR: `byte_offset = seconds × 24,000`. Still pad the
+request ±2 s and trim after decoding, using the decoded sample count as truth —
+MP3 frames don't align to byte boundaries and the first frame in a slice may be
+partial.
 
 ---
 
