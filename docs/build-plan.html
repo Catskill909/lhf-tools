@@ -1,0 +1,679 @@
+<title>LHF Podcast Archive — Build Plan</title>
+<style>
+  :root {
+    --ink: #f2efe6;
+    --ink-dim: #b8b3a4;
+    --paper: #14171c;
+    --paper-raised: #1b1f26;
+    --line: rgba(242,239,230,0.14);
+    --accent: #d1a94a;
+    --accent-soft: rgba(209,169,74,0.14);
+    --flag: #c4573d;
+    --flag-soft: rgba(196,87,61,0.14);
+    --good: #6fa287;
+    --good-soft: rgba(111,162,135,0.14);
+  }
+  :root[data-theme="light"] {
+    --ink: #201d17;
+    --ink-dim: #6b6455;
+    --paper: #f4f0e6;
+    --paper-raised: #ffffff;
+    --line: rgba(32,29,23,0.14);
+    --accent: #a97a1f;
+    --accent-soft: rgba(169,122,31,0.10);
+    --flag: #a8402a;
+    --flag-soft: rgba(168,64,42,0.09);
+    --good: #3f7a5c;
+    --good-soft: rgba(63,122,92,0.10);
+  }
+  @media (prefers-color-scheme: light) {
+    :root:not([data-theme="dark"]) {
+      --ink: #201d17;
+      --ink-dim: #6b6455;
+      --paper: #f4f0e6;
+      --paper-raised: #ffffff;
+      --line: rgba(32,29,23,0.14);
+      --accent: #a97a1f;
+      --accent-soft: rgba(169,122,31,0.10);
+      --flag: #a8402a;
+      --flag-soft: rgba(168,64,42,0.09);
+      --good: #3f7a5c;
+      --good-soft: rgba(63,122,92,0.10);
+    }
+  }
+
+  * { box-sizing: border-box; }
+  html { -webkit-font-smoothing: antialiased; }
+  body {
+    background: var(--paper);
+    color: var(--ink);
+    font-family: ui-sans-serif, -apple-system, "Segoe UI", Helvetica, Arial, sans-serif;
+    font-size: 16px;
+    line-height: 1.6;
+    margin: 0;
+    padding: 3rem 1.5rem 6rem;
+  }
+  .doc { max-width: 820px; margin: 0 auto; }
+
+  h1, h2, h3 {
+    font-family: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
+    font-weight: 600;
+    text-wrap: balance;
+    color: var(--ink);
+  }
+
+  .memo-head {
+    border-top: 3px solid var(--ink);
+    border-bottom: 1px solid var(--line);
+    padding: 1.5rem 0 1.25rem;
+    margin-bottom: 2.5rem;
+  }
+  .memo-head h1 { font-size: 1.9rem; margin: 0 0 0.5rem; }
+  .internal {
+    display: inline-block;
+    font-family: ui-monospace, monospace;
+    font-size: 0.68rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--flag);
+    border: 1px solid var(--flag);
+    padding: 0.15rem 0.55rem;
+    border-radius: 3px;
+    margin-bottom: 0.9rem;
+  }
+  .memo-head p { color: var(--ink-dim); font-size: 0.92rem; margin: 0; }
+
+  section { margin: 3rem 0; }
+  .eyebrow {
+    display: block;
+    font-family: ui-monospace, monospace;
+    font-size: 0.72rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 0.6rem;
+  }
+  h2 { font-size: 1.4rem; margin: 0 0 1rem; }
+  h3 {
+    font-size: 1rem;
+    margin: 1.8rem 0 0.6rem;
+    font-family: ui-sans-serif, -apple-system, "Segoe UI", Helvetica, Arial, sans-serif;
+    font-weight: 700;
+  }
+
+  p { margin: 0 0 1rem; max-width: 68ch; }
+  ul, ol { margin: 0 0 1rem; padding-left: 1.3rem; }
+  li { margin-bottom: 0.5rem; max-width: 66ch; }
+  a { color: var(--accent); text-underline-offset: 2px; }
+  strong { color: var(--ink); }
+  code {
+    font-family: ui-monospace, "SF Mono", Consolas, monospace;
+    font-size: 0.86em;
+    background: var(--paper-raised);
+    border: 1px solid var(--line);
+    padding: 0.1em 0.35em;
+    border-radius: 3px;
+  }
+  pre {
+    background: var(--paper-raised);
+    border: 1px solid var(--line);
+    border-radius: 5px;
+    padding: 1rem 1.2rem;
+    overflow-x: auto;
+    font-size: 0.8rem;
+    line-height: 1.55;
+    margin: 0 0 1rem;
+  }
+  pre code { background: none; border: none; padding: 0; font-size: inherit; }
+  .c { color: var(--ink-dim); }
+
+  .callout {
+    background: var(--paper-raised);
+    border: 1px solid var(--line);
+    border-left: 3px solid var(--accent);
+    padding: 1rem 1.2rem;
+    border-radius: 4px;
+    margin: 0 0 1.2rem;
+  }
+  .callout.warn { border-left-color: var(--flag); }
+  .callout p:last-child { margin-bottom: 0; }
+  .callout .label {
+    font-family: ui-monospace, monospace;
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--accent);
+    display: block;
+    margin-bottom: 0.4rem;
+  }
+  .callout.warn .label { color: var(--flag); }
+
+  .table-wrap { overflow-x: auto; margin-bottom: 1.2rem; }
+  table { border-collapse: collapse; width: 100%; font-size: 0.88rem; }
+  th, td {
+    text-align: left;
+    padding: 0.55rem 0.9rem;
+    border-bottom: 1px solid var(--line);
+    vertical-align: top;
+  }
+  th {
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--ink-dim);
+    font-weight: 600;
+    white-space: nowrap;
+  }
+  tr:last-child td { border-bottom: none; }
+  .yes { color: var(--good); font-weight: 600; }
+  .no { color: var(--flag); font-weight: 600; }
+
+  /* phases */
+  .phase {
+    border: 1px solid var(--line);
+    border-radius: 7px;
+    background: var(--paper-raised);
+    padding: 1.3rem 1.5rem;
+    margin-bottom: 1rem;
+  }
+  .phase-head {
+    display: flex;
+    align-items: baseline;
+    gap: 0.8rem;
+    margin-bottom: 0.7rem;
+    flex-wrap: wrap;
+  }
+  .phase-head .num {
+    font-family: "Iowan Old Style", Georgia, serif;
+    font-size: 1.5rem;
+    color: var(--accent);
+    line-height: 1;
+  }
+  .phase-head h3 { margin: 0; font-size: 1.05rem; }
+  .phase-head .est {
+    font-family: ui-monospace, monospace;
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--ink-dim);
+    margin-left: auto;
+  }
+  .phase p { font-size: 0.93rem; margin-bottom: 0.6rem; max-width: none; }
+  .phase ul { margin-bottom: 0.6rem; }
+  .phase li { font-size: 0.93rem; max-width: none; margin-bottom: 0.3rem; }
+  .phase p:last-child, .phase ul:last-child { margin-bottom: 0; }
+  .done {
+    font-family: ui-monospace, monospace;
+    font-size: 0.72rem;
+    color: var(--good);
+    background: var(--good-soft);
+    padding: 0.15rem 0.5rem;
+    border-radius: 999px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  ol.steps { counter-reset: s; list-style: none; padding-left: 0; }
+  ol.steps > li {
+    counter-increment: s;
+    position: relative;
+    padding-left: 2.4rem;
+    margin-bottom: 1rem;
+    max-width: 68ch;
+  }
+  ol.steps > li::before {
+    content: counter(s);
+    position: absolute;
+    left: 0;
+    top: 0.05rem;
+    width: 1.6rem;
+    height: 1.6rem;
+    border-radius: 50%;
+    border: 1px solid var(--accent);
+    color: var(--accent);
+    font-family: ui-monospace, monospace;
+    font-size: 0.75rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  footer {
+    margin-top: 4rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid var(--line);
+    font-size: 0.82rem;
+    color: var(--ink-dim);
+  }
+
+  @media (max-width: 640px) {
+    body { padding: 2rem 1.1rem 4rem; }
+    .phase-head .est { margin-left: 0; width: 100%; }
+  }
+</style>
+
+<div class="doc">
+
+  <div class="memo-head">
+    <span class="internal">Internal — not for client</span>
+    <h1>LHF Podcast Archive — Build Plan</h1>
+    <p>Working plan for the podcast search engine. Stack: Python + FastAPI, SQLite/FTS5, Docker, Coolify. Companion to the client-facing planning memo.</p>
+  </div>
+
+  <section>
+    <span class="eyebrow">Decide this first</span>
+    <h2>Google API vs. grinding it out on the VPS</h2>
+    <p>Worth taking seriously, because this workload is unusually well suited to self-hosting: a one-time backfill with no deadline, then a trickle of two episodes a week. Nothing about it needs to be fast.</p>
+
+    <h3>The arithmetic</h3>
+    <p>Assume ~300 episodes per show — 425 hours of audio all in. Running Whisper <code>large-v3-turbo</code> through <code>faster-whisper</code> with int8 quantization, the backfill takes:</p>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>Throughput on CPU</th><th>Backfill elapsed</th><th>Weekly upkeep after</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>1× realtime (pessimistic)</td><td>~18 days</td><td>~85 min</td></tr>
+          <tr><td>2× realtime</td><td>~9 days</td><td>~43 min</td></tr>
+          <tr><td>4× realtime</td><td>~4.5 days</td><td>~21 min</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p>The useful thing about that table is that <em>every row is acceptable</em>. Even the pessimistic case is under three weeks of unattended background processing for a project with no launch date, and steady state is well under an hour of CPU a week forever. The conclusion doesn't depend on nailing the throughput estimate, which is good, because published CPU benchmarks are vague — <code>turbo</code> int8 is documented at roughly 7× faster than <code>large-v3</code> and needing ~1.5&nbsp;GB of RAM, but real-world rate depends on core count. Measure it in the spike.</p>
+
+    <h3>What self-hosting wins</h3>
+    <ul>
+      <li><strong>It removes the only cost in the client memo.</strong> The transcription line item goes to zero. For a nonprofit at volunteer rate, "this costs nothing to run" is a materially better story than "$102, one time."</li>
+      <li><strong>Word-level timestamps, natively.</strong> Whisper emits them; this is exactly what <code>chirp_3</code> can't do. Self-hosting solves the deep-linking problem outright rather than working around it — see the model table below for what we'd otherwise be stuck with.</li>
+      <li><strong>The entire Google setup disappears.</strong> No service account, no JSON key to protect, no GCS bucket, no region-matching footgun, no billing account. That's a real reduction in moving parts and in things that can silently break in two years.</li>
+      <li><strong>Nothing leaves the box.</strong> Not a serious concern for a public radio archive, but never a downside.</li>
+    </ul>
+
+    <h3>What it costs</h3>
+    <ul>
+      <li><strong>Elapsed time</strong> — days, not minutes. Irrelevant here, but it does mean the backfill has to be resumable and genuinely unattended.</li>
+      <li><strong>CPU contention.</strong> If this shares a box with other Coolify projects, pegging every core for a week is antisocial. Run one or two workers under <code>nice</code>, or cap it with cgroup limits, and it becomes invisible.</li>
+      <li><strong>No diarization out of the box.</strong> Whisper doesn't do speaker labels; that needs <code>pyannote.audio</code> bolted on, with its own model downloads and a lot more compute. Given diarization was a Tier 4 nicety, dropping it from Tier 3 costs nothing we promised.</li>
+      <li><strong>Model size is not optional.</strong> The whole product hinges on proper nouns — guest names, union locals, historical figures. Small Whisper models mangle exactly those. This has to run <code>large-v3-turbo</code> or better; <code>small</code> would be a false economy.</li>
+      <li><strong>RAM headroom.</strong> ~1.5&nbsp;GB for the model plus overhead, so the earlier "512&nbsp;MB is comfortable" sizing applies only to the web side. The transcription worker wants a few GB while it's running.</li>
+    </ul>
+
+    <div class="callout">
+      <span class="label">Decision — API, not self-hosting</span>
+      <p>Both are viable, and the API wins on the thing that actually matters here: <strong>it keeps the server trivial forever.</strong> Transcription is a <em>one-time</em> job, so paying ~$100 once to avoid a three-week grind, a resumable-worker babysitting problem, CPU contention with every other project on the box, and a 1.5&nbsp;GB model volume is a straightforwardly good trade. The self-hosted path above stays documented as the fallback if API cost ever becomes a real constraint — at this scale it isn't.</p>
+      <p style="margin-top:0.6rem;">The one thing self-hosting bought us was word-level timestamps. Losing them costs less than it looks: <code>chirp_3</code> still returns segment-level offsets, which lands a listener within a chunk of speech. Nobody scrubbing a labor-history podcast needs word precision to find a story.</p>
+    </div>
+  </section>
+
+  <section>
+    <span class="eyebrow">The part nobody had priced</span>
+    <h2>The second pass — AI making sense of it all</h2>
+    <p>This is the step that turns a pile of transcripts into something searchable: one more API pass where a language model reads each episode's feed metadata <em>and</em> its transcript together, and writes out structured facts — guests, hosts, organizations, topics, a summary, notable segments. Also one-time, also just API calls, and it's the cheapest part of the whole build.</p>
+
+    <h3>The arithmetic</h3>
+    <p>Speech runs about 150 words per minute, so 425 hours of audio is roughly 3.8&nbsp;million words — call it <strong>5.1&nbsp;million tokens</strong> across the full archive, or about <strong>8,500 tokens per episode</strong>. That's small enough that each episode is a single API call: whole transcript in, structured JSON out, no chunking, no stitching, no context-window juggling.</p>
+    <div class="table-wrap">
+      <table>
+        <caption>One-time cost to run the full archive through a second AI pass</caption>
+        <thead>
+          <tr><th>Model</th><th class="num">Standard</th><th class="num">Batch API (50% off)</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Claude Haiku 4.5</td><td class="num">~$7</td><td class="num">~$3.50</td></tr>
+          <tr><td>Claude Sonnet 5</td><td class="num">~$20</td><td class="num">~$10</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p><strong>Use the Batch API for the backfill.</strong> It's half price, and its only tradeoff — results come back within 24 hours instead of instantly — is irrelevant for a one-time job on a decades-old archive. This is close to the textbook use case for it. New episodes going forward run through the normal API since there are only two a week.</p>
+
+    <div class="callout">
+      <span class="label">Why this shape is right</span>
+      <p>What you've described is <strong>precomputing the intelligence once at ingest and serving it with plain SQL</strong> — and that's the architectural reason Tier 3 is the smart stopping point rather than a compromise. The AI runs twice per episode, ever: once to hear it, once to understand it. Everything after that is rows in a table. The server does no inference at query time, holds no model in memory, and needs no GPU — a search is just an indexed lookup, as fast and cheap as any ordinary database query.</p>
+      <p style="margin-top:0.6rem;">That's most of Tier 4's <em>feel</em> — browse by guest, by topic, by theme, with AI-written summaries — at Tier 3's operating cost. True Tier 4 (semantic search over embeddings) is the version that puts a model back in the query path, and it's the one you can genuinely defer forever.</p>
+    </div>
+
+    <h3>Bandwidth, since you raised it</h3>
+    <p>You're right that it's not much. Podcast MP3s run 64–128&nbsp;kbps, so the full archive is roughly <strong>12–24&nbsp;GB</strong> to pull from Podbean, plus the same again pushing it to Google Cloud Storage. Call it 25–50&nbsp;GB of transfer, one time. Contabo's entry tier includes unlimited traffic at 200&nbsp;Mbit/s — this is a rounding error, and it's the only bandwidth-heavy thing the project ever does.</p>
+  </section>
+
+  <section>
+    <span class="eyebrow">Fallback path</span>
+    <h2>If we do go with Google</h2>
+    <p>Google's two current Chirp models each support exactly one of the two things we want, and not the other. This isn't a config flag — it's a model choice, and it determines what Tier 3 can actually promise.</p>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>Model</th><th>Word timestamps</th><th>Diarization</th><th>Availability</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>chirp_3</code></td>
+            <td class="no">Not supported</td>
+            <td class="yes">Yes — <code>BatchRecognize</code> only</td>
+            <td><code>us</code> / <code>eu</code> multi-region, GA</td>
+          </tr>
+          <tr>
+            <td><code>chirp_2</code></td>
+            <td class="yes">Yes — opt-in</td>
+            <td class="no">Not supported</td>
+            <td><code>us-central1</code>, <code>europe-west4</code>, <code>asia-southeast1</code> — Private GA</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="callout warn">
+      <span class="label">Only bites on this path</span>
+      <p>The memo's Tier 3 says you can "jump straight to that timestamp." With <code>chirp_3</code> that's only true at <em>segment</em> granularity — each result carries an end offset, so we can land the listener within a chunk of speech, not on the exact word. Probably fine for a podcast; nobody needs word-precision to find a story. But it's a constraint we simply don't have if we self-host, which is a decent part of why self-hosting is leading.</p>
+    </div>
+    <p><strong>If Google, then <code>chirp_3</code>.</strong> It's plain GA with no access request, it's the accuracy story, and diarization is a real bonus. <code>chirp_2</code> is Private GA — an access request and a dependency on Google's approval timeline, which is a bad thing to put on the critical path of a project nobody is being paid much for.</p>
+  </section>
+
+  <section>
+    <span class="eyebrow">Sizing</span>
+    <h2>Will the cheapest Contabo box do it?</h2>
+    <p>Their entry tier is <strong>Cloud VPS 4 — 4 vCPU, 8&nbsp;GB RAM, 100&nbsp;GB SSD, €5.50/mo</strong> on a 24-month term. Against what this workload actually needs:</p>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>Resource</th><th>Available</th><th>Needed</th><th>Verdict</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>RAM</td><td>8 GB</td><td>~2 GB model + ~1 GB app/OS</td><td class="yes">Ample headroom</td></tr>
+          <tr><td>Storage</td><td>100 GB SSD</td><td>1.5 GB model, &lt;100 MB transcripts, one MP3 at a time</td><td class="yes">Not close to a constraint</td></tr>
+          <tr><td>vCPU</td><td>4 (shared)</td><td>The whole job — it's CPU-bound</td><td>Workable, see below</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p>RAM was the thing that could have ruled it out and 8&nbsp;GB isn't remotely close to a limit. Transcripts are just text — 425 hours of speech lands somewhere under 100&nbsp;MB. Storage is a non-issue.</p>
+
+    <div class="callout warn">
+      <span class="label">The caveat</span>
+      <p>Contabo's Core VPS line is oversubscribed shared vCPU, and their own page describes it as running "across multiple CPU generations" — the AMD EPYC and NVMe hardware is explicitly the <em>Performance</em> tier, not this one. So these are likely older cores with variable noisy-neighbour throughput, and int8 inference speed depends heavily on CPU vector instructions (AVX-512/VNNI roughly doubles int8 throughput and is <em>not</em> guaranteed on older silicon). Derate accordingly: plan for the <strong>1–2× realtime</strong> end of the range, i.e. a 9–18 day backfill using most of the box. Fine for an unattended job with no deadline; not fine if you were expecting it in an afternoon.</p>
+    </div>
+
+    <p><strong>If this box also runs your other Coolify projects</strong>, capping the worker at 2 of 4 cores pushes the backfill toward 3+ weeks. At that point the <strong>VPS 6</strong> (6 vCPU / 12&nbsp;GB, €7.50) is worth €2/mo to keep everything else responsive while it grinds.</p>
+
+    <div class="callout">
+      <span class="label">With the API decision, this stops mattering</span>
+      <p>Everything above assumes the VPS is doing the transcription. Going through Google instead, the box never runs a model at all — it downloads files, makes API calls, and writes rows. The vCPU column stops being a constraint entirely, and <strong>the €5.50 tier is comfortably oversized</strong> for what's left: a small search API and a weekly cron job. 8&nbsp;GB of RAM for a SQLite-backed search app is luxurious.</p>
+      <p style="margin-top:0.6rem;">Keep the self-hosted numbers on file anyway — they're the fallback if API cost ever changes, and they're the reason we can say the fallback is real.</p>
+    </div>
+
+    <h3>Adding it to the existing Coolify box</h3>
+    <p>This lands on the existing VPS alongside everything else already running there. Its real steady-state footprint:</p>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>Resource</th><th>Steady state</th><th>During backfill</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>RAM</td><td>~200–400 MB (FastAPI + SQLite)</td><td>Same — no model in memory</td></tr>
+          <tr><td>CPU</td><td>Idle except when someone searches</td><td>Near-idle — the work is I/O, not compute</td></tr>
+          <tr><td>Disk</td><td>~200–300 MB (database + transcripts, all text)</td><td>+ scratch for audio in flight — prune after each episode</td></tr>
+          <tr><td>Network</td><td>Negligible</td><td>25–50 GB total, one time</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p>Steady state, it's quieter than most web services — a search is an indexed SQLite lookup. The backfill is the only period it's doing anything noticeable, and even then it's waiting on network rather than burning CPU.</p>
+
+    <div class="callout warn">
+      <span class="label">The one real risk on a shared box</span>
+      <p><strong>Don't let the backfill saturate the network port.</strong> A naive worker that fires parallel downloads and GCS uploads can eat the box's entire uplink for hours, and every other service on it — anything making outbound API calls, pulling images, or serving traffic — gets slow at the same time. That's the failure mode most likely to make this project annoying to a neighbour, not CPU or RAM.</p>
+      <p style="margin-top:0.6rem;">Fix it up front: process episodes <strong>serially, or two at a time at most</strong>, and put a small sleep between them. There's no deadline — a backfill that takes four days instead of one costs nothing and stays invisible to everything else on the box. Cap the worker in Coolify's resource limits as belt-and-braces.</p>
+    </div>
+
+    <h3>Pre-flight checks</h3>
+    <pre><code>df -h                    <span class="c"># free disk — 20 services + Docker images add up</span>
+free -h                  <span class="c"># RAM headroom; we need ~400 MB</span>
+docker system df         <span class="c"># reclaimable image/layer cruft if disk is tight</span></code></pre>
+    <p>Then two things worth settling before the backfill rather than after:</p>
+    <ul>
+      <li><strong>Scratch-space discipline.</strong> Delete each MP3 immediately after its transcription returns. Skip that and a 600-episode backfill quietly writes ~20&nbsp;GB of audio onto a disk shared with 20 other services.</li>
+      <li><strong>Off-box backup of the SQLite file.</strong> More important now than on a dedicated box: one machine holds 20 projects, and this one contains transcripts that cost real money and days of wall-clock to regenerate. The feeds are re-scrapeable for free; the transcripts are not. A nightly copy somewhere off the VPS is cheap insurance.</li>
+    </ul>
+  </section>
+
+  <section>
+    <span class="eyebrow">Fallback path</span>
+    <h2>Local Whisper setup</h2>
+    <p>Kept documented in case API cost ever becomes a constraint. Almost nothing to set up — no accounts, no keys, no billing.</p>
+    <pre><code>pip install faster-whisper
+
+<span class="c"># first run downloads the model (~1.5 GB) and caches it</span>
+python - &lt;&lt;'PY'
+from faster_whisper import WhisperModel
+m = WhisperModel("large-v3-turbo", device="cpu", compute_type="int8")
+segments, info = m.transcribe("ep.mp3", word_timestamps=True)
+for s in segments:
+    print(f"[{s.start:7.2f} → {s.end:7.2f}] {s.text}")
+PY</code></pre>
+    <p>Time that against the episode's known duration and you have the realtime factor the whole schedule depends on. Cache the model into a named Docker volume so it isn't re-downloaded on every deploy — that's the one deployment detail worth getting right early.</p>
+  </section>
+
+  <section>
+    <span class="eyebrow">Memory jog — primary path</span>
+    <h2>Google Cloud setup, start to finish</h2>
+    <p>The setup we'll actually be doing. Walked out in full so it isn't a research project on the day.</p>
+
+    <div class="callout warn">
+      <span class="label">The thing that trips everyone up</span>
+      <p>Speech-to-Text does <strong>not</strong> authenticate with a plain API key. You need a <strong>service account</strong> and its JSON key file (or ADC). If you go hunting for "create API key" you'll find one, it won't work for STT, and the error message won't be obvious about why.</p>
+    </div>
+
+    <p>Second thing worth knowing up front: <code>BatchRecognize</code> can't read audio over plain HTTP. Input has to be a <code>gs://</code> URI, so a Cloud Storage bucket isn't optional — the worker downloads the MP3 from Podbean, uploads it to GCS, then points the API at it.</p>
+
+    <h3>Console steps</h3>
+    <ol class="steps">
+      <li><strong>Create the project.</strong> <a href="https://console.cloud.google.com">console.cloud.google.com</a> → project picker (top bar) → <em>New Project</em>. Name it something like <code>lhf-podcast-archive</code>. Note the <strong>project ID</strong> — it's what the API wants, and it's often not identical to the display name.</li>
+      <li><strong>Attach billing.</strong> Billing → link an account. The API returns 403 without it even inside the free tier. New accounts get $300 credit, and STT includes 60 free minutes/month, so the backfill may cost literally nothing.</li>
+      <li><strong>Enable two APIs.</strong> APIs &amp; Services → <em>Enable APIs and Services</em> → enable <strong>Cloud Speech-to-Text API</strong> and <strong>Cloud Storage API</strong>. Missing the Storage one is an easy way to lose twenty minutes.</li>
+      <li><strong>Create the bucket.</strong> Cloud Storage → Create. Give it a region consistent with the model location you use (<code>us</code> multi-region pairs with <code>chirp_3</code> in <code>us</code>). Two folders by convention: <code>audio/</code> for uploads, <code>transcripts/</code> for the JSON that comes back. Set a lifecycle rule to delete <code>audio/</code> objects after ~7 days — we don't need to warehouse the MP3s, and it keeps storage cost at effectively zero.</li>
+      <li><strong>Create the service account.</strong> IAM &amp; Admin → Service Accounts → Create. Name: <code>stt-worker</code>. Grant it <code>roles/speech.client</code> and <code>roles/storage.objectAdmin</code> (scope the storage role to just this bucket if you want to be tidy about it).</li>
+      <li><strong>Download the key.</strong> Open the service account → <em>Keys</em> tab → Add Key → Create new key → <strong>JSON</strong>. It downloads once and Google keeps no copy. Put it somewhere sane immediately and never let it near the repo.</li>
+      <li><strong>Wire it into the app.</strong> Mount the JSON into the container and point <code>GOOGLE_APPLICATION_CREDENTIALS</code> at its path. The Google client libraries pick it up automatically — no code needed to load it.</li>
+    </ol>
+
+    <div class="callout">
+      <span class="label">Possible snag</span>
+      <p>If <em>Create new key</em> is greyed out, an org policy (<code>iam.disableServiceAccountKeyCreation</code>) is blocking it. That's common on managed/work Google Workspace accounts and won't apply to a personal one — but if it bites, the fix is either a policy exception or Workload Identity Federation, which is a much bigger lift for a self-hosted box.</p>
+    </div>
+
+    <h3>Smoke test before writing any app code</h3>
+    <pre><code><span class="c"># authenticate locally as the service account</span>
+export GOOGLE_APPLICATION_CREDENTIALS=~/.secrets/lhf-stt.json
+gcloud auth activate-service-account --key-file=$GOOGLE_APPLICATION_CREDENTIALS
+gcloud config set project YOUR_PROJECT_ID
+
+<span class="c"># put one real episode in the bucket</span>
+curl -sL -o ep.mp3 "https://<podbean-episode-audio-url>.mp3"
+gsutil cp ep.mp3 gs://lhf-podcast-archive/audio/ep.mp3
+
+<span class="c"># confirm the API answers at all</span>
+gcloud ml speech recognize-long-running \
+  gs://lhf-podcast-archive/audio/ep.mp3 \
+  --language-code=en-US --async</code></pre>
+    <p>If that returns an operation name, auth, billing, API enablement, and bucket permissions are all correct — which is the entire class of setup problems out of the way in one command. The real pipeline then uses the v2 <code>BatchRecognize</code> endpoint rather than this <code>gcloud</code> convenience wrapper.</p>
+
+    <div class="callout warn">
+      <span class="label">Region footgun</span>
+      <p>In Speech-to-Text v2, three things have to agree: the <strong>recognizer location</strong> in the resource path, the <strong>API endpoint host</strong>, and (practically) the <strong>bucket region</strong>. A non-global location needs the matching regional host — e.g. <code>us-speech.googleapis.com</code> with <code>projects/PROJECT/locations/us/recognizers/_</code>. Mismatch these and you get a confusing not-found on the recognizer rather than a clear region error. No recognizer resource needs creating, by the way — <code>_</code> is a valid implicit recognizer, config goes inline in the request.</p>
+    </div>
+  </section>
+
+  <section>
+    <span class="eyebrow">Shape of it</span>
+    <h2>Data model</h2>
+    <p>One SQLite file. Normalized tables for the things we filter on, plus an FTS5 virtual table for everything we search. Episodes key off the RSS <code>&lt;guid&gt;</code>, which is stable across Podbean edits — never off title or URL.</p>
+    <pre><code>episodes      id, show_id, guid UNIQUE, title, published_at,
+              duration_sec, audio_url, episode_url,
+              description_html, description_text,
+              transcript_status, transcript_text, extracted_at
+
+shows         id, name, feed_url, slug
+
+people        id, name, normalized_name UNIQUE, bio_url
+episode_people  episode_id, person_id, role   <span class="c">-- guest | host | interviewer</span>
+
+topics        id, name, normalized_name UNIQUE
+episode_topics  episode_id, topic_id
+
+segments      id, episode_id, start_sec, end_sec, speaker_tag, text
+              <span class="c">-- transcript chunks; powers deep-linking + diarization</span>
+
+episode_notes id, episode_id, body, replayed_at   <span class="c">-- internal "in the can" tracking</span>
+
+episodes_fts  <span class="c">-- FTS5: title, description_text, transcript_text, people, topics</span></code></pre>
+    <p><code>normalized_name</code> is the deduplication hook — lowercase, strip punctuation and honorifics — so "Dr. Jeffrey Johnson", "Jeffrey Johnson" and "jeff johnson" collapse to one person record instead of three. This is the single most important thing for the catalog to feel correct, and it's where an AI extraction pass will otherwise happily make a mess.</p>
+  </section>
+
+  <section>
+    <span class="eyebrow">Sequence</span>
+    <h2>Phases</h2>
+
+    <div class="phase">
+      <div class="phase-head">
+        <span class="num">0</span>
+        <h3>Spike — de-risk the two unknowns</h3>
+        <span class="est">half a day</span>
+      </div>
+      <p>Before building anything structural, answer the three questions that could invalidate the plan:</p>
+      <ul>
+        <li><strong>Run one episode end to end through <code>chirp_3</code>.</strong> Confirm the result objects carry usable segment offsets and that diarization tags come back. This is the deep-linking promise, tested.</li>
+        <li><strong>Read that transcript for proper nouns.</strong> Not overall accuracy — specifically whether it gets guest names, union names, and historical figures right. That's the product.</li>
+        <li><strong>Test extraction on ~20 real descriptions</strong> from both feeds and eyeball the guest/topic output. Show notes vary a lot in format; better to know now than after building a UI on top of it.</li>
+      </ul>
+      <p>Also worth doing here: paginate the full Podbean archive to get true episode counts, since every cost figure scales directly off it.</p>
+    </div>
+
+    <div class="phase">
+      <div class="phase-head">
+        <span class="num">1</span>
+        <h3>Ingest — Tier 1</h3>
+        <span class="est">~1 day</span>
+      </div>
+      <ul>
+        <li>Feed parser (<code>feedparser</code>) → normalize both shows into <code>episodes</code>. Idempotent upsert on <code>guid</code> so re-runs are safe and cheap.</li>
+        <li>Strip HTML into <code>description_text</code> while keeping <code>description_html</code> — the hyperlinks in show notes are a genuine signal about who the guest is, worth not discarding.</li>
+        <li>FTS5 table + triggers to keep the index in sync on insert/update.</li>
+        <li>CLI: <code>python -m app.ingest --backfill</code> and <code>--since</code>.</li>
+      </ul>
+      <p>Deliverable: a populated <code>.sqlite</code> with the entire archive of both shows, keyword-searchable from the shell. Real, useful, and it makes everything after it verifiable.</p>
+    </div>
+
+    <div class="phase">
+      <div class="phase-head">
+        <span class="num">2</span>
+        <h3>AI extraction — Tier 2</h3>
+        <span class="est">~1–2 days</span>
+      </div>
+      <ul>
+        <li>Batched extraction pass (Claude Haiku) over descriptions → structured guests, hosts, organizations, topics. Force JSON output against a fixed schema; store raw model output alongside parsed rows so a prompt change can be re-run without re-paying.</li>
+        <li>Entity resolution into <code>people</code>/<code>topics</code> via <code>normalized_name</code>, with a review CLI that lists near-duplicate names for a human call. Chris is the right person to sanity-check this once.</li>
+        <li>Seed the topic vocabulary from LHF's own language if they have one, rather than letting the model invent a taxonomy — otherwise you get "labor history," "Labor History," and "history of labor" as three topics.</li>
+      </ul>
+    </div>
+
+    <div class="phase">
+      <div class="phase-head">
+        <span class="num">3</span>
+        <h3>Search API + internal UI</h3>
+        <span class="est">~2–3 days</span>
+      </div>
+      <ul>
+        <li>FastAPI: <code>/search?q=&amp;person=&amp;topic=&amp;show=&amp;year=</code>, <code>/episode/{id}</code>, <code>/people</code>, <code>/topics</code>. FTS5 with <code>bm25()</code> ranking and <code>snippet()</code> for result excerpts.</li>
+        <li>Dark-mode UI, single search bar, filter chips, result cards linking out to Podbean. Server-rendered templates are entirely sufficient here — this doesn't need a SPA.</li>
+        <li>"In the can" flag + internal notes on episodes, behind a shared password.</li>
+      </ul>
+      <p>This is the first build that's demoable to Harold and Chris, and it's the one that solves their stated problem. Worth getting in front of them before touching transcription.</p>
+    </div>
+
+    <div class="phase">
+      <div class="phase-head">
+        <span class="num">4</span>
+        <h3>Transcription — Tier 3</h3>
+        <span class="est">~2 days + backfill runtime</span>
+      </div>
+      <ul>
+        <li>Worker loop per episode: download MP3 to scratch → upload to <code>gs://…/audio/</code> → <code>BatchRecognize</code> → poll the long-running operation → parse results out of <code>gs://…/transcripts/</code> → write <code>segments</code> + <code>transcript_text</code> → delete both the local file and the GCS object.</li>
+        <li><code>transcript_status</code> state machine (<code>pending → uploaded → processing → done | failed</code>) so a crash resumes cleanly and one bad episode doesn't halt the run. Cap retries so a corrupt file can't loop forever.</li>
+        <li>Batch several files per <code>BatchRecognize</code> request, and run the first wave as ~20 episodes to confirm real spend against the estimate before turning it loose on the archive.</li>
+        <li><strong>Throttle it.</strong> One or two episodes in flight at a time with a pause between — the box shares its uplink with everything else Coolify is running (see sizing above). Slow is free here.</li>
+        <li>Extend FTS to transcripts; add <code>?t=</code> deep-links into the Podbean player from segment offsets.</li>
+      </ul>
+      <p>The server does almost nothing here — it downloads, uploads, and writes down results. No model, no GPU, no sustained CPU load.</p>
+      <p><strong>Then the second pass:</strong> once transcripts exist, re-run the Phase 2 extraction with the transcript in context alongside the show notes, via the Batch API. This is where guests who were never written into the notes finally get caught, and where AI-written summaries and segment-level topics come from. Keep the raw model output so a better prompt can be re-run later without re-transcribing.</p>
+    </div>
+
+    <div class="phase">
+      <div class="phase-head">
+        <span class="num">5</span>
+        <h3>Public widget + automation</h3>
+        <span class="est">~2 days</span>
+      </div>
+      <ul>
+        <li>Read-only public search endpoint, rate-limited, no internal fields exposed. Embed as an iframe on laborheritage.org — simplest thing that survives whatever their site is built on.</li>
+        <li>Scheduled job (weekly, since both shows are weekly): poll feeds → ingest new → extract → transcribe → index. The whole pipeline unattended.</li>
+        <li>Failure notification, even if it's just an email on exception. A silent broken cron is how this quietly rots in six months.</li>
+      </ul>
+    </div>
+  </section>
+
+  <section>
+    <span class="eyebrow">Deployment</span>
+    <h2>Docker + Coolify</h2>
+    <p>Single image, two entrypoints — web and worker — sharing one volume. Nothing here needs orchestration beyond that.</p>
+    <pre><code>services:
+  web:
+    build: .
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000
+    volumes:
+      - lhf-data:/data                <span class="c"># SQLite lives here</span>
+    environment:
+      DATABASE_PATH: /data/lhf.sqlite
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD}
+
+  worker:
+    build: .
+    command: nice -n 19 python -m app.worker
+    volumes:
+      - lhf-data:/data
+      - lhf-models:/models            <span class="c"># Whisper weights — survives redeploys</span>
+      - lhf-scratch:/scratch          <span class="c"># MP3s in flight, deleted after each</span>
+    environment:
+      DATABASE_PATH: /data/lhf.sqlite
+      HF_HOME: /models
+      WHISPER_MODEL: large-v3-turbo
+      WHISPER_THREADS: "4"            <span class="c"># leave cores for everything else</span>
+    deploy:
+      resources:
+        limits:
+          cpus: "4"</code></pre>
+    <ul>
+      <li><strong>Model volume is the important one.</strong> Without <code>lhf-models</code> persisted, every redeploy re-downloads 1.5&nbsp;GB before the worker does anything useful.</li>
+      <li><strong>SQLite on a volume:</strong> enable WAL mode. One writer (worker) and one reader (web) is fine; just don't let the backfill hold long write transactions while the UI is being demoed.</li>
+      <li><strong>Sizing:</strong> web is genuinely tiny — 512&nbsp;MB is plenty. The worker wants ~3&nbsp;GB while transcribing and can be stopped entirely once the backfill is done, since weekly upkeep is minutes.</li>
+      <li><strong>Backups:</strong> <code>sqlite3 .backup</code> on a schedule to a second volume path. The database is rebuildable from the feeds, but transcripts cost days of CPU to regenerate — those are the bytes worth protecting.</li>
+      <li><strong>Secrets:</strong> only the Anthropic key on the local path. If we fall back to Google, its JSON goes in as a Coolify file mount — never in the image, never in git. Put <code>secrets/</code> in <code>.gitignore</code> on day one, before any key exists locally.</li>
+    </ul>
+  </section>
+
+  <section>
+    <span class="eyebrow">Watch out for</span>
+    <h2>Known risks</h2>
+    <ul>
+      <li><strong>Extraction quality is the whole product.</strong> If guest names come out wrong or fragmented, the catalog is worse than useless — it's misleading. Hence the Phase 0 spike and a human review pass before anything ships.</li>
+      <li><strong>Podbean pagination.</strong> The feed returns 100 items; the real archive is bigger. Confirm the true count before quoting timelines or costs.</li>
+      <li><strong>Encore episodes.</strong> Both shows re-air material — the feeds are full of "(Encore)". Worth detecting and linking re-airs to originals, since "have we run this already" is literally the client's stated problem.</li>
+      <li><strong>Audio URL rot.</strong> Store the Podbean episode page URL as well as the direct audio URL; the latter is likelier to change out from under us.</li>
+      <li><strong>Proper-noun accuracy on local Whisper.</strong> The single biggest unknown, and the one the spike exists to answer. A transcript that renders "Elise Bryant" three different ways is worse than no transcript, because search silently fails and nobody can tell.</li>
+      <li><strong>The backfill quietly dying.</strong> A two-week unattended job needs to log progress somewhere you'll actually look, or you find out on day twelve that it stopped on day two.</li>
+      <li><strong>Scope creep toward Tier 4.</strong> Semantic search is fun and is not what they asked for. Ship 1–3 and let them use it first.</li>
+    </ul>
+  </section>
+
+  <footer>
+    Internal working document — Paul Henshaw, August 2026. Google model capabilities verified against Google Cloud documentation on 3 August 2026; re-check before relying on the <code>chirp_3</code> / <code>chirp_2</code> feature split, as these models move fast.
+  </footer>
+
+</div>

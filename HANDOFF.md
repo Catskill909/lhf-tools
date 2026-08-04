@@ -1,0 +1,445 @@
+# LHF Podcast Archive — Handoff
+
+**Status:** working prototype, real data, running locally. Feature-complete for
+everything achievable without AI.
+**Last worked:** 3 August 2026 (one evening, built from nothing).
+**Client:** Labor Heritage Foundation — Harold Phillips (producer), Chris Garlock
+and Elise Bryant (hosts), Patrick Dixon.
+
+---
+
+## Start here
+
+```bash
+cd ~/Desktop/digital-asset-manager
+python3 refresh.py           # feeds + transcripts + enrichment  (~2 min)
+python3 serve.py             # → http://localhost:8000
+```
+
+`refresh.py` runs the three pipeline steps in the right order. Don't run them
+individually unless you know why — skipping enrichment leaves the API erroring
+on a missing `mentions` table.
+
+Stdlib only — no pip, no venv, no build step. A full rebuild from nothing takes
+~2½ minutes (most of it fetching 144 transcripts), so don't be precious about
+the database — delete `data/` and re-run whenever it's easier than debugging.
+
+> A test server may still be running on port **8765** from the last session.
+> `pkill -f serve.py` if it's in the way.
+
+---
+
+## What this is
+
+A searchable catalogue of both LHF podcasts. Their ask, from Harold's original
+email: catalogue the guests, topics and interviewers; find older shows to
+replay; check whether a segment has already run; and put a search box on
+laborheritage.org so listeners can jump straight to an episode.
+
+Everything achievable without AI is built: metadata, transcripts, spoken-word
+search, jump-to-moment, re-air detection and tags. See the tier ladder in
+`docs/lhf-podcast-spec.html`; only the AI tier remains.
+
+### Working now
+
+**Search**
+- 200 episodes, 143.1 hours, both shows, updating automatically from the feeds
+- Full-text with ranked results and highlighted excerpts
+- As-you-type prefix matching (`carsie bla` finds Carsie Blanton)
+- Query syntax: `"exact phrase"`, `AND`/`OR`/`NOT`, `(grouping)`, `organiz*`
+  truncation, `title:strike` field search, `NEAR(coal mine, 5)` proximity
+- Six sort orders: best match, newest, oldest, title A–Z, longest, shortest
+- Filters: show, year, encores-only, and by tag — with All / Reset to clear
+
+**Transcripts** *(free — pulled from the feed, no AI, no vendor)*
+- 144 of 200 episodes carry full transcripts: **14,937 passages, 882,346 words**
+- Search reaches spoken audio; hits are marked "Heard in this episode" and the
+  excerpt is the spoken line
+- **Jump to the moment** — up to 3 timestamps per result; click one and an
+  inline player starts at that second. Audio is CORS-open and range-seekable,
+  so this needs nothing from Podbean.
+
+**Cataloguing** *(deterministic — no AI)*
+- **Re-air detection** — 14 relationships: 5 programmes that ran on *both*
+  shows, 8 encores of an earlier episode. Shown inline as "Also ran".
+  This is Chris's "have we already run this" problem, solved.
+- **232 tags** — people, bands, museums and books the producers hyperlinked in
+  their own show notes. Click one to see every episode featuring it.
+- 22 encores flagged automatically from title convention
+
+**Interface**
+- Custom audio transport — play/pause, seekable track, elapsed/total, keyboard
+  seek (arrows ±5s, shift ±30s, space). Replaces the native control bar, which
+  can't be styled consistently across browsers.
+- Light/dark, follows the OS, with a manual toggle
+- Help modal documenting every search feature, with runnable examples
+- Keyboard: `/` search, `?` help, `Esc` clear → reset → close
+- Back-to-top in the gutter; floats centred on tablet and phone
+- Responsive; no build step, single HTML file
+
+### Not built yet
+
+- **Topics, un-hyperlinked guests, interviewer roles** → needs the AI pass
+  (~$7 batched). This is the one remaining gap in Harold's original ask.
+- The 55 episodes with no feed transcript (~$9.52 via Google STT)
+- One broken transcript link on Podbean's side ("MLK in Memphis" 404s);
+  `python3 ingest/transcripts.py --retry` will pick it up if they fix it
+- Public embed for laborheritage.org
+- Deployment (Docker/Coolify), auth for the internal view, off-box backups
+
+## Scorecard against Harold's original email
+
+| Ask | Status | Notes |
+|---|---|---|
+| Scrape existing + future episodes | ✅ **Done** | 200 episodes, re-runnable weekly. Last ~2 years — see the feed cap. |
+| Searchable database | ✅ **Done** | Full-text, boolean, fielded, six sorts, filters. |
+| Find older shows to replay | ✅ **Done** | Search, filter, sort by duration for a slot of a given length. |
+| Check if a segment is "in the can" | ✅ **Done** | Re-air detection incl. cross-show. Better than asked. |
+| Catalogue **guests** | 🟡 **Partial** | 232 names — but only those the producers hyperlinked. |
+| Catalogue **topics** | ❌ **Not built** | Needs AI. Hashtags tested and useless (`#LaborHistory` on 176/200). |
+| Catalogue **interviewers** | ❌ **Not built** | Needs AI, but it's a two-host show — a small job. |
+| Public search box on laborheritage.org | 🟡 **Works, not deployed** | Runs locally; needs embed packaging + hosting. |
+
+**Delivered beyond the ask** — neither was requested, both came free:
+
+| | |
+|---|---|
+| Search what was *said* on air | 144 transcripts, 882k words, pulled from the feed |
+| Jump to the exact moment | Click a timestamp, hear it — no Podbean cooperation needed |
+
+**The fair summary:** the internal tool Chris described is finished and then
+some. The one genuine gap is **topics** (and the guests who weren't
+hyperlinked) — everything deterministic has been mined, and that last piece
+needs a model reading prose. It's the cheap pass: ~$7 batched.
+
+Don't tell the client it's finished. Tell them the archive works, the re-air
+problem is solved, search now reaches the audio — and topics are the next step.
+
+## For the client (plain language — liftable into an email)
+
+> **What's working now**
+>
+> - **Both shows in one searchable place** — 200 episodes, 143 hours, updating
+>   automatically as new ones publish.
+> - **Search that reaches inside the audio.** 144 episodes have full
+>   transcripts, so searching finds what was *said*, not just what was written
+>   in the show notes. Searching "picket line" turns up 59 episodes — only two
+>   of which mention it in the notes.
+> - **Jump straight to the moment.** When your words were spoken aloud, the
+>   result shows the exact times. Click one and the episode plays from that
+>   second — no scrubbing.
+> - **"Have we run this already?"** — the archive spots when the same programme
+>   has aired more than once, as an encore or on both shows, and says so under
+>   the episode. It found 22 encores and 5 programmes that ran on both.
+> - **Browse by name.** The people, bands, museums and books you link in your
+>   show notes have become a clickable index — 232 of them. Nothing had to be
+>   tagged by hand.
+> - **Proper search tools** — exact phrases, AND/OR/NOT, wildcards, searching a
+>   single field, and six ways to sort. There's a Help button explaining all of
+>   it, with examples you can click to run.
+>
+> **What's next**
+>
+> - **Topics and full guest lists.** Right now we catch the guests you happened
+>   to hyperlink. Reading everything properly — every guest, the interviewer,
+>   and what each episode was actually about — is the remaining step, and it's
+>   what turns this into a true catalogue.
+> - **The last 55 episodes** don't have transcripts in the feed; we can fill
+>   those in cheaply.
+> - **The public search box** for laborheritage.org.
+>
+> **Two things worth knowing**
+>
+> The transcripts come from your own feed — the ones your editing produces get
+> published automatically, and we simply read them. Nothing new for you to do,
+> and no dependency on any one tool.
+>
+> They're machine transcripts though, so names take some damage (one renders
+> Elise as "Lisa"). Good enough to find things; not proofread documents.
+>
+> Also: the podcast feed only hands out the most recent 100 episodes per show,
+> so this covers roughly the last two years. Going further back means pulling
+> from Podbean's back-end.
+
+## Files
+
+| Path | What it is |
+|---|---|
+| `ingest/ingest.py` | RSS → SQLite. Idempotent, keys on `<guid>`. Also the weekly-cron path. |
+| `ingest/transcripts.py` | Podcast 2.0 `.srt` → `segments`. Idempotent; `--retry` re-attempts failures. |
+| `refresh.py` | Runs all three pipeline steps in order. The weekly-cron entry point. |
+| `ingest/enrich.py` | Deterministic enrichment, **no AI**. Re-airs + linked entities. Safe to re-run. |
+| `ingest/schema.sql` | Tables, FTS5 index, triggers. Already has `transcript_source` and a source-agnostic `segments` table. |
+| `serve.py` | JSON API + serves the UI. Stdlib `http.server`; swap for FastAPI at deploy. |
+| `static/index.html` | The whole interface — single file, no build step. |
+| `README.md` | Run instructions, API reference, useful SQL. |
+| `docs/lhf-podcast-spec.html` | **Client-facing** planning memo (shared with them). Tier ladder, no cost-of-work talk. |
+| `docs/build-plan.html` | **Internal** build plan. Google setup walkthrough, VPS sizing, phases, risks. |
+| `docs/reply-descript.md` | The short email reply about Descript transcripts (sent). |
+| `docs/transcripts-plan.md` | **Phased plan for transcripts.** Read before touching this area. |
+
+Both `docs/*.html` are also published as artifacts — same URLs update in place
+if edited and republished.
+
+---
+
+## What we learned today (the useful part)
+
+**1. The RSS feed caps at 100 episodes per show.** Every pagination parameter
+is ignored; the website's "Load More" is JavaScript. So we have roughly the
+last two years (Sept 2024 → Aug 2026). Anything older needs the **Podbean API**
+(OAuth, has an episode-list endpoint) or a dashboard export. This is the real
+answer to "how do we get the whole archive" — more useful than the episode
+count itself.
+
+**2. Their problem is real and measurable.** 22 of 200 episodes are encores
+(11%), and 5 programmes ran on *both* shows. That's evidence to show them, not just
+an assertion.
+
+**3. Show notes are hand-curated data.** 196 of 200 episodes contain
+hyperlinks, and the producers link guests, bands, museums and books. Frequency
+filtering separates them cleanly from boilerplate — only 5 entities were
+dropped as furniture, 232 kept. Nobody had to tag anything.
+
+**4. Hashtags are a dead end.** Tested hoping for free topics:
+`#LaborHistory` appears on 176 of 200 episodes, `#1u`/`#unions`/`#laborradiopod`
+on ~95 each. They're boilerplate, not classification. **Topics genuinely
+require reading the prose** — this is the hard wall, and it's why Tier 2 exists.
+
+**5. Estimates held.** Actual episode lengths average 54 min (Power Hour) and
+32 min (Labor History Today) against the 55/30 assumed in the client memo, so
+the cost figures there are sound.
+
+**8. Jump-to-moment needed nothing from Podbean.** Their audio URLs return
+`Accept-Ranges` and `Access-Control-Allow-Origin: *`, so we host our own player
+and seek precisely rather than depending on a `?t=` parameter their pages don't
+support. Checked before designing around it.
+
+**7. 145 of 200 episodes already publish full transcripts in the RSS feed**
+(Podcast 2.0 `<podcast:transcript>` tags → `.srt` files, timestamped to the
+millisecond, free). Only 55 episodes need machine transcription — about $9.52,
+not $102. Descript turns out to be largely irrelevant: Chris already publishes
+those exports to Podbean as part of his normal workflow, so we read the feed,
+not their API. See `docs/transcripts-plan.md`.
+
+**6. Descript changes the plan for the better.** LHF edits in Descript, which
+means human-corrected transcripts likely already exist for many episodes.
+That's *better* than machine transcription, because proper nouns — guest names,
+union locals — are the thing automated STT gets wrong and the thing this
+project most depends on. Schema already handles the hybrid via
+`transcript_source`.
+
+---
+
+## Open threads (waiting on the client)
+
+1. **Descript export format** — SRT preferred (timestamps enable jump-to-moment);
+   Word or plain text also fine for search only.
+2. **Have speakers been named** in the Descript projects, or left as
+   "Speaker 1"? Named speakers would give attribution for free.
+3. **How far back do the Descript projects go** — they've deleted some over time.
+4. **Podbean API credentials**, if we want the pre-2024 archive.
+
+Nothing is blocked on these. They're slow-moving; the interface work continues
+regardless.
+
+---
+
+## Where we stopped
+
+Everything listed under "Working now" is built, verified and documented. The
+database rebuilds from nothing in ~2½ minutes via `refresh.py`.
+
+The natural next moves, in order of value:
+
+1. **Deploy it.** The client can't see any of this until it has a URL.
+   Coolify + a Dockerfile; ~an hour. Nothing else matters until this happens.
+2. **The AI pass** (~$7) — topics, un-hyperlinked guests, interviewers. The one
+   remaining gap in the original ask.
+3. **The 55-episode transcript gap** (~$9.52).
+
+---
+
+## Data ownership, scheduling, export
+
+Three related concerns. Status differs for each.
+
+### 1. Storing the scraped text — ✅ already done
+
+Everything is stored locally, nothing is re-fetched at query time:
+
+| | |
+|---|---|
+| `episodes.transcript_text` | 144 episodes, 4 MB |
+| `segments` (timestamped passages) | 14,937 rows, 4 MB |
+| `description_html` + `description_text` | all 200 episodes |
+| Audio | **not stored** — only the URL |
+
+Database is 33 MB. Podbean's transcript URLs and audio URLs are recorded but
+never depended on after ingest, so CDN link rot can't take the archive down. If
+both feeds vanished tomorrow, everything searchable still works.
+
+Audio deliberately isn't stored — ~12–24 GB, and streaming from their CDN is
+free and fast. Worth revisiting only if clip export gets built.
+
+### 2. Timed updates — ✅ mechanism built, ⚠️ not yet scheduled anywhere
+
+`refresh.py --loop 24h` now runs the pipeline on a schedule and keeps itself
+alive — verified cycling correctly. It works the same on a laptop, in Docker,
+and on Coolify without depending on a host scheduler, and backs off on repeated
+failure instead of hammering the feed.
+
+**What's still missing is choosing where it runs.** Nothing is scheduled on any
+machine yet. Once deployed, either run the container with
+`--loop 24h --quiet-if-nothing-new` as its command, or use a host cron:
+
+```cron
+# Sundays 04:00 — after both shows are out
+0 4 * * 0  cd /path/to/digital-asset-manager && /usr/bin/python3 refresh.py >> /var/log/lhf-refresh.log 2>&1
+```
+
+Still worth adding when wiring it up:
+
+- **Failure notification.** The loop logs failures to stderr and backs off, but
+  nobody is watching stderr. An email or webhook on repeated failure is the
+  missing piece — a silently broken updater is how this rots.
+- **Back up the SQLite file off-box first.** The feeds are re-scrapeable for
+  free; 882k words of transcript are not worth re-fetching casually.
+
+### 3. Export — ❌ not built, and worth doing
+
+Currently JSON via the API only. Their organisation includes Library of
+Congress people, so export formats will be asked about early.
+
+**Build it from scratch — no package needed.** Python's stdlib (`csv`, `json`,
+`xml.etree`) covers every format below, and staying zero-dependency has been
+genuinely valuable: no venv, no install, `python3 refresh.py` just works. A
+library would buy nothing here.
+
+Formats worth supporting, roughly by demand:
+
+| Format | For | Effort |
+|---|---|---|
+| CSV | Everyone. Opens in Excel, which is how most of this org works. | trivial |
+| JSON | Machine use, already the API shape | done |
+| SRT / VTT | A single episode's transcript, back out in a standard format | trivial |
+| Plain text / Markdown | Readable transcript for reference or quoting | trivial |
+| Dublin Core XML | The library-standard metadata answer. ~20 lines. | small |
+| BibTeX / citation | Researchers quoting an episode + timestamp | small |
+
+Scope it as "export whatever the current search returns" rather than a separate
+reporting screen — a button next to Sort that exports the visible result set,
+filters and all. That's one endpoint and one control, and it covers most of what
+anyone actually wants.
+
+## Who these users actually are
+
+Worth holding onto, because it changes which features matter. They wear three
+hats at once:
+
+**Podcast producers** — editing, clips, promos, show notes. Descript workflow.
+
+**FM radio broadcasters** — the Power Hour airs on WPFW 89.3FM. This is the one
+easiest to forget and it has the hardest constraints: broadcast needs *exact*
+durations, clean in/out points, and run sheets. "I have a 4-minute hole to
+fill" is a real question with a real answer, and no search tool built for
+podcasts ever answers it.
+
+**Labor history researchers** — provenance, citation, "when did she say that,
+and can I quote it." Their organisation includes Library of Congress people,
+so cataloguing conventions land with them.
+
+Two things we built read differently in that light:
+
+- **Sort by longest / shortest** isn't a nicety — it's the beginnings of a
+  broadcast tool. "Show me segments between 3 and 5 minutes" would finish it.
+- **Re-air detection** matters more for broadcast than podcast. Repeating a
+  segment on air three months later is a scheduling decision with an audience
+  that noticed the first time.
+
+## Brainstorm seeds — producer and broadcast tools
+
+Not planned, just captured. Roughly cheapest first:
+
+- **Duration-range filter** ("between 3 and 5 minutes") — trivial, and directly
+  serves the fill-a-slot problem.
+- **Shareable moment links** (`?ep=123&from=522&to=549`) — the cheapest version
+  of clip extraction; someone sends a colleague an exact passage.
+- **Copy a citation** — episode, date, show, timestamp, and the spoken line.
+  Free, and researchers will want it. LC people especially.
+- **Mark in/out on the player track** → preview, then export via a server-side
+  `ffmpeg` call. The real clip tool.
+- **Run-sheet view** — pick segments, see cumulative duration against a target.
+  Pure broadcast, and nothing else on the market does it.
+- **"Not aired since"** — episodes not run in N months, sorted by age. Turns the
+  re-air data into a scheduling worklist rather than a lookup.
+
+The thread: they don't just need to *find* things, they need to *use* them on
+air. Search was the prerequisite; the tools above are the actual job.
+
+## Idea parked: clip extraction
+
+Raised at the end of the session, worth writing down while it's fresh.
+
+Now that every spoken moment has a timestamp and an inline player, the archive
+knows exactly where any passage starts and ends. That's most of what you need
+to let someone **select a range and pull a clip out of the audio** — for a
+promo, a social post, or dropping a segment into a future show.
+
+Why it fits this client specifically: Chris is already looking for material to
+replay. "Find the moment, mark in and out, export" is the same workflow he does
+in Descript, but starting from a search across the whole archive rather than
+one project file.
+
+Rough shape if it gets picked up:
+
+- **Selection** is nearly free — passages already carry `start_sec` / `end_sec`;
+  the UI would need in/out handles on the player track.
+- **Preview** is free — set `currentTime`, stop at the out point. No server work.
+- **Export** is the real decision. Client-side is possible for simple cuts
+  (fetch the byte range, though MP3 frame boundaries make naive slicing lossy),
+  but a small server-side `ffmpeg` call is far more predictable and gives clean
+  cuts plus format choice.
+- **Shareable links** — `?ep=123&from=522&to=549` would let someone send a
+  colleague an exact passage without exporting anything at all. That's the
+  cheapest version of this idea and probably the one to build first.
+
+Worth checking with LHF whether they'd actually use it before building —
+it's a genuinely different product surface, not a refinement of search.
+
+---
+
+## Picking it back up
+
+**If you want the fastest visible win:** the public embed. The search UI already
+works; packaging it as an iframe-able page for laborheritage.org is mostly
+CSS and a read-only flag, and it's the deliverable Harold can show people.
+
+**If you want to unblock the real feature set:** Tier 2 extraction. Run a
+batched AI pass over `description_text` → guests, topics, interviewers into the
+`people` / `topics` tables (already in the schema, currently empty). Roughly
+$7 for the whole archive via the Batch API. The deterministic entities from
+`enrich.py` are ground truth — let them win on conflict, and use them to check
+the model's output.
+
+**If the client comes back with transcripts:** write a `ingest/descript.py`
+that parses SRT/DOCX into the `segments` table with `transcript_source =
+'descript'`. Nothing else changes — extraction, search, and UI all read from
+the same place.
+
+### Known rough edges
+
+- `serve.py` binds `127.0.0.1` only and is stdlib `http.server` — correct for
+  local, not for deployment.
+- No git repo initialised yet (`.gitignore` is written and ready).
+- No tests. The pipeline is deterministic and rebuilds in ~2½ minutes, so
+  `refresh.py` → check counts is currently the test.
+- **Always use `refresh.py`.** The three steps must run in order; running
+  `ingest.py` alone against a fresh database leaves no tags and no re-airs.
+  Search degrades gracefully now rather than 500ing, but the data is missing.
+- One transcript URL in Podbean's feed 404s ("MLK in Memphis") — their broken
+  link, not ours. `transcripts.py --retry` re-attempts failures.
+- `docs/build-plan.html` still lists Phase 1 (ingest) as upcoming — it's done.
+  Worth reconciling if the doc gets shared internally again.
+- The client memo's cost scenarios assume backlogs of 100/300/600 per show.
+  Still valid as projections, but we now know the *feed* only reaches 100.

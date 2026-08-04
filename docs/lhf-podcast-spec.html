@@ -1,0 +1,539 @@
+<title>LHF Podcast Search &amp; Discovery — Planning Memo</title>
+<style>
+  :root {
+    --ink: #f2efe6;
+    --ink-dim: #b8b3a4;
+    --paper: #14171c;
+    --paper-raised: #1b1f26;
+    --line: rgba(242,239,230,0.14);
+    --accent: #d1a94a;
+    --accent-soft: rgba(209,169,74,0.14);
+    --flag: #c4573d;
+    --flag-soft: rgba(196,87,61,0.14);
+    --good: #6fa287;
+    --good-soft: rgba(111,162,135,0.14);
+  }
+  :root[data-theme="light"] {
+    --ink: #201d17;
+    --ink-dim: #6b6455;
+    --paper: #f4f0e6;
+    --paper-raised: #ffffff;
+    --line: rgba(32,29,23,0.14);
+    --accent: #a97a1f;
+    --accent-soft: rgba(169,122,31,0.10);
+    --flag: #a8402a;
+    --flag-soft: rgba(168,64,42,0.09);
+    --good: #3f7a5c;
+    --good-soft: rgba(63,122,92,0.10);
+  }
+  @media (prefers-color-scheme: light) {
+    :root:not([data-theme="dark"]) {
+      --ink: #201d17;
+      --ink-dim: #6b6455;
+      --paper: #f4f0e6;
+      --paper-raised: #ffffff;
+      --line: rgba(32,29,23,0.14);
+      --accent: #a97a1f;
+      --accent-soft: rgba(169,122,31,0.10);
+      --flag: #a8402a;
+      --flag-soft: rgba(168,64,42,0.09);
+      --good: #3f7a5c;
+      --good-soft: rgba(63,122,92,0.10);
+    }
+  }
+
+  * { box-sizing: border-box; }
+  html { -webkit-font-smoothing: antialiased; }
+  body {
+    background: var(--paper);
+    color: var(--ink);
+    font-family: ui-sans-serif, -apple-system, "Segoe UI", Helvetica, Arial, sans-serif;
+    font-size: 16px;
+    line-height: 1.6;
+    margin: 0;
+    padding: 4rem 1.5rem 6rem;
+    transition: background .2s ease, color .2s ease;
+  }
+  .doc {
+    max-width: 740px;
+    margin: 0 auto;
+  }
+  .wide {
+    max-width: 900px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  h1, h2, h3 {
+    font-family: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
+    font-weight: 600;
+    text-wrap: balance;
+    color: var(--ink);
+  }
+
+  /* Memo header */
+  .memo-head {
+    border-top: 3px solid var(--ink);
+    border-bottom: 1px solid var(--line);
+    padding: 1.5rem 0 1.25rem;
+    margin-bottom: 2.75rem;
+  }
+  .memo-head h1 {
+    font-size: 1.85rem;
+    margin: 0 0 1.1rem;
+    letter-spacing: 0.01em;
+  }
+  .memo-fields {
+    display: grid;
+    grid-template-columns: max-content 1fr;
+    gap: 0.35rem 0.9rem;
+    font-family: ui-monospace, "SF Mono", "Cascadia Code", Consolas, monospace;
+    font-size: 0.82rem;
+    color: var(--ink-dim);
+  }
+  .memo-fields dt { text-transform: uppercase; letter-spacing: 0.08em; }
+  .memo-fields dd { margin: 0; color: var(--ink); }
+
+  section { margin: 3rem 0; }
+  .eyebrow {
+    display: block;
+    font-family: ui-monospace, "SF Mono", "Cascadia Code", Consolas, monospace;
+    font-size: 0.72rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 0.6rem;
+  }
+  h2 { font-size: 1.45rem; margin: 0 0 1rem; }
+  h3 { font-size: 1.08rem; margin: 1.6rem 0 0.6rem; font-family: ui-sans-serif, -apple-system, "Segoe UI", Helvetica, Arial, sans-serif; font-weight: 700;}
+
+  p { margin: 0 0 1rem; max-width: 66ch; }
+  ul, ol { margin: 0 0 1rem; padding-left: 1.3rem; }
+  li { margin-bottom: 0.45rem; max-width: 64ch; }
+  a { color: var(--accent); text-decoration-color: var(--accent-soft); text-underline-offset: 2px; }
+  a:hover { text-decoration-color: var(--accent); }
+  strong { color: var(--ink); }
+  code { font-family: ui-monospace, "SF Mono", "Cascadia Code", Consolas, monospace; font-size: 0.88em; background: var(--paper-raised); border: 1px solid var(--line); padding: 0.1em 0.35em; border-radius: 3px; }
+
+  .tldr {
+    background: var(--paper-raised);
+    border: 1px solid var(--line);
+    border-left: 3px solid var(--accent);
+    padding: 1.1rem 1.3rem;
+    border-radius: 4px;
+  }
+  .tldr p:last-child { margin-bottom: 0; }
+  .tldr .eyebrow { margin-bottom: 0.5rem; }
+
+  hr {
+    border: none;
+    border-top: 1px solid var(--line);
+    margin: 3rem 0;
+  }
+
+  /* tables */
+  .table-wrap { overflow-x: auto; }
+  table {
+    border-collapse: collapse;
+    width: 100%;
+    font-size: 0.9rem;
+  }
+  caption {
+    text-align: left;
+    font-size: 0.78rem;
+    color: var(--ink-dim);
+    margin-bottom: 0.5rem;
+    font-family: ui-monospace, monospace;
+  }
+  th, td {
+    text-align: left;
+    padding: 0.55rem 0.9rem;
+    border-bottom: 1px solid var(--line);
+    white-space: nowrap;
+  }
+  th {
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--ink-dim);
+    font-weight: 600;
+  }
+  td.num, th.num { font-variant-numeric: tabular-nums; text-align: right; }
+  tr:last-child td { border-bottom: none; }
+  tr.highlight td { color: var(--accent); font-weight: 600; }
+
+  /* pipeline diagram */
+  .pipeline {
+    background: var(--paper-raised);
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    padding: 1.6rem;
+    font-family: ui-monospace, "SF Mono", "Cascadia Code", Consolas, monospace;
+    font-size: 0.82rem;
+  }
+  .stage-row {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    flex-wrap: wrap;
+  }
+  .stage {
+    border: 1px solid var(--line);
+    background: var(--paper);
+    padding: 0.55rem 0.8rem;
+    border-radius: 4px;
+    line-height: 1.3;
+  }
+  .stage.accent { border-color: var(--accent); color: var(--accent); }
+  .stage.store { border-color: var(--good); color: var(--good); }
+  .arrow { color: var(--ink-dim); }
+  .branch {
+    margin: 0.9rem 0 0.9rem 1.6rem;
+    padding-left: 1rem;
+    border-left: 2px dashed var(--line);
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    flex-wrap: wrap;
+    color: var(--ink-dim);
+  }
+  .branch .tag { color: var(--flag); font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.06em; }
+  .fork {
+    display: flex;
+    gap: 0.9rem;
+    margin-top: 0.9rem;
+    padding-top: 0.9rem;
+    border-top: 1px solid var(--line);
+    flex-wrap: wrap;
+  }
+
+  /* naming verdict */
+  .verdict-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 0.9rem;
+  }
+  .verdict {
+    border: 1px solid var(--line);
+    border-radius: 5px;
+    padding: 0.9rem 1.1rem;
+    background: var(--paper-raised);
+  }
+  .verdict .name { font-weight: 700; font-size: 0.95rem; }
+  .verdict .fit { font-size: 0.76rem; font-family: ui-monospace, monospace; text-transform: uppercase; letter-spacing: .06em; color: var(--ink-dim); display: block; margin-top: 0.2rem;}
+  .verdict.pick { border-color: var(--accent); }
+  .verdict.pick .fit { color: var(--accent); }
+  .verdict p { margin: 0.5rem 0 0; font-size: 0.92rem; }
+
+  .pill {
+    display: inline-block;
+    font-family: ui-monospace, monospace;
+    font-size: 0.7rem;
+    padding: 0.15rem 0.5rem;
+    border-radius: 999px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+  .pill.good, .pill.none { background: var(--good-soft); color: var(--good); }
+  .pill.flag { background: var(--flag-soft); color: var(--flag); }
+  .pill.accentpill { background: var(--accent-soft); color: var(--accent); }
+  .pill.mini { padding: 0.05rem 0.4rem; font-size: 0.62rem; margin-left: 0.4rem; vertical-align: 1px; }
+
+  /* tiered build path */
+  .tier {
+    border: 1px solid var(--line);
+    border-radius: 7px;
+    background: var(--paper-raised);
+    padding: 1.3rem 1.5rem;
+    margin-bottom: 1.1rem;
+  }
+  .tier-head {
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+    margin-bottom: 0.8rem;
+    flex-wrap: wrap;
+  }
+  .tier-head .num {
+    font-family: "Iowan Old Style", Georgia, serif;
+    font-size: 1.7rem;
+    color: var(--accent);
+    line-height: 1;
+  }
+  .tier-head h3 { margin: 0; font-size: 1.1rem; }
+  .tier p { margin: 0 0 0.55rem; font-size: 0.92rem; max-width: none; }
+  .tier p:last-child { margin-bottom: 0; }
+  .tier p > strong { color: var(--ink-dim); font-weight: 600; }
+
+  footer {
+    margin-top: 4rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid var(--line);
+    font-size: 0.8rem;
+    color: var(--ink-dim);
+  }
+
+  @media (max-width: 640px) {
+    body { padding: 2.5rem 1.1rem 4rem; }
+    th, td { white-space: normal; }
+  }
+</style>
+
+<div class="doc">
+
+  <div class="memo-head">
+    <h1>Podcast Search &amp; Discovery — Planning Memo</h1>
+    <dl class="memo-fields">
+      <dt>To</dt><dd>Harold Phillips, Chris Garlock, Patrick Dixon — Labor Heritage Foundation</dd>
+      <dt>From</dt><dd>Paul Henshaw</dd>
+      <dt>Date</dt><dd>August 3, 2026</dd>
+      <dt>Re</dt><dd>Cataloging &amp; searching Labor Heritage Power Hour + Labor History Today</dd>
+    </dl>
+  </div>
+
+  <section class="tldr">
+    <span class="eyebrow">Short answer</span>
+    <p>Yes — this is doable. Both shows already publish standard podcast RSS feeds with episode audio, descriptions, and dates, so the raw material is all there and machine-readable. The one real gap is that guest names and topics live inside free-text show notes rather than in their own fields, so the system needs a small amount of AI-assisted extraction, not just scraping. Full-text search on that data is straightforward at this scale.</p>
+    <p>What follows is a tiered build path — from plain scraping up to full AI — so you can see the options and decide how far you want to go. Nothing here commits you to the most ambitious version.</p>
+  </section>
+
+  <section>
+    <span class="eyebrow">What's actually there</span>
+    <h2>Feed audit</h2>
+    <p>I pulled both feeds directly to see what we'd really be working with before speccing anything:</p>
+    <ul>
+      <li><strong>Labor Heritage Power Hour</strong> — weekly WPFW broadcast, archived at <code>feed.podbean.com/yourrightsatwork/feed.xml</code>. Averages ~55 minutes per episode. Hosted by Chris Garlock and Elise Bryant.</li>
+      <li><strong>Labor History Today</strong> — weekly, archived at <code>feed.podbean.com/laborhistorytoday/feed.xml</code>. Averages ~30 minutes per episode.</li>
+      <li>Both feeds are standard iTunes-tagged RSS: title, publish date, duration, description, and a direct audio file link per episode. Fully machine-readable, no scraping-the-webpage required.</li>
+      <li><strong>The catch:</strong> guest names and topics aren't separate fields — they're written into the description paragraph (e.g. <em>"we hear from songwriter Mindy Murray about her powerful song…"</em>). Sometimes the guest's name is hyperlinked, which helps, but there's no consistent pattern a simple program could rely on. This is why the system needs an AI reading step, not just a feed reader.</li>
+      <li>Podbean paginates at 100 items per request with a "load more" beyond that — so the true historical backlog on each show is larger than what a single fetch returns. Worth getting an exact count from Podbean's dashboard before scoping the backfill.</li>
+    </ul>
+  </section>
+
+  <section>
+    <span class="eyebrow">Roadmap</span>
+    <h2>A tiered path — plain scraping up to full AI</h2>
+    <p>"AI" gets used loosely, so here's the project broken into four tiers, stacked in order of how much AI is actually doing the work and what it costs to run. Each tier is a complete, usable tool on its own — you're not committing to Tier 4 by starting at Tier 1, and you could stop at any tier and pick the rest up later.</p>
+
+    <div class="tier">
+      <div class="tier-head">
+        <span class="num">1</span>
+        <div><h3>Basic Archive</h3></div>
+        <span class="pill none">No AI</span>
+      </div>
+      <p><strong>What it does —</strong> pulls both podcast feeds and stores every episode's title, date, description, and audio link exactly as published. A search box runs plain keyword matching over that stored text.</p>
+      <p><strong>What you get —</strong> instant search across whatever words already appear in the show notes. Type "Mindy Murray" and you'll find her episode, because her name happens to be in the text.</p>
+      <p><strong>What you don't get —</strong> no real "browse by guest" or "browse by topic" list — just keyword luck. Two episodes about the same guest aren't linked unless the text matches. Nothing from the audio itself.</p>
+      <p><strong>How it's built —</strong> an RSS feed reader plus SQLite full-text search. Ordinary software, zero AI, zero per-episode cost.</p>
+    </div>
+
+    <div class="tier">
+      <div class="tier-head">
+        <span class="num">2</span>
+        <div><h3>AI-Organized Catalog</h3></div>
+        <span class="pill accentpill">AI reads the text</span>
+      </div>
+      <p><strong>What it does —</strong> takes everything Tier 1 already scraped and adds one step: an AI model reads each episode's description and organizes it — who the guest was, who hosted, what topics or themes came up — instead of a person leaving that text as an unsorted paragraph.</p>
+      <p><strong>What you get —</strong> real "browse by guest" and "browse by topic" pages, and search that understands "who's been on the show" as a question, not just a lucky keyword match.</p>
+      <p><strong>What you don't get —</strong> anything from the audio itself. If a guest is never mentioned in the written show notes, this tier still can't find them.</p>
+      <p><strong>How it's built —</strong> adds a single AI (language model) pass over text that's already been scraped — no audio involved, so the cost is a fraction of a cent per episode, not worth its own line item.</p>
+    </div>
+
+    <div class="tier">
+      <div class="tier-head">
+        <span class="num">3</span>
+        <div><h3>AI Transcription</h3></div>
+        <span class="pill flag">AI listens to the audio</span>
+      </div>
+      <p><strong>What it does —</strong> sends every episode's actual audio file through an AI speech-to-text engine, turning what was <em>said on air</em> into searchable text — not just the written summary of it.</p>
+      <p><strong>What you get —</strong> search for a phrase someone actually spoke, and jump straight to that timestamp in the episode. Solves cases where a guest or topic was discussed but never written into the show notes.</p>
+      <p><strong>What you don't get —</strong> automatic attribution of who said what (that's Tier 4) — the transcript is searchable, but not yet speaker-labeled by default.</p>
+      <p><strong>How it's built —</strong> Google Cloud Speech-to-Text, run once per episode. This is the first tier that touches audio, and the only one with a real per-episode dollar cost — see the <a href="#stt-section">speech-to-text breakdown</a> below (roughly 12–22¢ per episode).</p>
+    </div>
+
+    <div class="tier">
+      <div class="tier-head">
+        <span class="num">4</span>
+        <div><h3>Full AI Discovery</h3></div>
+        <span class="pill flag">AI, advanced</span>
+      </div>
+      <p><strong>What it does —</strong> layers smarter AI on top of the Tier 3 transcripts: natural-language search (find episodes about "1930s strikes" even if that exact phrase is never spoken), automatic speaker labeling so a quote is attributed to the right guest, AI-written episode summaries, and "more like this" suggestions on the public widget.</p>
+      <p><strong>What you get —</strong> the "discovery engine" version of the tool — search by meaning, not just matching words.</p>
+      <p><strong>How it's built —</strong> semantic (embeddings-based) search plus speaker diarization, layered on everything from Tiers 1–3.</p>
+    </div>
+
+    <p style="margin-top:1.6rem;">The public widget for laborheritage.org doesn't need to wait for Tier 3 or 4 — it can launch as soon as Tier 2 is stable and just gets better as later tiers are layered in underneath it.</p>
+  </section>
+
+  <section>
+    <span class="eyebrow">Naming</span>
+    <h2>What do we actually call this?</h2>
+    <p>There are a few industry terms for a system like this, and they're worth sorting out now, because each one sets a different expectation about what the tool does. They aren't competing options so much as descriptions of different tiers of the same project:</p>
+    <div class="verdict-grid">
+      <div class="verdict">
+        <span class="name">Podcast Metadata Scraper &amp; Cataloger</span>
+        <span class="fit">Describes Tiers 1–2</span>
+        <p>Accurate for the ingestion + extraction pipeline itself — the unglamorous part that pulls episodes and figures out who's in them.</p>
+      </div>
+      <div class="verdict">
+        <span class="name">Podcast Search &amp; Indexing Engine</span>
+        <span class="fit">Describes the backend, once search ships</span>
+        <p>The right technical name for the RSS-ingest + full-text-search system once the search box exists — Tier 2's endpoint.</p>
+      </div>
+      <div class="verdict pick">
+        <span class="name">Podcast Knowledge Base / Discovery Engine</span>
+        <span class="fit">Describes where this is headed — recommended framing</span>
+        <p>This is the name I'd use with the board or on the website, because it's honest about the destination: once transcripts and AI search land in Tiers 3–4, people are searching what was <em>said</em>, not just what was written about an episode. It also doesn't over-promise on day one.</p>
+      </div>
+      <div class="verdict">
+        <span class="name">Audio Asset Management System / DAM</span>
+        <span class="fit">Overkill for this scope</span>
+        <p>That term implies enterprise rights management, versioned masters, multi-department workflows. LHF has two shows and a clear use case — a DAM framing would push toward over-building.</p>
+      </div>
+    </div>
+    <p style="margin-top:1rem;">Working name for the project itself: <strong>LHF Podcast Archive</strong> (public-facing, plain-language), with <strong>Podcast Knowledge Base</strong> as the internal name once the later tiers are in place.</p>
+  </section>
+
+  <section>
+    <span class="eyebrow">Scope</span>
+    <h2>Two audiences, one database</h2>
+    <p>Everything you described — internal lookup for "did we already run this," and a public search box on laborheritage.org — is the same underlying data with two different front doors:</p>
+    <ul>
+      <li><strong>Internal tool</strong> (you, Chris, staff): full search with filters by guest, topic, host, air date; a way to flag an episode or segment as already re-aired ("in the can"); no public auth needed, just a shared link or simple password gate.</li>
+      <li><strong>Public widget</strong> (laborheritage.org): a single search box embedded on a page, returning episode title, date, guest/topic tags, and a direct link out to the Podbean episode player. Read-only, no login, built to be dropped into the existing site as an iframe or small JS embed.</li>
+    </ul>
+  </section>
+
+  <section>
+    <span class="eyebrow">Architecture</span>
+    <h2>How it works</h2>
+    <div class="wide">
+      <div class="pipeline">
+        <div class="stage-row">
+          <div class="stage accent">Podbean RSS ×2</div>
+          <span class="arrow">→</span>
+          <div class="stage">Ingest worker<br><span style="color:var(--ink-dim)">(polls feeds, diffs by episode GUID)</span><br><span class="pill none mini">Tier 1 · no AI</span></div>
+          <span class="arrow">→</span>
+          <div class="stage">Metadata extraction<br><span style="color:var(--ink-dim)">(guests, host, topics)</span><br><span class="pill accentpill mini">Tier 2 · AI</span></div>
+          <span class="arrow">→</span>
+          <div class="stage store">SQLite + FTS5</div>
+        </div>
+        <div class="branch">
+          <span class="tag">async · optional</span>
+          <div class="stage">Audio file</div>
+          <span class="arrow">→</span>
+          <div class="stage">Google Speech-to-Text<br><span class="pill flag mini">Tier 3 · AI</span></div>
+          <span class="arrow">→</span>
+          <span style="color:var(--ink-dim)">transcript feeds back into SQLite + FTS5</span>
+        </div>
+        <div class="stage-row" style="margin-top:0.4rem;">
+          <div class="stage store">SQLite + FTS5</div>
+          <span class="arrow">→</span>
+          <div class="stage">API<br><span style="color:var(--ink-dim)">(FastAPI or Node, one small container)</span></div>
+        </div>
+        <div class="fork">
+          <div class="stage accent">Internal search UI<br><span style="color:var(--ink-dim)">(staff, dark mode)</span></div>
+          <div class="stage accent">Public search widget<br><span style="color:var(--ink-dim)">(laborheritage.org)</span></div>
+        </div>
+      </div>
+    </div>
+
+    <h3>Storage</h3>
+    <p>SQLite with an <code>FTS5</code> virtual table is genuinely the right tool here, not a compromise — even a full backlog across both shows (low thousands of episodes) is a trivial dataset for it, and it means no separate search server to run or pay for. One <code>.sqlite</code> file on a Coolify volume holds episodes, extracted people/topics, and transcripts.</p>
+
+    <h3>Reading the show notes</h3>
+    <p>A small, inexpensive AI model reads each episode's description and pulls the useful pieces out of the prose — guest names, interviewer, organizations, topics — filing them into proper database fields so they can be browsed and filtered. The original text is kept and stays searchable alongside it, so nothing is lost in translation. Since it's only reading a paragraph or two per episode, this runs at fractions of a cent apiece.</p>
+
+    <h3>Frontend</h3>
+    <p>Dark-mode-first, Material-influenced, single search bar with filter chips (guest / topic / host / show / year). Same component library powers both the internal tool and the public widget — the public one is just a stripped-down, read-only view.</p>
+  </section>
+
+  <section id="stt-section">
+    <span class="eyebrow">Speech-to-text</span>
+    <h2>Should we transcribe every episode?</h2>
+    <p>Show notes alone get you guest and topic search from day one (Tier 2). Full transcription is what lets someone search for a phrase actually <em>spoken</em> on air and jump to that exact moment — the more ambitious "discovery engine" version (Tier 3).</p>
+    <p><strong>What "transcription" means here:</strong> not a person typing up episodes — an <strong>AI speech-to-text engine</strong> that listens to each episode's audio file and produces the text automatically, billed per minute of audio it processes. I've priced this against <strong>Google Cloud Speech-to-Text</strong>, in its batch mode: since we're working through a back catalog rather than transcribing live radio, results don't need to come back instantly, and that batch tier runs about 4x cheaper than Google's real-time pricing (~$0.004/min vs. ~$0.016/min, as of August 2026).</p>
+
+    <p>That per-minute rate translates to a flat <strong>per-episode cost</strong>, since each show runs a fairly consistent length:</p>
+    <div class="table-wrap">
+      <table>
+        <caption>Cost per episode to run through Google Cloud STT (batch, ~$0.004/min)</caption>
+        <thead>
+          <tr><th>Show</th><th class="num">Avg. episode length</th><th class="num">Cost / episode</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Labor Heritage Power Hour</td>
+            <td class="num">55 min</td>
+            <td class="num">$0.22</td>
+          </tr>
+          <tr>
+            <td>Labor History Today</td>
+            <td class="num">30 min</td>
+            <td class="num">$0.12</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p>We don't yet know the exact size of either show's historical backlog — Podbean only returns 100 episodes per fetch, and I haven't paginated through the full archive. So here's what the <em>one-time cost to transcribe the entire back catalog</em> looks like at three illustrative backlog sizes, using the per-episode price above:</p>
+    <div class="table-wrap">
+      <table>
+        <caption>One-time cost to transcribe the full back catalog, at three possible backlog sizes</caption>
+        <thead>
+          <tr><th>Show</th><th class="num">If backlog is 100 eps.</th><th class="num">If backlog is 300 eps.</th><th class="num">If backlog is 600 eps.</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Labor Heritage Power Hour</td>
+            <td class="num">$22</td>
+            <td class="num">$66</td>
+            <td class="num">$132</td>
+          </tr>
+          <tr>
+            <td>Labor History Today</td>
+            <td class="num">$12</td>
+            <td class="num">$36</td>
+            <td class="num">$72</td>
+          </tr>
+          <tr class="highlight">
+            <td>Both shows, same backlog size assumed for each</td>
+            <td class="num">$34 <span style="color:var(--ink-dim); font-weight:400;">(200 eps. total)</span></td>
+            <td class="num">$102 <span style="color:var(--ink-dim); font-weight:400;">(600 eps. total)</span></td>
+            <td class="num">$204 <span style="color:var(--ink-dim); font-weight:400;">(1,200 eps. total)</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <p style="font-size:0.85rem; color:var(--ink-dim); margin-top:0.6rem;">Read this as: <em>if</em> each show has ~300 episodes in its archive (600 episodes combined), full transcription of the entire history of both shows costs about $102, one time. Once you confirm real counts from the Podbean dashboard, multiply <code>episode count × cost/episode</code> from the first table to get an exact figure — the relationship is linear, so there's no guessing involved once we have the real number. Going forward, transcribing new episodes as they post (roughly one per show per week) runs under $1/month combined, forever.</p>
+
+    <p><strong>Why Google over OpenAI or Groq:</strong> pricing lands in the same range as OpenAI's transcription models (~$0.006/min) and Google's batch tier includes built-in speaker diarization, which is genuinely useful here — it can separate host voices from guest voices automatically, which is most of the way to auto-attributing quotes to the right person. Groq's Whisper endpoint is cheaper still (~$0.0007/min) but at this scale the difference is a few dollars total, not worth adding a second vendor for.</p>
+
+    <p><strong>Worth knowing:</strong> transcription doesn't have to be decided up front. The audio stays where it is on Podbean, so episodes can be run through speech-to-text at any point — all at once, gradually, or only for the years you care most about — without rebuilding anything underneath.</p>
+  </section>
+
+  <section>
+    <span class="eyebrow">Infrastructure</span>
+    <h2>What it runs on</h2>
+    <p>Technical detail, included for the record — the practical takeaway is that this is a small, cheap thing to host, and nothing about it requires specialist hardware.</p>
+    <p>Because the transcription work happens on Google's servers rather than ours, the app itself stays lightweight: no graphics hardware, no heavy machine needed just to keep up with speech recognition.</p>
+    <ul>
+      <li><strong>Steady state</strong> (search + occasional ingest): 1 vCPU / 512MB–1GB RAM is comfortable. SQLite + FTS5 barely register at this data volume.</li>
+      <li><strong>Backfill runs</strong> (bulk transcription pass): the server stays idle — the work happens on Google's side; our container is just sending files and writing down results, so no extra capacity is needed even during a big batch job.</li>
+      <li><strong>Storage</strong>: one volume for the database file, plus a small scratch space for holding audio while it's being sent for transcription (cleared afterward — no need to keep local copies of the audio).</li>
+      <li><strong>Deploy</strong>: a single container holding the search API, the feed ingest worker, and the scheduled job that checks both feeds for new episodes — deployed on the same self-hosted setup I already run for other projects, so there's no new platform for LHF to buy or maintain.</li>
+    </ul>
+  </section>
+
+  <section>
+    <span class="eyebrow">Where this leaves us</span>
+    <h2>Next step</h2>
+    <p>Nothing here needs a decision this week — it's meant to give you a picture of what's possible so you can think about how far up the tiers you'd actually want to go. Happy to talk it through whenever it's useful, and to sketch out timing once there's a sense of direction.</p>
+    <p>The details will firm up as we go — everything above scales cleanly with the size of the archive, so nothing here depends on pinning that down first.</p>
+  </section>
+
+  <footer>
+    Put together by Paul Henshaw for the Labor Heritage Foundation, August 2026. Transcription rates are Google's publicly listed prices as of this month and are worth re-checking whenever we actually get going.
+  </footer>
+
+</div>

@@ -1,0 +1,1255 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>LHF Podcast Archive</title>
+<style>
+  /* ---------------------------------------------------------------
+     Two-color letterpress logic: ink + one spot red on paper stock.
+     Neutrals are warm-biased (newsprint), never neutral grey.
+     --------------------------------------------------------------- */
+  :root {
+    --paper:      #14161a;
+    --paper-2:    #1a1d22;
+    --ink:        #efece4;
+    --ink-2:      #a09a8c;
+    --ink-3:      #6d6961;
+    --rule:       rgba(239,236,228,0.11);
+    --rule-hard:  rgba(239,236,228,0.22);
+    --spot:       #d8503a;
+    --spot-soft:  rgba(216,80,58,0.16);
+    --spot-ink:   #ff7a5f;
+    --gold:       #d8a94a;
+    --focus:      #ff7a5f;
+  }
+  :root[data-theme="light"] {
+    --paper:      #f6f3ec;
+    --paper-2:    #fffdf8;
+    --ink:        #1b1a17;
+    --ink-2:      #5f5a50;
+    --ink-3:      #8b857a;
+    --rule:       rgba(27,26,23,0.13);
+    --rule-hard:  rgba(27,26,23,0.28);
+    --spot:       #b8331d;
+    --spot-soft:  rgba(184,51,29,0.10);
+    --spot-ink:   #9c2b17;
+    --gold:       #8a6512;
+    --focus:      #b8331d;
+  }
+  @media (prefers-color-scheme: light) {
+    :root:not([data-theme="dark"]) {
+      --paper:      #f6f3ec;
+      --paper-2:    #fffdf8;
+      --ink:        #1b1a17;
+      --ink-2:      #5f5a50;
+      --ink-3:      #8b857a;
+      --rule:       rgba(27,26,23,0.13);
+      --rule-hard:  rgba(27,26,23,0.28);
+      --spot:       #b8331d;
+      --spot-soft:  rgba(184,51,29,0.10);
+      --spot-ink:   #9c2b17;
+      --gold:       #8a6512;
+      --focus:      #b8331d;
+    }
+  }
+
+  *, *::before, *::after { box-sizing: border-box; }
+
+  html { -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
+  body {
+    margin: 0;
+    background: var(--paper);
+    color: var(--ink);
+    font-family: ui-sans-serif, -apple-system, "Segoe UI", Helvetica, Arial, sans-serif;
+    font-size: 15px;
+    line-height: 1.5;
+  }
+
+  /* Slab serif — the wood-type poster face of the labor press */
+  .display {
+    font-family: "Superclarendon", "Bookman Old Style", "Bitstream Vera Serif",
+                 "Georgia", serif;
+    font-weight: 700;
+  }
+  .mono {
+    font-family: ui-monospace, "SF Mono", "Cascadia Code", Consolas, monospace;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .wrap { max-width: 1000px; margin: 0 auto; padding: 0 1.5rem; }
+
+  /* ------------------------------------------------------- masthead */
+  .masthead {
+    border-bottom: 3px solid var(--ink);
+    padding: 2.25rem 0 1rem;
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 1.5rem;
+    flex-wrap: wrap;
+  }
+  /* Rule sits above the title, both on the page's left spine — the title
+     must align with the search field, filter labels and date column below
+     it. Sitting the mark beside the title pushed the h1 ~3rem off that
+     spine and was the one broken vertical edge on the page. */
+  /* width:fit-content makes the block exactly as wide as the title, so the
+     rule can span it with width:100% — no magic number, no JS. A stub of
+     arbitrary length read as decoration; matching the measure makes it
+     belong to the title. */
+  .brand {
+    display: flex; flex-direction: column; align-items: stretch;
+    width: fit-content; gap: 0.5rem;
+  }
+  .brand h1 {
+    font-size: clamp(1.5rem, 4vw, 2.05rem);
+    margin: 0;
+    letter-spacing: -0.015em;
+    line-height: 1;
+    white-space: nowrap;
+  }
+  .brand .rule-mark {
+    display: block;
+    width: 100%; height: 0.22rem;
+    background: var(--spot);
+  }
+  #themeToggle {
+    background: none; border: 1px solid var(--rule); color: var(--ink-2);
+    border-radius: 2px; cursor: pointer; font: inherit;
+    font-size: 0.7rem; letter-spacing: 0.08em; text-transform: uppercase;
+    padding: 0.3rem 0.6rem;
+  }
+  #themeToggle:hover { color: var(--ink); border-color: var(--rule-hard); }
+
+  /* --------------------------------------------------------- search */
+  .search-zone {
+    position: sticky; top: 0; z-index: 10;
+    background: var(--paper);
+    padding: 1.4rem 0 0.9rem;
+    border-bottom: 1px solid var(--rule);
+  }
+  .field { position: relative; display: flex; align-items: center; }
+  .field::before {
+    content: "";
+    position: absolute; left: 0.95rem;
+    width: 13px; height: 13px;
+    border: 2px solid var(--ink-3);
+    border-radius: 50%;
+    box-shadow: 6px 6px 0 -4.5px var(--ink-3);
+    transform: rotate(-45deg);
+    pointer-events: none;
+  }
+  #q {
+    width: 100%;
+    background: var(--paper-2);
+    border: 1px solid var(--rule-hard);
+    border-radius: 3px;
+    color: var(--ink);
+    font: inherit;
+    font-size: 1.1rem;
+    padding: 0.9rem 2.8rem 0.9rem 2.9rem;
+  }
+  #q::placeholder { color: var(--ink-3); }
+  /* The field is the largest element on the page, so the hard accent ring used
+     on chips and buttons reads as an alert at this size. A soft halo plus a
+     one-step border shift is quieter and still unmistakably focused.
+     The transparent outline is not decorative — box-shadow is dropped in
+     forced-colors mode, and this keeps a focus ring for those users. */
+  #q:focus-visible {
+    outline: 2px solid transparent;
+    border-color: var(--spot);
+    box-shadow: 0 0 0 3px var(--spot-soft);
+  }
+  #clear {
+    position: absolute; right: 0.5rem;
+    background: none; border: none; cursor: pointer;
+    color: var(--ink-3); font-size: 1.4rem; line-height: 1;
+    padding: 0.2rem 0.55rem; display: none;
+  }
+  #clear:hover { color: var(--spot); }
+
+  .filters {
+    display: flex; gap: 1.4rem; margin-top: 0.85rem;
+    flex-wrap: wrap; align-items: center;
+  }
+  .filter-group { display: flex; align-items: center; gap: 0.45rem; flex-wrap: wrap; }
+  .filter-group > .lbl {
+    font-size: 0.66rem; letter-spacing: 0.11em; text-transform: uppercase;
+    color: var(--ink-3); margin-right: 0.1rem;
+  }
+  .chip {
+    background: none;
+    border: 1px solid var(--rule-hard);
+    border-radius: 2px;
+    color: var(--ink-2);
+    font: inherit; font-size: 0.79rem;
+    padding: 0.2rem 0.6rem;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+  .chip:hover { color: var(--ink); border-color: var(--ink-3); }
+  .chip:focus-visible { outline: 2px solid var(--focus); outline-offset: 1px; }
+  .chip[aria-pressed="true"] {
+    background: var(--spot); border-color: var(--spot); color: #fff;
+  }
+  .chip .n {
+    opacity: 0.5; margin-left: 0.35rem; font-size: 0.9em;
+    font-variant-numeric: tabular-nums;
+  }
+  .chip[aria-pressed="true"] .n { opacity: 0.75; }
+
+  /* "All" reads as the resting state, not another option competing for
+     attention — quieter border, and it only goes solid when nothing else
+     in the group is chosen. */
+  .chip.all { border-style: dashed; }
+  .chip.all[aria-pressed="true"] {
+    background: none;
+    border-style: solid;
+    border-color: var(--ink-3);
+    color: var(--ink);
+  }
+  .chip.all[aria-pressed="true"] .n { opacity: 0.5; }
+
+  .status-right { display: flex; align-items: baseline; gap: 0.9rem; }
+  #resetAll {
+    background: none; border: 1px solid var(--spot); color: var(--spot-ink);
+    border-radius: 2px; cursor: pointer; font: inherit;
+    font-size: 0.68rem; letter-spacing: 0.09em; text-transform: uppercase;
+    padding: 0.18rem 0.55rem; white-space: nowrap;
+  }
+  #resetAll:hover { background: var(--spot-soft); }
+  #resetAll:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+  #resetAll[hidden] { display: none; }
+
+  @media (max-width: 560px) { #corpus { display: none; } }
+
+
+  /* ------------------------------------------------------------ sort
+     Menu behaviour is modern (elevation, keyboard nav, clear selected
+     state); the skin stays in the letterpress system rather than importing
+     a different design language mid-page. */
+  .sort { position: relative; }
+  #sortBtn {
+    background: none; border: 1px solid var(--rule-hard); color: var(--ink-2);
+    border-radius: 2px; cursor: pointer; font: inherit;
+    font-size: 0.72rem; letter-spacing: 0.06em; text-transform: uppercase;
+    padding: 0.22rem 0.55rem;
+    display: inline-flex; align-items: center; gap: 0.4rem; white-space: nowrap;
+  }
+  #sortBtn:hover { color: var(--ink); border-color: var(--ink-3); }
+  #sortBtn:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+  #sortBtn .cur { color: var(--ink); }
+  #sortBtn .caret { font-size: 0.62rem; opacity: 0.7; transition: transform .12s; }
+  #sortBtn[aria-expanded="true"] { border-color: var(--spot); color: var(--spot-ink); }
+  #sortBtn[aria-expanded="true"] .caret { transform: rotate(180deg); }
+
+  #sortMenu {
+    position: absolute; right: 0; top: calc(100% + 0.4rem); z-index: 30;
+    min-width: 11rem;
+    background: var(--paper-2);
+    border: 1px solid var(--rule-hard);
+    border-top: 2px solid var(--spot);
+    border-radius: 3px;
+    box-shadow: 0 12px 32px rgba(0,0,0,0.35);
+    padding: 0.25rem;
+    text-transform: none; letter-spacing: 0;
+  }
+  :root[data-theme="light"] #sortMenu { box-shadow: 0 12px 32px rgba(27,26,23,0.16); }
+  #sortMenu[hidden] { display: none; }
+  .sort-opt {
+    display: flex; align-items: baseline; gap: 0.55rem; width: 100%;
+    background: none; border: none; border-radius: 2px;
+    color: var(--ink-2); font: inherit; font-size: 0.84rem;
+    padding: 0.4rem 0.6rem; cursor: pointer; text-align: left;
+    white-space: nowrap;
+  }
+  .sort-opt:hover, .sort-opt:focus-visible {
+    background: var(--spot-soft); color: var(--ink); outline: none;
+  }
+  .sort-opt .tick { width: 0.85rem; color: var(--spot-ink); flex: none; }
+  .sort-opt[aria-selected="true"] { color: var(--ink); font-weight: 600; }
+
+  /* -------------------------------------------------------- results */
+  .status {
+    display: flex; align-items: baseline; justify-content: space-between;
+    gap: 1rem; flex-wrap: wrap;
+    padding: 1.25rem 0 0.5rem;
+    font-size: 0.74rem; letter-spacing: 0.1em; text-transform: uppercase;
+    color: var(--ink-3);
+    min-height: 2.6rem;
+  }
+  .status b { color: var(--ink); font-weight: 600; }
+
+  ol.results { list-style: none; margin: 0; padding: 0; }
+  .row {
+    display: grid;
+    grid-template-columns: 6.5rem 1fr;
+    gap: 0 1.5rem;
+    padding: 1.05rem 0;
+    border-top: 1px solid var(--rule);
+    position: relative;
+  }
+  .row:last-child { border-bottom: 1px solid var(--rule); }
+  .row::before {
+    content: ""; position: absolute; left: -1.5rem; top: -1px; bottom: -1px;
+    width: 3px; background: var(--spot); opacity: 0; transition: opacity .12s;
+  }
+  .row:hover::before, .row:focus-within::before { opacity: 1; }
+
+  .row .when {
+    font-size: 0.74rem; color: var(--ink-3); padding-top: 0.2rem;
+    font-variant-numeric: tabular-nums; line-height: 1.45;
+  }
+  .row .when .yr { display: block; color: var(--ink-2); font-weight: 600; }
+
+  .row h2 { margin: 0 0 0.3rem; font-size: 1.06rem; line-height: 1.32; }
+  .row h2 a { color: var(--ink); text-decoration: none; }
+  .row h2 a:hover { color: var(--spot-ink); text-decoration: underline;
+                    text-underline-offset: 2px; }
+  .row h2 a:focus-visible { outline: 2px solid var(--focus); outline-offset: 3px; }
+
+  .row .meta {
+    display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap;
+    font-size: 0.7rem; letter-spacing: 0.05em; text-transform: uppercase;
+    color: var(--ink-3); margin-bottom: 0.4rem;
+  }
+  .row .meta .dot { opacity: 0.4; }
+  .badge {
+    border: 1px solid currentColor; border-radius: 2px;
+    padding: 0.02rem 0.36rem; font-size: 0.63rem; letter-spacing: 0.07em;
+  }
+  .badge.encore { color: var(--gold); }
+
+  .row .excerpt {
+    margin: 0; font-size: 0.895rem; color: var(--ink-2);
+    max-width: 68ch;
+  }
+
+  /* Re-air notice — the "have we run this already" answer, stated inline. */
+  .reair {
+    margin: 0.5rem 0 0;
+    padding: 0.4rem 0 0.4rem 0.65rem;
+    border-left: 2px solid var(--gold);
+    font-size: 0.775rem; color: var(--ink-2);
+    display: flex; flex-wrap: wrap; gap: 0.15rem 0.5rem; align-items: baseline;
+  }
+  .reair .lead {
+    color: var(--gold); text-transform: uppercase;
+    letter-spacing: 0.08em; font-size: 0.66rem; font-weight: 600;
+  }
+  .reair .when { font-variant-numeric: tabular-nums; }
+  .reair a { color: var(--ink-2); text-decoration: underline;
+             text-decoration-color: var(--rule-hard); text-underline-offset: 2px; }
+  .reair a:hover { color: var(--ink); }
+
+  /* Producer-linked entities — a hand-curated guest/org list, free.
+     Labelled "Tags" and styled to match the filter-group labels at the top
+     of the page, so it's obvious these are the same kind of control and not
+     inert metadata like the Encore badge sitting above them. */
+  .ents {
+    margin-top: 0.5rem;
+    display: flex; flex-wrap: wrap; gap: 0.3rem;
+    align-items: center;
+  }
+  .ents > .lbl {
+    font-size: 0.66rem; letter-spacing: 0.11em; text-transform: uppercase;
+    color: var(--ink-3); margin-right: 0.1rem;
+  }
+  .ent {
+    background: none; border: 1px solid var(--rule); border-radius: 2px;
+    color: var(--ink-2); font: inherit; font-size: 0.72rem;
+    padding: 0.1rem 0.42rem; cursor: pointer; white-space: nowrap;
+  }
+  .ent:hover { color: var(--spot-ink); border-color: var(--spot); }
+  .ent:focus-visible { outline: 2px solid var(--focus); outline-offset: 1px; }
+  .ent[aria-pressed="true"] {
+    background: var(--spot-soft); border-color: var(--spot); color: var(--spot-ink);
+  }
+
+  .active-person {
+    display: inline-flex; align-items: baseline; gap: 0.45rem;
+    border: 1px solid var(--spot); background: var(--spot-soft);
+    color: var(--spot-ink); border-radius: 2px;
+    padding: 0.12rem 0.5rem; font-size: 0.74rem; text-transform: none;
+    letter-spacing: 0;
+  }
+  .active-person button {
+    background: none; border: none; color: inherit; cursor: pointer;
+    font: inherit; font-size: 1.05em; line-height: 1; padding: 0;
+  }
+  .row .excerpt mark {
+    background: var(--spot-soft); color: var(--spot-ink);
+    padding: 0 0.15em; border-radius: 1px; font-weight: 600;
+  }
+
+
+  /* A hit in the spoken transcript is a different kind of result from a hit
+     in the show notes — worth saying so rather than leaving people to guess
+     why a phrase they searched isn't in the visible blurb. */
+  .from-tx {
+    display: inline-flex; align-items: baseline; gap: 0.3rem;
+    font-size: 0.62rem; letter-spacing: 0.09em; text-transform: uppercase;
+    color: var(--spot-ink); margin-bottom: 0.25rem;
+  }
+  .from-tx::before {
+    content: ""; width: 0.5rem; height: 0.5rem; border-radius: 50%;
+    border: 1.5px solid currentColor; flex: none;
+  }
+  .row .excerpt.spoken { border-left: 2px solid var(--spot-soft); padding-left: 0.6rem; }
+
+  /* ---------------------------------------------------------- misc */
+  .empty { padding: 4rem 0; text-align: center; color: var(--ink-2); }
+  .empty .big { font-size: 1.15rem; color: var(--ink); margin-bottom: 0.5rem; }
+  .empty code {
+    background: var(--paper-2); border: 1px solid var(--rule);
+    padding: 0.1em 0.4em; border-radius: 2px; color: var(--spot-ink);
+    font-size: 0.9em;
+  }
+  .skel { height: 1px; background: var(--rule); margin: 0; }
+
+  /* ----------------------------------------------------------- help */
+  .backdrop {
+    position: fixed; inset: 0; z-index: 50;
+    background: rgba(0,0,0,0.55);
+    display: flex; align-items: flex-start; justify-content: center;
+    padding: 4vh 1.25rem;
+    overflow-y: auto;
+  }
+  :root[data-theme="light"] .backdrop { background: rgba(27,26,23,0.35); }
+  .backdrop[hidden] { display: none; }
+
+  .modal {
+    background: var(--paper);
+    border: 1px solid var(--rule-hard);
+    border-top: 4px solid var(--spot);
+    border-radius: 3px;
+    width: min(680px, 100%);
+    box-shadow: 0 24px 60px rgba(0,0,0,0.4);
+  }
+  .modal-head {
+    display: flex; align-items: baseline; justify-content: space-between;
+    gap: 1rem; padding: 1.4rem 1.6rem 0.9rem;
+    border-bottom: 1px solid var(--rule);
+  }
+  .modal-head h2 { margin: 0; font-size: 1.25rem; }
+  .modal-head p { margin: 0.25rem 0 0; font-size: 0.8rem; color: var(--ink-3); }
+  #helpClose {
+    background: none; border: 1px solid var(--rule); color: var(--ink-2);
+    border-radius: 2px; cursor: pointer; font: inherit; font-size: 1.15rem;
+    line-height: 1; padding: 0.25rem 0.5rem;
+  }
+  #helpClose:hover { color: var(--spot-ink); border-color: var(--spot); }
+  #helpClose:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+
+  .modal-body { padding: 0.4rem 1.6rem 1.6rem; }
+  .help-sec { padding-top: 1.3rem; }
+  .help-sec + .help-sec { border-top: 1px solid var(--rule); }
+  .help-sec > h3 {
+    margin: 0 0 0.15rem; font-size: 0.68rem; letter-spacing: 0.12em;
+    text-transform: uppercase; color: var(--spot-ink); font-weight: 600;
+    font-family: inherit;
+  }
+  .help-sec > .lede {
+    margin: 0 0 0.75rem; font-size: 0.87rem; color: var(--ink-2);
+    max-width: 58ch;
+  }
+  .help-rows { display: grid; gap: 0.4rem; }
+  .help-row {
+    display: grid; grid-template-columns: minmax(9.5rem, auto) 1fr;
+    gap: 0.35rem 0.9rem; align-items: baseline;
+  }
+  .help-row .what { font-size: 0.85rem; color: var(--ink-2); }
+
+  /* Examples are runnable — click to fill the box and search. */
+  .try {
+    font-family: ui-monospace, "SF Mono", Consolas, monospace;
+    font-size: 0.79rem;
+    background: var(--paper-2);
+    border: 1px solid var(--rule-hard);
+    border-radius: 2px; color: var(--ink);
+    padding: 0.16rem 0.45rem; cursor: pointer;
+    text-align: left; white-space: nowrap;
+  }
+  .try:hover { border-color: var(--spot); color: var(--spot-ink); }
+  .try:focus-visible { outline: 2px solid var(--focus); outline-offset: 1px; }
+
+  .keys { display: flex; flex-wrap: wrap; gap: 0.45rem 1.4rem; }
+  .keys div { font-size: 0.85rem; color: var(--ink-2); }
+  kbd {
+    font-family: ui-monospace, Consolas, monospace; font-size: 0.76rem;
+    border: 1px solid var(--rule-hard); border-bottom-width: 2px;
+    border-radius: 3px; padding: 0.05rem 0.35rem;
+    background: var(--paper-2); color: var(--ink);
+  }
+  .swatch {
+    display: inline-block; width: 0.6rem; height: 0.6rem;
+    border-radius: 1px; margin-right: 0.15rem; vertical-align: baseline;
+  }
+  .modal-foot {
+    border-top: 1px solid var(--rule);
+    padding: 0.85rem 1.6rem 1.1rem;
+    font-size: 0.75rem; color: var(--ink-3);
+  }
+
+  #helpBtn {
+    background: none; border: 1px solid var(--rule); color: var(--ink-2);
+    border-radius: 2px; cursor: pointer; font: inherit;
+    font-size: 0.7rem; letter-spacing: 0.08em; text-transform: uppercase;
+    padding: 0.3rem 0.6rem;
+  }
+  #helpBtn:hover { color: var(--spot-ink); border-color: var(--spot); }
+  #helpBtn:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+
+  @media (max-width: 560px) {
+    .help-row { grid-template-columns: 1fr; }
+    .modal-head, .modal-body, .modal-foot { padding-left: 1.1rem; padding-right: 1.1rem; }
+  }
+
+
+  /* ------------------------------------------------------- moments
+     Where a phrase was actually spoken. Clicking seeks an inline player —
+     the audio is CORS-open and supports range requests, so we can seek
+     precisely rather than depending on the host's URL scheme. */
+  .moments { margin-top: 0.55rem; display: flex; flex-direction: column; gap: 0.3rem; }
+  .moment {
+    display: grid; grid-template-columns: 3.6rem 1fr; gap: 0.6rem;
+    align-items: baseline; width: 100%;
+    background: none; border: none; border-left: 2px solid var(--rule-hard);
+    color: var(--ink-2); font: inherit; font-size: 0.82rem;
+    padding: 0.22rem 0 0.22rem 0.6rem; cursor: pointer; text-align: left;
+  }
+  .moment:hover, .moment:focus-visible {
+    border-left-color: var(--spot); color: var(--ink); outline: none;
+  }
+  .moment .t {
+    font-family: ui-monospace, Consolas, monospace; font-variant-numeric: tabular-nums;
+    font-size: 0.76rem; color: var(--spot-ink);
+  }
+  .moment mark { background: var(--spot-soft); color: var(--spot-ink); padding: 0 0.12em; }
+  .moment.playing { border-left-color: var(--spot); background: var(--spot-soft); }
+
+
+  /* Custom transport — the native control bar is a different design language
+     and can't be styled consistently across browsers. */
+  .player { margin-top: 0.6rem; }
+  .player[hidden] { display: none; }
+  .pl {
+    display: flex; align-items: center; gap: 0.7rem;
+    background: var(--paper-2);
+    border: 1px solid var(--rule-hard);
+    border-left: 2px solid var(--spot);
+    border-radius: 3px;
+    padding: 0.5rem 0.75rem;
+  }
+  .pl-play {
+    flex: none; width: 2rem; height: 2rem;
+    display: grid; place-items: center;
+    background: none; border: 1px solid var(--rule-hard); border-radius: 50%;
+    color: var(--ink); cursor: pointer; font: inherit; font-size: 0.7rem;
+    line-height: 1; padding: 0;
+  }
+  .pl-play:hover { border-color: var(--spot); color: var(--spot-ink); }
+  .pl-play:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+
+  .pl-track {
+    flex: 1; position: relative; height: 1.1rem;
+    display: flex; align-items: center; cursor: pointer;
+    border: none; background: none; padding: 0;
+  }
+  .pl-track::before {
+    content: ""; position: absolute; left: 0; right: 0; height: 3px;
+    background: var(--rule-hard); border-radius: 2px;
+  }
+  .pl-fill {
+    position: absolute; left: 0; height: 3px; width: 0;
+    background: var(--spot); border-radius: 2px;
+  }
+  .pl-knob {
+    position: absolute; width: 9px; height: 9px; border-radius: 50%;
+    background: var(--spot); left: 0; transform: translateX(-50%);
+    opacity: 0; transition: opacity .12s;
+  }
+  .pl-track:hover .pl-knob, .pl-track:focus-visible .pl-knob { opacity: 1; }
+  .pl-track:focus-visible { outline: 2px solid var(--focus); outline-offset: 3px; border-radius: 2px; }
+
+  .pl-time {
+    flex: none; font-family: ui-monospace, Consolas, monospace;
+    font-variant-numeric: tabular-nums; font-size: 0.72rem; color: var(--ink-2);
+    white-space: nowrap;
+  }
+  .pl-time b { color: var(--spot-ink); font-weight: 600; }
+
+  /* --------------------------------------------------------- to top
+     Borrows the same button language as Help / Theme / Sort so it reads as
+     part of the furniture rather than a widget bolted on. Lives in the right
+     gutter on wide screens; once the gutter can't hold it, it floats
+     centred over the content instead. */
+  #toTop {
+    position: fixed;
+    bottom: 1.75rem;
+    left: 50%; transform: translateX(-50%) translateY(0.4rem);
+    z-index: 20;
+    display: inline-flex; align-items: center; gap: 0.4rem;
+    background: var(--paper-2);
+    border: 1px solid var(--rule-hard);
+    border-radius: 2px;
+    color: var(--ink-2);
+    font: inherit; font-size: 0.7rem;
+    letter-spacing: 0.09em; text-transform: uppercase;
+    padding: 0.42rem 0.7rem;
+    cursor: pointer;
+    opacity: 0; visibility: hidden;
+    transition: opacity .18s ease, transform .18s ease,
+                color .12s, border-color .12s;
+  }
+  #toTop.show { opacity: 1; visibility: visible; transform: translateX(-50%) translateY(0); }
+  #toTop:hover { color: var(--spot-ink); border-color: var(--spot); }
+  #toTop:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+  #toTop .arw { font-size: 0.82rem; line-height: 1; }
+
+  /* Content is 1000px; once the viewport can spare ~90px of gutter, move it
+     out of the way of the text entirely. */
+  @media (min-width: 1180px) {
+    #toTop {
+      left: auto;
+      right: calc((100vw - 1000px) / 2 - 4.75rem);
+      transform: translateY(0.4rem);
+    }
+    #toTop.show { transform: translateY(0); }
+  }
+
+  /* Floating over content on small screens — lift it off the text. */
+  @media (max-width: 1179px) {
+    #toTop {
+      background: color-mix(in srgb, var(--paper-2) 88%, transparent);
+      backdrop-filter: blur(8px);
+      box-shadow: 0 4px 16px rgba(0,0,0,0.28);
+    }
+    :root[data-theme="light"] #toTop { box-shadow: 0 4px 16px rgba(27,26,23,0.12); }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    #toTop, #toTop.show { transition: none; }
+  }
+
+  footer {
+    border-top: 1px solid var(--rule);
+    margin-top: 3rem; padding: 1.25rem 0 3.5rem;
+    font-size: 0.73rem; color: var(--ink-3); line-height: 1.6;
+  }
+  footer b { color: var(--ink-2); font-weight: 600; }
+
+  @media (max-width: 620px) {
+    .row { grid-template-columns: 1fr; gap: 0.35rem; }
+    .row .when { display: flex; gap: 0.4rem; padding-top: 0; }
+    .row .when .yr { display: inline; }
+    .row::before { left: -0.75rem; }
+    .wrap { padding: 0 1rem; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    * { transition: none !important; animation: none !important; }
+  }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+
+  <header class="masthead">
+    <div class="brand">
+      <span class="rule-mark"></span>
+      <h1 class="display">LHF Podcast Archive</h1>
+    </div>
+    <div style="display:flex;align-items:center;gap:0.5rem;">
+      <button id="helpBtn" title="Search help (?)" aria-haspopup="dialog">Help</button>
+      <button id="themeToggle" title="Toggle light/dark">Theme</button>
+    </div>
+  </header>
+
+  <div class="search-zone">
+    <div class="field">
+      <input id="q" type="search" autocomplete="off" spellcheck="false" autofocus
+             aria-label="Search episodes"
+             placeholder="Search episodes, guests, topics…  or click any tag below">
+      <button id="clear" aria-label="Clear search">&times;</button>
+    </div>
+
+    <div class="filters">
+      <div class="filter-group" id="showChips"><span class="lbl">Show</span></div>
+      <div class="filter-group" id="yearChips"><span class="lbl">Year</span></div>
+      <div class="filter-group" id="flagChips"></div>
+    </div>
+  </div>
+
+  <div class="status">
+    <span id="statusText"></span>
+    <span class="status-right">
+      <button id="resetAll" hidden>Reset</button>
+      <span class="sort">
+        <button id="sortBtn" aria-haspopup="listbox" aria-expanded="false">
+          Sort <span class="cur" id="sortCur">Newest</span> <span class="caret">&#9660;</span>
+        </button>
+        <div id="sortMenu" role="listbox" aria-label="Sort results" hidden></div>
+      </span>
+    </span>
+  </div>
+
+  <ol class="results" id="results"></ol>
+
+  <footer>
+    <b>Searching titles, show notes and transcripts.</b> Topic tagging and full
+    guest extraction layer onto this same database without changing the interface.
+    <button class="try" id="footHelp" style="margin-left:.4rem">Search help</button>
+  </footer>
+
+</div>
+
+<button id="toTop" aria-label="Back to top"><span class="arw">&uarr;</span> Top</button>
+
+<!-- Every example below is runnable: click it and the search executes. -->
+<div class="backdrop" id="help" hidden>
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="helpTitle">
+
+    <div class="modal-head">
+      <div>
+        <h2 class="display" id="helpTitle">Searching the archive</h2>
+        <p>Click any example to run it.</p>
+      </div>
+      <button id="helpClose" aria-label="Close help">&times;</button>
+    </div>
+
+    <div class="modal-body">
+
+      <section class="help-sec">
+        <h3>Just type</h3>
+        <p class="lede">Words are matched together, and the word you're still
+          typing is matched as a prefix — so results narrow as you go, before
+          you've finished a name.</p>
+        <div class="help-rows">
+          <div class="help-row"><button class="try" data-q="coal mine">coal mine</button>
+            <span class="what">Both words, anywhere in the episode</span></div>
+          <div class="help-row"><button class="try" data-q="carsie bla">carsie bla</button>
+            <span class="what">Finds Carsie Blanton — no need to finish typing</span></div>
+        </div>
+      </section>
+
+      <section class="help-sec">
+        <h3>Precise searching</h3>
+        <p class="lede">Use an operator, quote, bracket or <code>*</code> and the
+          query runs exactly as written.</p>
+        <div class="help-rows">
+          <div class="help-row"><button class="try" data-q="&quot;general strike&quot;">"general strike"</button>
+            <span class="what">Exact phrase, in that order</span></div>
+          <div class="help-row"><button class="try" data-q="organiz*">organiz*</button>
+            <span class="what">Truncation — organize, organized, organizing, organizers</span></div>
+          <div class="help-row"><button class="try" data-q="strike NOT encore">strike NOT encore</button>
+            <span class="what">Exclude. <code>AND</code> and <code>OR</code> work too</span></div>
+          <div class="help-row"><button class="try" data-q="(strike OR walkout) NOT encore">(strike OR walkout) NOT encore</button>
+            <span class="what">Group with brackets</span></div>
+          <div class="help-row"><button class="try" data-q="title:strike">title:strike</button>
+            <span class="what">One field only — also <code>description_text</code></span></div>
+          <div class="help-row"><button class="try" data-q="NEAR(coal mine, 5)">NEAR(coal mine, 5)</button>
+            <span class="what">Words within 5 of each other</span></div>
+        </div>
+      </section>
+
+      <section class="help-sec">
+        <h3>Narrowing</h3>
+        <p class="lede">Filters combine with whatever you've searched.
+          <b>All</b> clears a row; <b>Reset</b> clears everything at once.</p>
+        <div class="help-rows">
+          <div class="help-row"><span class="what"><b>Show</b> / <b>Year</b></span>
+            <span class="what">One at a time — picking another replaces it</span></div>
+          <div class="help-row"><span class="what"><b>Encores only</b></span>
+            <span class="what">Episodes flagged as a repeat broadcast</span></div>
+        </div>
+      </section>
+
+      <section class="help-sec">
+        <h3>Searching what was said</h3>
+        <p class="lede">Most episodes now include a full transcript, so search
+          reaches the audio itself — not just the show notes. When a result
+          matched something spoken, it's marked <b>Heard in this episode</b> and
+          the excerpt is the actual line.</p>
+        <div class="help-rows">
+          <div class="help-row"><button class="try" data-q="&quot;picket line&quot;">"picket line"</button>
+            <span class="what">Finds it whether written or spoken aloud</span></div>
+        </div>
+      </section>
+
+      <section class="help-sec">
+        <h3>Jumping to a moment</h3>
+        <p class="lede">When your words were spoken aloud, the timestamps under
+          a result show exactly where. Click one and the episode starts playing
+          from that second — no scrubbing.</p>
+      </section>
+
+      <section class="help-sec">
+        <h3>Tags</h3>
+        <p class="lede">The names under each episode are people, bands, museums
+          and books the producers linked in the show notes — a hand-curated index,
+          not guesswork. Click one to see every episode tagged with it.</p>
+      </section>
+
+      <section class="help-sec">
+        <h3><span class="swatch" style="background:var(--gold)"></span>Also ran</h3>
+        <p class="lede">A gold line under an episode means the same programme
+          aired more than once — as an encore, or on both shows. That's the
+          quick answer to "have we run this already?"</p>
+      </section>
+
+      <section class="help-sec">
+        <h3>Keyboard</h3>
+        <div class="keys">
+          <div><kbd>/</kbd> search</div>
+          <div><kbd>?</kbd> this help</div>
+          <div><kbd>Esc</kbd> clear, then reset, then close</div>
+        </div>
+      </section>
+
+    </div>
+
+    <div class="modal-foot">
+      Searching episode titles, show notes and transcripts. Topic tagging and
+      full guest lists are coming next.
+    </div>
+
+  </div>
+</div>
+
+<script>
+const $  = s => document.querySelector(s);
+const state = { q: "", show: null, year: null, encore: false, person: null, personLabel: "", sort: "newest" };
+let timer, lastReq = 0;
+const CORPUS = { episodes: 0, hours: 0 };
+
+/* ---------- theme ---------- */
+const root = document.documentElement;
+const saved = localStorage.getItem("lhf-theme");
+if (saved) root.setAttribute("data-theme", saved);
+$("#themeToggle").addEventListener("click", () => {
+  const cur = root.getAttribute("data-theme")
+    || (matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark");
+  const next = cur === "dark" ? "light" : "dark";
+  root.setAttribute("data-theme", next);
+  localStorage.setItem("lhf-theme", next);
+});
+
+/* ---------- helpers ---------- */
+const MONTHS = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+function dateParts(iso) {
+  if (!iso) return { md: "", yr: "" };
+  const d = new Date(iso);
+  return { md: `${MONTHS[d.getUTCMonth()]} ${d.getUTCDate()}`, yr: d.getUTCFullYear() };
+}
+function hms(sec) {
+  sec = Math.floor(sec || 0);
+  const h = Math.floor(sec / 3600), m = Math.floor(sec % 3600 / 60), x = sec % 60;
+  return (h ? h + ":" + String(m).padStart(2, "0") : String(m))
+       + ":" + String(x).padStart(2, "0");
+}
+const esc = s => (s || "").replace(/[&<>"]/g,
+  c => ({ "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;" }[c]));
+
+/* ---------- facets ---------- */
+async function loadFacets() {
+  const f = await (await fetch("/api/facets")).json();
+  const t = f.totals;
+  CORPUS.episodes = t.episodes;
+  CORPUS.hours = t.hours;
+
+  const allChip = (kind, n) =>
+    `<button class="chip all" data-kind="${kind}" data-val=""
+       aria-pressed="true">All<span class="n">${n}</span></button>`;
+
+  $("#showChips").insertAdjacentHTML("beforeend",
+    allChip("show", t.episodes)
+    + f.shows.map(s => {
+        const short = s.name.replace("Labor Heritage ", "").replace("Labor History ", "History ");
+        return `<button class="chip" data-kind="show" data-val="${s.slug}"
+                  aria-pressed="false" title="${esc(s.name)}">${esc(short)}<span class="n">${s.n}</span></button>`;
+      }).join(""));
+
+  $("#yearChips").insertAdjacentHTML("beforeend",
+    allChip("year", t.episodes)
+    + f.years.map(y => `<button class="chip" data-kind="year" data-val="${y.y}"
+        aria-pressed="false">${y.y}<span class="n">${y.n}</span></button>`).join(""));
+
+  $("#flagChips").insertAdjacentHTML("beforeend",
+    `<button class="chip" data-kind="encore" data-val="1" aria-pressed="false"
+       title="Only episodes re-aired as encores">Encores only<span class="n">${t.encores}</span></button>`);
+
+  document.querySelectorAll(".chip").forEach(c => c.addEventListener("click", onChip));
+}
+
+/** Repaint every chip from state, so the UI can't drift out of sync. */
+function syncChips() {
+  document.querySelectorAll(".chip").forEach(c => {
+    const kind = c.dataset.kind, val = c.dataset.val;
+    const active = kind === "encore"
+      ? state.encore
+      : (state[kind] || "") === val;      // "" is the All chip
+    c.setAttribute("aria-pressed", String(active));
+  });
+  const dirty = !!(state.q || state.show || state.year || state.encore || state.person);
+  $("#resetAll").hidden = !dirty;
+}
+
+function onChip(e) {
+  const el = e.currentTarget, kind = el.dataset.kind, val = el.dataset.val;
+  if (kind === "encore") {
+    state.encore = el.getAttribute("aria-pressed") !== "true";
+  } else {
+    state[kind] = val || null;           // All chip carries "" → clears the group
+  }
+  run();
+}
+
+function resetAll() {
+  state.q = ""; state.show = null; state.year = null; state.encore = false;
+  state.person = null; state.personLabel = "";
+  $("#q").value = "";
+  $("#clear").style.display = "none";
+  run();
+  $("#q").focus();
+}
+
+/* ---------- search ---------- */
+async function run() {
+  const p = new URLSearchParams();
+  if (state.q)      p.set("q", state.q);
+  if (state.show)   p.set("show", state.show);
+  if (state.year)   p.set("year", state.year);
+  if (state.encore) p.set("encore", "1");
+  if (state.person) p.set("person", state.person);
+  p.set("sort", state.sort);
+
+  syncChips();
+
+  const req = ++lastReq;
+  const data = await (await fetch("/api/search?" + p)).json();
+  if (req !== lastReq) return;          // a newer keystroke already won
+
+  if (data.error) {
+    $("#statusText").textContent = data.error;
+    $("#results").innerHTML = "";
+    return;
+  }
+
+  const n = data.total ?? data.count;
+  const shown = data.truncated ? ` <span style="opacity:.6">(showing ${data.count})</span>` : "";
+  const person = state.person
+    ? ` <span class="active-person">tagged ${esc(state.personLabel || state.person)}<button id="dropPerson" aria-label="Remove this filter">&times;</button></span>`
+    : "";
+  const narrowed = !!(state.q || state.show || state.year || state.encore || state.person);
+  $("#statusText").innerHTML = state.q
+    ? `<b>${n}</b> result${n === 1 ? "" : "s"} for “${esc(state.q)}”${shown}${person}`
+    : `<b>${n}</b> episodes${shown}${person}`;
+  syncSort();
+  const dp = $("#dropPerson");
+  if (dp) dp.addEventListener("click", () => {
+    state.person = null; state.personLabel = ""; run();
+  });
+
+  if (!data.count) {
+    $("#results").innerHTML = `<div class="empty">
+        <div class="big">Nothing matched that.</div>
+        <div>Try a broader term, or <code>"an exact phrase"</code> in quotes.</div>
+      </div>`;
+    return;
+  }
+
+  const shortShow = s => s.replace("Labor Heritage ", "").replace("Labor History ", "History ");
+
+  $("#results").innerHTML = data.results.map(r => {
+    const d = dateParts(r.published_at);
+
+    const reair = (r.reairs && r.reairs.length) ? `
+      <p class="reair">
+        <span class="lead">${r.reairs.length > 1 ? "Ran " + (r.reairs.length + 1) + " times" : "Also ran"}</span>
+        ${r.reairs.map(a => {
+          const ad = dateParts(a.published_at);
+          const tag = a.kind === "cross_show" ? ` on ${esc(shortShow(a.show_name))}` : "";
+          return `<span><a href="${esc(a.episode_url)}" target="_blank" rel="noopener"
+                    ><span class="when">${ad.md} ${ad.yr}</span>${tag}</a></span>`;
+        }).join('<span class="dot">·</span>')}
+      </p>` : "";
+
+    const moments = (r.moments && r.moments.length) ? `
+      <div class="moments">${r.moments.map(m =>
+        `<button class="moment" data-audio="${esc(r.audio_url || "")}"
+           data-t="${Math.floor(m.start_sec || 0)}" data-ep="${r.id}">
+           <span class="t">${hms(m.start_sec)}</span>
+           <span>${m.excerpt || ""}</span>
+         </button>`).join("")}
+       <div class="player" id="player-${r.id}"></div>
+      </div>` : "";
+
+    const ents = (r.mentions && r.mentions.length) ? `
+      <div class="ents"><span class="lbl">Tags</span>${r.mentions.slice(0, 8).map(m =>
+        `<button class="ent" data-person="${esc(m.norm_text)}"
+           aria-pressed="${state.person === m.norm_text}"
+           title="Show every episode tagged ${esc(m.text)}">${esc(m.text)}</button>`
+      ).join("")}</div>` : "";
+
+    return `<li class="row">
+      <div class="when mono"><span>${d.md}</span><span class="yr">${d.yr}</span></div>
+      <div>
+        <div class="meta">
+          <span>${esc(shortShow(r.show_name))}</span>
+          ${r.duration_sec ? `<span class="dot">·</span><span>${Math.round(r.duration_sec/60)} min</span>` : ""}
+          ${r.is_encore ? `<span class="badge encore">Encore</span>` : ""}
+        </div>
+        <h2><a href="${esc(r.episode_url)}" target="_blank" rel="noopener">${esc(r.title)}</a></h2>
+        ${r.excerpt_from === "transcript" ? `<div class="from-tx">Heard in this episode</div>` : ""}
+        <p class="excerpt${r.excerpt_from === "transcript" ? " spoken" : ""}">${r.excerpt || ""}</p>
+        ${moments}
+        ${reair}
+        ${ents}
+      </div>
+    </li>`;
+  }).join("");
+
+
+  // Play from a spoken moment. One player at a time; reuse it if the same
+  // episode is already loaded so seeking within an episode doesn't restart.
+  document.querySelectorAll(".moment").forEach(b =>
+    b.addEventListener("click", () => {
+      const url = b.dataset.audio, t = +b.dataset.t, host = $("#player-" + b.dataset.ep);
+      if (!url || !host) return;
+      document.querySelectorAll(".moment.playing").forEach(x => x.classList.remove("playing"));
+      document.querySelectorAll(".player audio").forEach(a => {
+        if (a.parentElement !== host) { a.pause(); a.parentElement.innerHTML = ""; }
+      });
+      let audio = host.querySelector("audio");
+      if (!audio) { host.innerHTML = ""; audio = buildPlayer(host, url); }
+      b.classList.add("playing");
+      const go = () => { audio.currentTime = t; audio.play().catch(() => {}); };
+      if (audio.readyState >= 1) go();
+      else audio.addEventListener("loadedmetadata", go, { once: true });
+    }));
+
+  document.querySelectorAll(".ent").forEach(b =>
+    b.addEventListener("click", () => {
+      state.person = state.person === b.dataset.person ? null : b.dataset.person;
+      state.personLabel = b.textContent;
+      run();
+      scrollTo({ top: 0, behavior: "smooth" });
+    }));
+}
+
+$("#q").addEventListener("input", e => {
+  state.q = e.target.value;
+  $("#clear").style.display = state.q ? "block" : "none";
+  clearTimeout(timer);
+  timer = setTimeout(run, 140);
+});
+$("#clear").addEventListener("click", () => {
+  state.q = ""; $("#q").value = ""; $("#clear").style.display = "none";
+  $("#q").focus(); run();
+});
+$("#resetAll").addEventListener("click", resetAll);
+addEventListener("keydown", e => {
+  if (!$("#help").hidden) return;              // modal owns the keyboard
+  if (sortOpen()) return;                      // so does the sort menu
+  if (e.key === "/" && document.activeElement !== $("#q")) { e.preventDefault(); $("#q").focus(); }
+  if (e.key === "Escape") {
+    if (document.activeElement === $("#q") && state.q) $("#clear").click();
+    else if (!$("#resetAll").hidden) resetAll();
+  }
+});
+
+/* ---------- help ---------- */
+const help = $("#help");
+let lastFocus = null;
+
+function openHelp() {
+  lastFocus = document.activeElement;
+  help.hidden = false;
+  $("#helpClose").focus();
+}
+function closeHelp() {
+  help.hidden = true;
+  if (lastFocus) lastFocus.focus();
+}
+const helpOpen = () => !help.hidden;
+
+$("#helpBtn").addEventListener("click", openHelp);
+$("#footHelp").addEventListener("click", openHelp);
+$("#helpClose").addEventListener("click", closeHelp);
+help.addEventListener("mousedown", e => { if (e.target === help) closeHelp(); });
+
+// Runnable examples — fill the box, run it, close.
+help.querySelectorAll(".try[data-q]").forEach(b =>
+  b.addEventListener("click", () => {
+    state.q = b.dataset.q;
+    $("#q").value = state.q;
+    $("#clear").style.display = "block";
+    closeHelp();
+    run();
+  }));
+
+// Keep focus inside the dialog while it's open.
+help.addEventListener("keydown", e => {
+  if (e.key !== "Tab") return;
+  const f = [...help.querySelectorAll("button")].filter(el => el.offsetParent !== null);
+  if (!f.length) return;
+  const first = f[0], last = f[f.length - 1];
+  if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+  else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+});
+
+addEventListener("keydown", e => {
+  const typing = /^(INPUT|TEXTAREA)$/.test(document.activeElement.tagName);
+  if (e.key === "?" && !typing && !helpOpen()) { e.preventDefault(); openHelp(); }
+  if (e.key === "Escape" && helpOpen()) { e.preventDefault(); closeHelp(); }
+});
+
+
+/** Minimal transport: play/pause, seekable track, elapsed / total. */
+function buildPlayer(host, url) {
+  const audio = document.createElement("audio");
+  audio.preload = "metadata"; audio.src = url;
+
+  const wrap = document.createElement("div");
+  wrap.className = "pl";
+  wrap.innerHTML = `
+    <button class="pl-play" aria-label="Play">&#9654;</button>
+    <div class="pl-track" role="slider" tabindex="0" aria-label="Seek"
+         aria-valuemin="0" aria-valuenow="0">
+      <span class="pl-fill"></span><span class="pl-knob"></span>
+    </div>
+    <span class="pl-time"><b>0:00</b> / --:--</span>`;
+  host.appendChild(wrap);
+  host.appendChild(audio);
+
+  const play = wrap.querySelector(".pl-play"),
+        track = wrap.querySelector(".pl-track"),
+        fill  = wrap.querySelector(".pl-fill"),
+        knob  = wrap.querySelector(".pl-knob"),
+        time  = wrap.querySelector(".pl-time");
+
+  const paint = () => {
+    const d = audio.duration || 0, c = audio.currentTime || 0;
+    const pct = d ? (c / d) * 100 : 0;
+    fill.style.width = pct + "%";
+    knob.style.left = pct + "%";
+    time.innerHTML = `<b>${hms(c)}</b> / ${d ? hms(d) : "--:--"}`;
+    track.setAttribute("aria-valuenow", Math.round(pct));
+  };
+  const icon = () => {
+    play.innerHTML = audio.paused ? "&#9654;" : "&#10074;&#10074;";
+    play.setAttribute("aria-label", audio.paused ? "Play" : "Pause");
+  };
+
+  audio.addEventListener("timeupdate", paint);
+  audio.addEventListener("loadedmetadata", paint);
+  audio.addEventListener("play", icon);
+  audio.addEventListener("pause", icon);
+  audio.addEventListener("ended", icon);
+  play.addEventListener("click", () => audio.paused ? audio.play().catch(() => {}) : audio.pause());
+
+  const seekTo = e => {
+    const r = track.getBoundingClientRect();
+    const ratio = Math.min(1, Math.max(0, (e.clientX - r.left) / r.width));
+    if (audio.duration) audio.currentTime = ratio * audio.duration;
+  };
+  track.addEventListener("mousedown", e => {
+    seekTo(e);
+    const move = ev => seekTo(ev);
+    const up = () => { removeEventListener("mousemove", move); removeEventListener("mouseup", up); };
+    addEventListener("mousemove", move); addEventListener("mouseup", up);
+  });
+  track.addEventListener("keydown", e => {
+    const step = e.shiftKey ? 30 : 5;
+    if (e.key === "ArrowRight") { e.preventDefault(); audio.currentTime += step; }
+    if (e.key === "ArrowLeft")  { e.preventDefault(); audio.currentTime -= step; }
+    if (e.key === " ")          { e.preventDefault(); audio.paused ? audio.play() : audio.pause(); }
+  });
+  return audio;
+}
+
+/* ---------- sort ---------- */
+// "Best match" only exists once there's something to match against, so it
+// appears when you search rather than sitting there greyed out and unexplained.
+const SORTS = [
+  ["relevance", "Best match"],
+  ["newest",    "Newest first"],
+  ["oldest",    "Oldest first"],
+  ["title",     "Title A–Z"],
+  ["longest",   "Longest first"],
+  ["shortest",  "Shortest first"],
+];
+const sortBtn = $("#sortBtn"), sortMenu = $("#sortMenu");
+
+function syncSort() {
+  const avail = SORTS.filter(([k]) => k !== "relevance" || state.q);
+  if (!state.q && state.sort === "relevance") state.sort = "newest";
+  const cur = avail.find(o => o[0] === state.sort) || avail[0];
+  $("#sortCur").textContent = cur[1];
+  sortMenu.innerHTML = avail.map(([key, label]) =>
+    `<button class="sort-opt" role="option" data-sort="${key}"
+       aria-selected="${key === state.sort}">
+       <span class="tick">${key === state.sort ? "✓" : ""}</span>
+       <span>${label}</span>
+     </button>`).join("");
+  sortMenu.querySelectorAll(".sort-opt").forEach(b =>
+    b.addEventListener("click", () => {
+      state.sort = b.dataset.sort;
+      closeSort();
+      run();
+      sortBtn.focus();
+    }));
+}
+
+const sortOpen = () => sortBtn.getAttribute("aria-expanded") === "true";
+function openSort() {
+  sortBtn.setAttribute("aria-expanded", "true");
+  sortMenu.hidden = false;
+  const sel = sortMenu.querySelector('[aria-selected="true"]')
+           || sortMenu.querySelector(".sort-opt");
+  if (sel) sel.focus();
+}
+function closeSort() {
+  sortBtn.setAttribute("aria-expanded", "false");
+  sortMenu.hidden = true;
+}
+
+sortBtn.addEventListener("click", () => sortOpen() ? closeSort() : openSort());
+document.addEventListener("mousedown", e => {
+  if (sortOpen() && !e.target.closest(".sort")) closeSort();
+});
+sortMenu.addEventListener("keydown", e => {
+  const opts = [...sortMenu.querySelectorAll(".sort-opt")];
+  const i = opts.indexOf(document.activeElement);
+  if (e.key === "ArrowDown") { e.preventDefault(); opts[(i + 1) % opts.length].focus(); }
+  if (e.key === "ArrowUp")   { e.preventDefault(); opts[(i - 1 + opts.length) % opts.length].focus(); }
+  if (e.key === "Home")      { e.preventDefault(); opts[0].focus(); }
+  if (e.key === "End")       { e.preventDefault(); opts[opts.length - 1].focus(); }
+  if (e.key === "Escape")    { e.preventDefault(); closeSort(); sortBtn.focus(); }
+  if (e.key === "Tab")       closeSort();
+});
+
+/* ---------- back to top ---------- */
+const toTop = $("#toTop");
+let ticking = false;
+function onScroll() {
+  if (ticking) return;
+  ticking = true;
+  requestAnimationFrame(() => {
+    toTop.classList.toggle("show", scrollY > innerHeight * 0.6);
+    ticking = false;
+  });
+}
+addEventListener("scroll", onScroll, { passive: true });
+toTop.addEventListener("click", () => {
+  const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
+  scrollTo({ top: 0, behavior: reduce ? "auto" : "smooth" });
+  $("#q").focus({ preventScroll: true });
+});
+onScroll();
+
+loadFacets().then(run);
+</script>
+</body>
+</html>
