@@ -12,10 +12,13 @@ Swap to FastAPI later without touching the front end — the JSON contract
 """
 
 import argparse
+import csv
+import io
 import json
 import os
 import re
 import sqlite3
+from datetime import date
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from urllib.parse import parse_qs, urlparse
 
@@ -239,6 +242,90 @@ def entities(conn, limit=400):
     return {"count": len(rows), "entities": [dict(r) for r in rows]}
 
 
+# ---------------------------------------------------------------- export
+
+# One row per episode keeps the sheet pivotable. Header names carry units so
+# the values can stay numeric (54, not "54 min") and remain sortable/summable.
+EXPORT_COLUMNS = [
+    ("show",             "Show"),
+    ("title",            "Title"),
+    ("published",        "Published"),
+    ("duration_min",     "Duration (min)"),
+    ("is_encore",        "Encore"),
+    ("tags",             "Tags"),
+    ("reair_dates",      "Also aired"),
+    ("has_transcript",   "Transcript"),
+    ("transcript_words", "Words"),
+    ("episode_url",      "Episode page"),
+    ("source_url",       "Source transcript"),
+    ("archive_url",      "Archive transcript"),
+    ("audio_url",        "Audio"),
+]
+
+
+def export_rows(conn, base_url, **kw):
+    """Flatten search results into spreadsheet-shaped rows."""
+    kw.setdefault("limit", 5000)
+    data = search(conn, **kw)
+    if data.get("error"):
+        return None, data["error"]
+
+    ids = [r["id"] for r in data["results"]]
+    words, src = {}, {}
+    if ids:
+        marks = ",".join("?" * len(ids))
+        for r in conn.execute(
+            f"""SELECT id, transcript_url,
+                       CASE WHEN transcript_text IS NULL THEN 0
+                            ELSE LENGTH(transcript_text)
+                                 - LENGTH(REPLACE(transcript_text,' ','')) + 1 END AS w
+                FROM episodes WHERE id IN ({marks})""", ids):
+            words[r["id"]] = r["w"]
+            src[r["id"]] = r["transcript_url"]
+
+    rows = []
+    for r in data["results"]:
+        has_tx = bool(words.get(r["id"]))
+        rows.append({
+            "show": r["show_name"],
+            "title": r["title"],
+            # ISO so a spreadsheet parses it as a real date, not text.
+            "published": (r["published_at"] or "")[:10],
+            "duration_min": round((r["duration_sec"] or 0) / 60) or "",
+            # TRUE/FALSE gives Sheets checkbox filtering; 1/0 would be numeric.
+            "is_encore": "TRUE" if r["is_encore"] else "FALSE",
+            "tags": "; ".join(m["text"] for m in r.get("mentions", [])),
+            "reair_dates": "; ".join(
+                (a["published_at"] or "")[:10] for a in r.get("reairs", [])),
+            "has_transcript": "TRUE" if has_tx else "FALSE",
+            "transcript_words": words.get(r["id"]) or "",
+            "episode_url": r["episode_url"] or "",
+            "source_url": src.get(r["id"]) or "",
+            "archive_url": f"{base_url}/episode/{r['id']}/transcript" if has_tx else "",
+            "audio_url": r["audio_url"] or "",
+        })
+    return rows, None
+
+
+def to_delimited(rows, delimiter, bom):
+    buf = io.StringIO()
+    w = csv.writer(buf, delimiter=delimiter, quoting=csv.QUOTE_MINIMAL,
+                   lineterminator="\r\n")
+    w.writerow([label for _, label in EXPORT_COLUMNS])
+    for r in rows:
+        w.writerow([r[key] for key, _ in EXPORT_COLUMNS])
+    text = buf.getvalue()
+    # BOM so Excel reads UTF-8 — without it "No Pasarán" arrives as mojibake.
+    return ("\ufeff" + text if bom else text).encode("utf-8")
+
+
+def export_filename(ext, filters):
+    bits = ["lhf-archive", date.today().isoformat()]
+    bits += [v for v in filters if v]
+    slug = "_".join(re.sub(r"[^a-z0-9]+", "-", str(b).lower()).strip("-") for b in bits)
+    return f"{slug[:120]}.{ext}"
+
+
 def facets(conn):
     shows = conn.execute(
         """
@@ -311,6 +398,60 @@ class Handler(BaseHTTPRequestHandler):
             finally:
                 conn.close()
             return self._send(200, json.dumps(data))
+
+        if path == "/api/export":
+            fmt = (one("format") or "csv").lower()
+            conn = connect()
+            try:
+                rows, err = export_rows(
+                    conn, f"http://{self.headers.get('Host', 'localhost:8000')}",
+                    q=one("q") or "", show=one("show"), year=one("year"),
+                    encore=one("encore"), person=one("person"), sort=one("sort"))
+            finally:
+                conn.close()
+            if err:
+                return self._send(400, json.dumps({"error": err}))
+
+            name = export_filename(
+                "csv" if fmt == "csv" else "tsv" if fmt == "tsv" else "json",
+                [one("show"), one("year"), (one("q") or "")[:24]])
+
+            if fmt == "json":
+                body = json.dumps(rows, indent=2).encode("utf-8")
+                ctype = "application/json; charset=utf-8"
+            elif fmt == "tsv":
+                body = to_delimited(rows, "\t", bom=False)
+                ctype = "text/tab-separated-values; charset=utf-8"
+            else:
+                body = to_delimited(rows, ",", bom=True)
+                ctype = "text/csv; charset=utf-8"
+
+            self.send_response(200)
+            self.send_header("Content-Type", ctype)
+            self.send_header("Content-Disposition", f'attachment; filename="{name}"')
+            self.send_header("X-Row-Count", str(len(rows)))
+            self.send_header("Content-Length", str(len(body)))
+            self.end_headers()
+            return self.wfile.write(body)
+
+        m = re.fullmatch(r"/episode/(\d+)/transcript", path)
+        if m:
+            conn = connect()
+            try:
+                row = conn.execute(
+                    """SELECT e.title, e.published_at, e.transcript_text, s.name AS show
+                       FROM episodes e JOIN shows s ON s.id = e.show_id
+                       WHERE e.id = ?""", (int(m.group(1)),)).fetchone()
+            finally:
+                conn.close()
+            if not row or not row["transcript_text"]:
+                return self._send(404, "No transcript for that episode.",
+                                  "text/plain; charset=utf-8")
+            head = (f"{row['title']}\n{row['show']} — "
+                    f"{(row['published_at'] or '')[:10]}\n"
+                    + "-" * 60 + "\n\n")
+            return self._send(200, head + row["transcript_text"],
+                              "text/plain; charset=utf-8")
 
         if path == "/api/facets":
             conn = connect()

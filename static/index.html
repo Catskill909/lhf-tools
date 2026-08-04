@@ -586,6 +586,86 @@
   }
   .pl-time b { color: var(--spot-ink); font-weight: 600; }
 
+
+  /* -------------------------------------------------------- export */
+  #exportBtn {
+    background: none; border: 1px solid var(--rule); color: var(--ink-2);
+    border-radius: 2px; cursor: pointer; font: inherit;
+    font-size: 0.7rem; letter-spacing: 0.08em; text-transform: uppercase;
+    padding: 0.3rem 0.6rem;
+  }
+  #exportBtn:hover { color: var(--spot-ink); border-color: var(--spot); }
+  #exportBtn:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+
+  .scope {
+    background: var(--paper-2); border: 1px solid var(--rule);
+    border-left: 2px solid var(--spot);
+    border-radius: 3px; padding: 0.7rem 0.9rem; margin-bottom: 1.1rem;
+  }
+  .scope .n {
+    font-family: "Superclarendon", Georgia, serif; font-weight: 700;
+    font-size: 1.35rem; color: var(--ink); line-height: 1;
+  }
+  .scope .what { font-size: 0.82rem; color: var(--ink-2); margin-top: 0.25rem; }
+
+  /* Format choices are big hit targets with the trade-off written in —
+     nobody should have to guess what CSV means for them. */
+  .fmt-list { display: grid; gap: 0.5rem; }
+  .fmt {
+    display: grid; grid-template-columns: 1.1rem 1fr; gap: 0.75rem;
+    align-items: start; width: 100%; text-align: left;
+    background: none; border: 1px solid var(--rule-hard); border-radius: 3px;
+    color: var(--ink-2); font: inherit; padding: 0.75rem 0.9rem; cursor: pointer;
+  }
+  .fmt:hover { border-color: var(--ink-3); color: var(--ink); }
+  .fmt:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+  .fmt[aria-checked="true"] {
+    border-color: var(--spot); background: var(--spot-soft); color: var(--ink);
+  }
+  .fmt .dot {
+    width: 1.1rem; height: 1.1rem; border-radius: 50%;
+    border: 1px solid var(--rule-hard); margin-top: 0.1rem;
+    display: grid; place-items: center;
+  }
+  .fmt[aria-checked="true"] .dot { border-color: var(--spot); }
+  .fmt[aria-checked="true"] .dot::after {
+    content: ""; width: 0.55rem; height: 0.55rem; border-radius: 50%;
+    background: var(--spot);
+  }
+  .fmt .name { font-weight: 650; font-size: 0.93rem; color: var(--ink); }
+  .fmt .desc { font-size: 0.8rem; color: var(--ink-2); margin-top: 0.15rem; }
+
+  .cols-note {
+    margin-top: 1.1rem; padding-top: 0.9rem; border-top: 1px solid var(--rule);
+    font-size: 0.78rem; color: var(--ink-3); line-height: 1.55;
+  }
+  .cols-note b { color: var(--ink-2); font-weight: 600; }
+
+  .modal-actions {
+    display: flex; justify-content: flex-end; align-items: center;
+    gap: 0.7rem; padding: 0.9rem 1.6rem 1.2rem;
+    border-top: 1px solid var(--rule);
+  }
+  .btn-quiet {
+    background: none; border: 1px solid var(--rule-hard); color: var(--ink-2);
+    border-radius: 2px; font: inherit; font-size: 0.82rem;
+    padding: 0.42rem 0.9rem; cursor: pointer;
+  }
+  .btn-quiet:hover { color: var(--ink); border-color: var(--ink-3); }
+  .btn-primary {
+    background: var(--spot); border: 1px solid var(--spot); color: #fff;
+    border-radius: 2px; font: inherit; font-size: 0.82rem; font-weight: 600;
+    padding: 0.42rem 1.1rem; cursor: pointer;
+  }
+  .btn-primary:hover { filter: brightness(1.08); }
+  .btn-quiet:focus-visible, .btn-primary:focus-visible {
+    outline: 2px solid var(--focus); outline-offset: 2px;
+  }
+  #exportDone {
+    margin-right: auto; font-size: 0.8rem; color: var(--spot-ink);
+  }
+  #exportDone[hidden] { display: none; }
+
   /* --------------------------------------------------------- to top
      Borrows the same button language as Help / Theme / Sort so it reads as
      part of the furniture rather than a widget bolted on. Lives in the right
@@ -668,6 +748,7 @@
       <h1 class="display">LHF Digital Asset Manager</h1>
     </div>
     <div style="display:flex;align-items:center;gap:0.5rem;">
+      <button id="exportBtn" title="Export these results" aria-haspopup="dialog">Export</button>
       <button id="helpBtn" title="Search help (?)" aria-haspopup="dialog">Help</button>
       <button id="themeToggle" title="Toggle light/dark">Theme</button>
     </div>
@@ -709,6 +790,60 @@
     <button class="try" id="footHelp" style="margin-left:.4rem">Search help</button>
   </footer>
 
+</div>
+
+<div class="backdrop" id="exportModal" hidden>
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="exportTitle">
+    <div class="modal-head">
+      <div>
+        <h2 class="display" id="exportTitle">Export</h2>
+        <p>Exactly what's on screen — filters and all.</p>
+      </div>
+      <button id="exportClose" aria-label="Close">&times;</button>
+    </div>
+
+    <div class="modal-body">
+      <div class="scope">
+        <div class="n" id="scopeCount">—</div>
+        <div class="what" id="scopeWhat">episodes</div>
+      </div>
+
+      <div class="fmt-list" role="radiogroup" aria-label="Format">
+        <button class="fmt" role="radio" data-fmt="csv" aria-checked="true">
+          <span class="dot"></span>
+          <span><span class="name">Spreadsheet (CSV)</span>
+            <span class="desc">Opens in Google Sheets, Excel or Numbers. Dates,
+              durations and yes/no columns arrive ready to sort and filter.</span></span>
+        </button>
+        <button class="fmt" role="radio" data-fmt="clipboard" aria-checked="false">
+          <span class="dot"></span>
+          <span><span class="name">Copy to clipboard</span>
+            <span class="desc">Paste straight into a sheet you already have open —
+              no file to download.</span></span>
+        </button>
+        <button class="fmt" role="radio" data-fmt="json" aria-checked="false">
+          <span class="dot"></span>
+          <span><span class="name">JSON</span>
+            <span class="desc">For feeding another system.</span></span>
+        </button>
+      </div>
+
+      <p class="cols-note">
+        <b>What you get:</b> one row per episode — show, title, date, length,
+        encore flag, tags and re-air dates, plus links to the episode page, the
+        original transcript, our transcript, and the audio.
+        <br><b>Not included:</b> transcript text itself. A single episode runs to
+        ~49,000 characters and a spreadsheet cell tops out at 50,000 — the links
+        keep it readable instead of silently cut off.
+      </p>
+    </div>
+
+    <div class="modal-actions">
+      <span id="exportDone" hidden></span>
+      <button class="btn-quiet" id="exportCancel">Cancel</button>
+      <button class="btn-primary" id="exportGo">Export</button>
+    </div>
+  </div>
 </div>
 
 <button id="toTop" aria-label="Back to top"><span class="arw">&uarr;</span> Top</button>
@@ -949,6 +1084,7 @@ async function run() {
     ? ` <span class="active-person">tagged ${esc(state.personLabel || state.person)}<button id="dropPerson" aria-label="Remove this filter">&times;</button></span>`
     : "";
   const narrowed = !!(state.q || state.show || state.year || state.encore || state.person);
+  lastTotal = n; lastScope = describeScope();
   $("#statusText").innerHTML = state.q
     ? `<b>${n}</b> result${n === 1 ? "" : "s"} for “${esc(state.q)}”${shown}${person}`
     : `<b>${n}</b> episodes${shown}${person}`;
@@ -1059,6 +1195,7 @@ $("#resetAll").addEventListener("click", resetAll);
 addEventListener("keydown", e => {
   if (!$("#help").hidden) return;              // modal owns the keyboard
   if (sortOpen()) return;                      // so does the sort menu
+  if (exportOpen()) return;                    // and the export dialog
   if (e.key === "/" && document.activeElement !== $("#q")) { e.preventDefault(); $("#q").focus(); }
   if (e.key === "Escape") {
     if (document.activeElement === $("#q") && state.q) $("#clear").click();
@@ -1108,7 +1245,7 @@ help.addEventListener("keydown", e => {
 
 addEventListener("keydown", e => {
   const typing = /^(INPUT|TEXTAREA)$/.test(document.activeElement.tagName);
-  if (e.key === "?" && !typing && !helpOpen()) { e.preventDefault(); openHelp(); }
+  if (e.key === "?" && !typing && !helpOpen() && !exportOpen()) { e.preventDefault(); openHelp(); }
   if (e.key === "Escape" && helpOpen()) { e.preventDefault(); closeHelp(); }
 });
 
@@ -1255,6 +1392,103 @@ toTop.addEventListener("click", () => {
   $("#q").focus({ preventScroll: true });
 });
 onScroll();
+
+/* ---------- export ---------- */
+const exportModal = $("#exportModal");
+let exportFmt = "csv", exportFocus = null, lastTotal = 0, lastScope = "";
+
+function currentQuery() {
+  const p = new URLSearchParams();
+  if (state.q)      p.set("q", state.q);
+  if (state.show)   p.set("show", state.show);
+  if (state.year)   p.set("year", state.year);
+  if (state.encore) p.set("encore", "1");
+  if (state.person) p.set("person", state.person);
+  p.set("sort", state.sort);
+  return p;
+}
+
+function describeScope() {
+  const bits = [];
+  if (state.q)      bits.push(`matching “${state.q}”`);
+  if (state.show)   bits.push(document.querySelector(`.chip[data-kind="show"][data-val="${state.show}"]`)?.textContent.replace(/\d+$/, "").trim());
+  if (state.year)   bits.push(state.year);
+  if (state.encore) bits.push("encores only");
+  if (state.person) bits.push(`tagged ${state.personLabel}`);
+  return bits.filter(Boolean).join(" · ") || "the whole archive";
+}
+
+function openExport() {
+  exportFocus = document.activeElement;
+  $("#scopeCount").textContent = lastTotal.toLocaleString();
+  $("#scopeWhat").textContent =
+    (lastTotal === 1 ? "episode" : "episodes") + " — " + lastScope;
+  $("#exportDone").hidden = true;
+  exportModal.hidden = false;
+  $("#exportGo").focus();
+}
+function closeExport() {
+  exportModal.hidden = true;
+  if (exportFocus) exportFocus.focus();
+}
+const exportOpen = () => !exportModal.hidden;
+
+$("#exportBtn").addEventListener("click", openExport);
+$("#exportClose").addEventListener("click", closeExport);
+$("#exportCancel").addEventListener("click", closeExport);
+exportModal.addEventListener("mousedown", e => {
+  if (e.target === exportModal) closeExport();
+});
+
+document.querySelectorAll(".fmt").forEach(b =>
+  b.addEventListener("click", () => {
+    exportFmt = b.dataset.fmt;
+    document.querySelectorAll(".fmt").forEach(x =>
+      x.setAttribute("aria-checked", String(x === b)));
+  }));
+
+$("#exportGo").addEventListener("click", async () => {
+  const p = currentQuery();
+  const done = $("#exportDone");
+
+  if (exportFmt === "clipboard") {
+    p.set("format", "tsv");
+    const res = await fetch("/api/export?" + p);
+    const text = await res.text();
+    try {
+      await navigator.clipboard.writeText(text);
+      done.textContent = `${lastTotal.toLocaleString()} rows copied — paste into a sheet.`;
+      done.hidden = false;
+    } catch {
+      done.textContent = "Couldn't reach the clipboard — try the CSV instead.";
+      done.hidden = false;
+    }
+    return;
+  }
+
+  p.set("format", exportFmt);
+  // Let the browser handle the download so Content-Disposition names the file.
+  const a = document.createElement("a");
+  a.href = "/api/export?" + p;
+  a.download = "";
+  document.body.appendChild(a); a.click(); a.remove();
+  done.textContent = "Downloading…";
+  done.hidden = false;
+  setTimeout(closeExport, 900);
+});
+
+exportModal.addEventListener("keydown", e => {
+  if (e.key !== "Tab") return;
+  const f = [...exportModal.querySelectorAll("button")].filter(el => el.offsetParent !== null);
+  if (!f.length) return;
+  const first = f[0], last = f[f.length - 1];
+  if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+  else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+});
+
+addEventListener("keydown", e => {
+  if (e.key === "Escape" && exportOpen()) { e.preventDefault(); closeExport(); }
+});
 
 loadFacets().then(run);
 </script>
