@@ -460,6 +460,9 @@ class Handler(BaseHTTPRequestHandler):
             self.send_header("Content-Type", ctype)
             self.send_header("Content-Disposition", f'attachment; filename="{name}"')
             self.send_header("X-Row-Count", str(len(rows)))
+            # Same reasoning as _send: an export must reflect the archive as it
+            # is now, not as it was when this URL was last visited.
+            self.send_header("Cache-Control", "no-cache")
             self.send_header("Content-Length", str(len(body)))
             self.end_headers()
             return self.wfile.write(body)

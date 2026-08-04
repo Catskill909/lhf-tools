@@ -524,6 +524,23 @@ owns updates there; two loops on one SQLite file would race.
 
 The loop waits for the first build to finish before its first tick.
 
+### Backups — this gets more important with time, not less
+
+Today the database is disposable: `refresh.py` rebuilds all 200 episodes from
+the feeds in 143 seconds. Losing the volume costs two and a half minutes.
+
+**That stops being true as the feed window slides.** Podbean only serves the
+most recent 100 episodes per show, so every week the oldest episode in the feed
+falls out of reach. Anything already ingested stays in the database — but once
+it has left the feed, it cannot be fetched again. In a year the archive will
+hold episodes that exist nowhere else we can reach, and the volume becomes the
+only copy of them.
+
+So: back up the Coolify volume, and start before it matters rather than after.
+`sqlite3 /data/lhf.sqlite ".backup /somewhere/else.sqlite"` is safe to run
+against a live database in WAL mode. The other half of the same problem is the
+Podbean back-end export, which would recover the pre-feed backlog once.
+
 ### Deploys and stale browsers
 
 `serve.py` sends `Cache-Control: no-cache` on everything. There is no build
@@ -538,6 +555,18 @@ that had been deleted from the source two commits earlier.
 
 If a fix seems not to have landed, check for a stale page before checking the
 code — and `git log -S'some string from the screen'` will date it exactly.
+
+### Small things that were wrong and are now fixed
+
+- Waveform peaks were cached in IndexedDB under `ep-<id>`. Episode ids are
+  `INTEGER PRIMARY KEY`, assigned in ingest order, so rebuilding from an empty
+  volume can give a number to a different episode — a returning visitor would
+  then get another show's waveform and cut a clip from the wrong audio while it
+  all looked correct. Keyed on the audio URL now, which identifies the
+  recording rather than its row.
+- Dragging the overview needed the waveform to have loaded, so every drag
+  during the first minute did nothing. Only duration is required to move a
+  selection, and that arrives with the search result.
 
 ### Known rough edges
 

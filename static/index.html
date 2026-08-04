@@ -2066,7 +2066,12 @@ async function openClip(ep, fromSec, toSec) {
   const me = clip;                    // anything below must check it still owns the modal
 
   try {
-    const { peaks, duration, cached } = await getPeaks(clip.url, `ep-${ep.id}`, {
+    // Keyed on the audio URL, not the episode id. Ids are INTEGER PRIMARY KEY,
+    // assigned in ingest order, so rebuilding from an empty volume can hand a
+    // number to a different episode — and a returning visitor would then get
+    // another show's waveform and cut a clip from the wrong audio believing it
+    // was right. The URL identifies the recording itself.
+    const { peaks, duration, cached } = await getPeaks(clip.url, `audio:${clip.url}`, {
       signal: me.abort.signal,
       onProgress: (l, t) => {
         if (clip !== me) return;      // a superseded download talks to nobody
@@ -2167,10 +2172,13 @@ function overviewSeek(clientX) {
 
 // The label says "drag to move the selection", so let it drag, not just click.
 $("#waveAll").addEventListener("mousedown", e => {
-  if (!clip || !clip.peaks) return;
+  // Only duration is needed to move a selection, and that arrives with the
+  // search result. Requiring peaks meant every drag before the waveform landed
+  // did nothing at all, which reads as a broken control rather than a wait.
+  if (!clip || !clip.duration) return;
   e.preventDefault();
   overviewSeek(e.clientX);
-  const move = ev => { if (clip && clip.peaks) overviewSeek(ev.clientX); };
+  const move = ev => { if (clip && clip.duration) overviewSeek(ev.clientX); };
   const up = () => {
     removeEventListener("mousemove", move);
     removeEventListener("mouseup", up);
