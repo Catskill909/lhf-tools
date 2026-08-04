@@ -72,8 +72,10 @@ ingest/ingest.py       feed → SQLite
 ingest/transcripts.py  Podcast 2.0 .srt → segments
 ingest/enrich.py       deterministic enrichment (tags, re-airs) — no AI
 ingest/schema.sql      tables, FTS5 index, triggers
-serve.py               JSON API + serves the UI
-static/index.html      the interface (single file, no build step)
+serve.py               JSON API + serves the UI and its JS
+static/index.html      the interface (markup, styles, app code — no build step)
+static/mp3cut.js       lossless MP3 clip extraction (probe + frame copy)
+static/waveform.js     peaks, IndexedDB cache, canvas waveform, snap-to-silence
 data/lhf.sqlite        the database (gitignored)
 ```
 
@@ -122,7 +124,11 @@ The UI is just a client — swap it for anything without touching the backend.
 | `GET /api/search?q=&show=&year=&encore=&limit=` | ranked results with highlighted snippets |
 | `GET /api/facets` | shows, years, and totals for the filter chips |
 | `GET /api/export?format=csv\|tsv\|json&…` | the current result set as a file; same filter params as search |
+| `GET /api/episode/<id>` | one episode, for shared moment links |
 | `GET /episode/<id>/transcript` | plain-text transcript for one episode |
+
+Clip extraction calls no endpoint here at all — the browser range-requests the
+audio from Podbean's CDN directly.
 
 `serve.py` is stdlib `http.server` — fine for local work. For deployment,
 swap in FastAPI behind the same two routes; the front end won't know.
@@ -156,6 +162,14 @@ tags and 14 detected re-airs.
 - **Filters** — show, year, encores-only, by tag, with All / Reset
 - **Export** — CSV / TSV / JSON of the current result set, built for clean
   spreadsheet import (UTF-8 BOM, ISO dates, numeric durations, TRUE/FALSE)
+- **Clip extraction** — a **Clip** button on every moment opens a waveform
+  editor with the passage selected: drag handles, arrow-key nudge, snap to
+  silence, play with lead-in, then download an MP3 **cut losslessly from the
+  source** (no re-encode; within one 26 ms frame of the mark). Entirely in the
+  browser — audio streams from the CDN and never touches this server.
+- **Shareable links** — the address bar carries the full search state, and
+  `?ep=123&from=522&to=549` opens a single moment. `?q=` is the integration
+  point for a search box on laborheritage.org.
 - Light/dark, keyboard shortcuts, help modal with runnable examples
 
 ## ⚠️ The feed only returns 100 episodes per show
@@ -223,6 +237,9 @@ FTS5 syntax worth knowing: `"exact phrase"`, `labor NOT history`,
 
 ## Next
 
-- Tier 2: AI extraction pass over `description_text` → `people` / `topics`
-- Search API + UI on top of this database (nothing below it needs to be
-  finished first — that's the point of building the interface now)
+- **Deploy** — Dockerfile + Coolify. Everything works locally; the client has
+  no URL yet, and nothing else moves the project forward as much.
+- AI extraction pass over `description_text` + transcripts → `topics`,
+  un-hyperlinked guests, interviewer roles (~$7 batched). The last gap in the
+  original brief.
+- The 55 episodes with no feed transcript (~$9.52)

@@ -1,6 +1,6 @@
 # Audio clip editor — specification
 
-**Status:** specced, not built. Supersedes the earlier WAV-based draft.
+**Status:** **built and verified** (Phases 1–5). Supersedes the earlier WAV-based draft.
 
 Find a moment by search, adjust the in/out points against the episode waveform,
 export an MP3 clip. Entirely in the browser; **our server does nothing** — audio
@@ -10,19 +10,37 @@ streams from Podbean's CDN direct to the user.
 
 ## The measurements everything rests on
 
-Taken from a real episode, not assumed:
+Taken from real episodes, not assumed:
 
 | | |
 |---|---|
 | Episode | 55 min (3,300 s) |
-| File | **75.5 MB** |
-| Format | **192 kbps mono, CBR** (sampled at 10/30/50/90% — identical) |
-| Frame | 626–627 bytes, **1,152 samples, 26.12 ms** |
-| Rate | exactly **24,000 bytes/sec** |
+| File | **75.5 MB** at 192 kbps |
+| Format | **mono, CBR** (sampled at 10/30/50/90% — identical) |
+| Frame | 626–627 bytes at 192 kbps, **1,152 samples, 26.12 ms** |
+| Rate | **bitrate × 1000 / 8** bytes/sec — exact at CBR |
 
 Verified by walking 200 consecutive frames, chaining each to the next by its
 own length header. That proves the frame maths is exact — which is what makes
 everything below possible.
+
+### The bitrate is not constant across the archive
+
+The first draft of this spec hardcoded 24,000 bytes/sec from a single Power
+Hour episode. **That was wrong, and it broke on real data.** Sampling both
+shows found **128, 192 and 256 kbps** files. Every file is internally CBR, but
+the rate differs episode to episode.
+
+A hardcoded rate computes a byte offset past the end of a smaller file — the
+server answers `416 Range Not Satisfiable` and the clip fails outright. On a
+larger file it silently lands in the wrong place, which is worse.
+
+So `probeMp3()` measures each file before cutting: it reads the ID3v2 tag
+length to find where audio actually begins, then reads the first frame header
+for the real bitrate. Two small range requests, cached per episode.
+
+**The ID3 offset matters too.** Cover art can push the first frame a hundred
+kilobytes in; treating byte 0 as time 0 would put every cut four seconds early.
 
 ---
 
@@ -98,12 +116,14 @@ Most of the scaffolding is built:
 | `audio_url` per episode | ✅ in the API response |
 | CORS + range requests on the audio | ✅ verified `Access-Control-Allow-Origin: *`, `HTTP 206` |
 | Design tokens, button/dialog styles | ✅ reuse as-is |
-| **MP3 frame parser** | ❌ build (~80 lines) |
-| **Peak extraction + canvas waveform** | ❌ build (~150 lines) |
-| **Drag handles** | ❌ build |
+| **MP3 frame parser** | ✅ `static/mp3cut.js` |
+| **Peak extraction + canvas waveform** | ✅ `static/waveform.js` |
+| **Drag handles** | ✅ in the clip modal |
 
-Nothing existing has to change. This is additive: a new modal, opened from a
-button on each moment.
+Nothing existing had to change. This was additive: a new modal opened from a
+button on each moment. Two small server changes came with it — `serve.py` now
+serves `.js` files (the UI was a single file until this point) and exposes
+`/api/episode/<id>` for shared moment links.
 
 ### Library: build it, don't import it
 
@@ -167,39 +187,82 @@ difference between "roughly there" and "on the word."
 
 ## Phases
 
-**Phase 1 — Frame cutter** *(half a day, no UI)*
+**Phase 1 — Frame cutter** ✅ *(`static/mp3cut.js`)*
 The load-bearing piece. Range-fetch a byte span, scan to a frame sync, copy
 whole frames, write ID3, download. Verify the output plays in QuickTime, VLC and
 a browser, and that its duration matches the request. Prove this before building
 anything on top of it.
 
-**Phase 2 — Peaks + waveform** *(half a day)*
+**Phase 2 — Peaks + waveform** ✅ *(`static/waveform.js`)*
 Fetch, decode at 8 kHz through `OfflineAudioContext`, reduce to peaks, cache in
 IndexedDB, render to canvas. Both views — full episode and zoomed selection.
 Watch first-open time on a real connection; 75 MB is not instant.
 
-**Phase 3 — Selection** *(half a day)*
+**Phase 3 — Selection** ✅
 Draggable handles, numeric readout, nudge keys, play-selection and play-with-
 lead-in. Pre-seed the selection from the search passage's `start_sec`/`end_sec`.
 
-**Phase 4 — Wire it in** *(2 hours)*
+**Phase 4 — Wire it in** ✅
 A "Clip" button on each moment in a search result. Modal reuses the existing
 shell. Filename and ID3 from episode metadata.
 
-**Phase 5 — Snap to silence** *(2 hours)*
+**Phase 5 — Snap to silence** ✅
 Local-minimum search in the peak array. Small, and the thing producers will
 actually thank you for.
 
-**Risk sits in Phase 2**, not Phase 1 — decoding 75 MB in a tab is the part most
-likely to be slow or memory-hostile on a modest laptop. If it disappoints, the
-fallback is a coarse overview built from ~40 sampled range-requests rather than
-a full decode, with the zoomed view decoded on demand.
+**The risk was called correctly, and it landed in Phase 2.** Cutting was never
+the problem; the waveform is. A clip needs ~0.5 MB, but drawing the waveform
+needs the whole 30–105 MB file.
+
+Rather than fall back to a coarse overview, the modal was made **usable without
+the waveform**: in/out times, nudge keys, playback and download all work from
+the moment it opens, and the waveform fills in when it arrives. Peaks are then
+cached in IndexedDB, so an episode is only ever downloaded once. Closing the
+modal aborts the download.
+
+The sampled-range fallback remains available if first-open time disappoints on
+a slow connection.
 
 ---
 
-## Worth doing first, cheaply
+## Shareable links — built
 
-**Shareable moment links** — `?ep=123&from=522&to=549` opens the app at that
-episode, cued to that passage. An hour's work, no decoding, no export. For "send
-a colleague this bit", it may be the whole answer — and it's worth finding out
-before building five phases of editor.
+`?ep=123&from=522&to=549` opens the clip editor on that episode with the passage
+already selected. Every search is also reflected in the address bar
+(`?q=picket+line&show=1&sort=oldest`), so a result set can be sent to a
+colleague as-is.
+
+That second form is the **external integration point from the original brief**:
+laborheritage.org can put a search box on its own page and link straight in with
+`?q=`, no API work required.
+
+
+---
+
+## Verification
+
+Tested against live episodes, not fixtures.
+
+**Cut accuracy.** Four random episodes, cut at ~15 minutes in:
+
+```
+192kbps  asked 927.20s  landed 927.22s  off by 0.019s
+192kbps  asked 992.38s  landed 992.39s  off by 0.012s
+128kbps  asked 945.75s  landed 945.76s  off by 0.008s
+192kbps  asked 964.42s  landed 964.44s  off by 0.022s
+```
+
+Every clip is off by **less than one frame (26 ms)**, at two different
+bitrates. Position was proved by searching the source file for the clip's bytes
+and finding an **exact byte match** at the expected offset — which confirms
+both that the cut lands where it should *and* that it is genuinely lossless.
+
+**Playability.** `afinfo` reports every output as a valid `MPG3`, 1 channel,
+44100 Hz, with a duration matching the request and the source bitrate preserved
+(the 128 kbps source produced a 128 kbps clip, not a re-encode).
+
+**The app.** Loaded in headless Chrome with no console errors. `?q=picket+line`
+renders 86 results, 156 moments, 156 Clip buttons and 523 highlights.
+`?ep=12&from=605.5&to=633.25` opens the editor reading
+`10:05.50 / 10:33.25 / 27.8s` — correct, and displayed *before* the waveform
+downloads.

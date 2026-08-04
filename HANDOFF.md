@@ -80,6 +80,32 @@ search, jump-to-moment, re-air detection and tags. See the tier ladder in
   50k-character spreadsheet cell cap would truncate silently
 - Clipboard option for pasting straight into an open sheet
 
+**Clip extraction** *(all in the browser — our server does nothing)*
+- **Clip** button on every timestamped moment, opening a waveform editor with
+  that passage already selected
+- Two waveforms — whole episode for context, zoomed selection for precision —
+  with draggable in/out handles, arrow-key nudge (±0.1s, ±1s with Shift), and
+  a live in / out / length readout
+- **Play selection** and **play with a 2-second lead-in**, because you judge an
+  edit by hearing the approach to it
+- **Snap to silence** puts a cut in the gap between words instead of through
+  the middle of one
+- Downloads as MP3 **cut straight from the source with no re-encoding** — the
+  clip is bit-identical to the broadcast audio, and lands within one frame
+  (26 ms) of the requested point. Verified by exact byte match against the
+  source at 128 and 192 kbps.
+- File name and ID3 tags carry show, date and timecode, so a clip found in a
+  folder months later still says where it came from
+- Audio streams from Podbean's CDN direct to the browser; peaks are cached in
+  IndexedDB so an episode is only ever downloaded once
+
+**Sharing**
+- Every search is reflected in the address bar — filters, tag, sort and all —
+  so a result set can be sent to a colleague as a link
+- `?ep=123&from=522&to=549` opens the clip editor on a single moment
+- `?q=` is the **public integration point**: laborheritage.org can put a search
+  box on its own page and link straight in, with no API work
+
 **Interface**
 - Custom audio transport — play/pause, seekable track, elapsed/total, keyboard
   seek (arrows ±5s, shift ±30s, space). Replaces the native control bar, which
@@ -97,10 +123,12 @@ search, jump-to-moment, re-air detection and tags. See the tier ladder in
 - The 55 episodes with no feed transcript (~$9.52 via Google STT)
 - One broken transcript link on Podbean's side ("MLK in Memphis" 404s);
   `python3 ingest/transcripts.py --retry` will pick it up if they fix it
-- Public embed for laborheritage.org
-- Deployment (Docker/Coolify), auth for the internal view, off-box backups
+- Deployment (Docker/Coolify), auth for the internal view, off-box backups —
+  **this is now the highest-value remaining task.** Everything else is built;
+  the client still has no URL.
 - Failure notification on the refresh loop (it logs to stderr; nobody watches stderr)
-- **Next up: audio editing / clip extraction** — specced in `docs/audio-editor-spec.md`
+- A styled embed widget for laborheritage.org. The `?q=` deep link means a
+  plain search box already works — the widget is polish, not plumbing.
 
 ## Scorecard against Harold's original email
 
@@ -113,7 +141,7 @@ search, jump-to-moment, re-air detection and tags. See the tier ladder in
 | Catalogue **guests** | 🟡 **Partial** | 232 names — but only those the producers hyperlinked. |
 | Catalogue **topics** | ❌ **Not built** | Needs AI. Hashtags tested and useless (`#LaborHistory` on 176/200). |
 | Catalogue **interviewers** | ❌ **Not built** | Needs AI, but it's a two-host show — a small job. |
-| Public search box on laborheritage.org | 🟡 **Works, not deployed** | Runs locally; needs embed packaging + hosting. |
+| Public search box on laborheritage.org | 🟡 **Works, not deployed** | `?q=` deep links make a plain search box work already; needs hosting. |
 
 **Delivered beyond the ask** — neither was requested, both came free:
 
@@ -122,6 +150,8 @@ search, jump-to-moment, re-air detection and tags. See the tier ladder in
 | Search what was *said* on air | 144 transcripts, 882k words, pulled from the feed |
 | Jump to the exact moment | Click a timestamp, hear it — no Podbean cooperation needed |
 | Spreadsheet export | Whatever's on screen, ready for Sheets or Excel |
+| **Cut a broadcast-ready clip** | Waveform, drag handles, snap to silence, lossless MP3 out |
+| **Share a search or a moment** | Copy the address bar; it carries the whole state |
 
 **The fair summary:** the internal tool Chris described is finished and then
 some. The one genuine gap is **topics** (and the guests who weren't
@@ -189,10 +219,13 @@ problem is solved, search now reaches the audio — and topics are the next step
 | `ingest/transcripts.py` | Podcast 2.0 `.srt` → `segments`. Idempotent; `--retry` re-attempts failures. |
 | `refresh.py` | Runs all three pipeline steps in order; `--loop 24h` schedules itself. |
 | `docs/export-spec.md` | Export design + the CSV details that decide whether it imports cleanly. **Built.** |
-| `docs/audio-editor-spec.md` | Browser-side clip editor: lossless MP3 frame-copy export, 5 phases. |
+| `docs/audio-editor-spec.md` | Browser-side clip editor: design, decisions and verification. **Built.** |
 | `ingest/enrich.py` | Deterministic enrichment, **no AI**. Re-airs + linked entities. Safe to re-run. |
 | `ingest/schema.sql` | Tables, FTS5 index, triggers. Already has `transcript_source` and a source-agnostic `segments` table. |
-| `serve.py` | JSON API + serves the UI. Stdlib `http.server`; swap for FastAPI at deploy. |
+| `serve.py` | JSON API + serves the UI and its JS. Stdlib `http.server`; swap for FastAPI at deploy. |
+| `static/index.html` | The whole UI — markup, styles and app code. No build step. |
+| `static/mp3cut.js` | Lossless MP3 clip extraction. `probeMp3()` measures each file; `cutClip()` copies frames. |
+| `static/waveform.js` | Peaks at 8 kHz, IndexedDB cache, canvas rendering, snap-to-silence. |
 | `static/index.html` | The whole interface — single file, no build step. |
 | `README.md` | Run instructions, API reference, useful SQL. |
 | `docs/lhf-podcast-spec.html` | **Client-facing** planning memo (shared with them). Tier ladder, no cost-of-work talk. |
@@ -385,12 +418,11 @@ Not planned, just captured. Roughly cheapest first:
 
 - **Duration-range filter** ("between 3 and 5 minutes") — trivial, and directly
   serves the fill-a-slot problem.
-- **Shareable moment links** (`?ep=123&from=522&to=549`) — the cheapest version
-  of clip extraction; someone sends a colleague an exact passage.
+- ~~**Shareable moment links**~~ ✅ **built** — `?ep=123&from=522&to=549`.
 - **Copy a citation** — episode, date, show, timestamp, and the spoken line.
   Free, and researchers will want it. LC people especially.
-- **Mark in/out on the player track** → preview, then export via a server-side
-  `ffmpeg` call. The real clip tool.
+- ~~**Mark in/out on the player track**~~ ✅ **built** — and with no `ffmpeg`
+  and no server load at all, which the note above assumed would be necessary.
 - **Run-sheet view** — pick segments, see cumulative duration against a target.
   Pure broadcast, and nothing else on the market does it.
 - **"Not aired since"** — episodes not run in N months, sorted by age. Turns the
@@ -399,15 +431,20 @@ Not planned, just captured. Roughly cheapest first:
 The thread: they don't just need to *find* things, they need to *use* them on
 air. Search was the prerequisite; the tools above are the actual job.
 
-## Clip extraction — now specced
+## Clip extraction — built
 
-Fully specced in `docs/audio-editor-spec.md`. The headline decisions:
+Spec and verification in `docs/audio-editor-spec.md`. The headline decisions:
 
-- **Export by copying MP3 frames, not re-encoding.** Verified against a real
-  file: 626/627-byte frames, 26.12 ms each, 24,000 bytes/sec exactly. A clip is
-  the frames between two timestamps, copied byte-for-byte. Bit-identical to the
-  source, instant, ~80 lines, no library. A 2-min clip is 2.9 MB.
-- **Cut accuracy is one frame (26 ms)** — inaudible in speech.
+- **Export by copying MP3 frames, not re-encoding.** A clip is the frames
+  between two timestamps, copied byte-for-byte. Bit-identical to the source,
+  instant, no library. A 2-min clip is 2.9 MB at 192 kbps.
+- **Cut accuracy is one frame (26 ms)** — inaudible in speech. Measured at
+  0.008–0.022 s across four episodes, confirmed by exact byte match against
+  the source.
+- **Never assume the bitrate.** The archive runs 128, 192 *and* 256 kbps. A
+  rate hardcoded from one episode returns HTTP 416 on a smaller file and cuts
+  in the wrong place on a larger one. `probeMp3()` measures each file — ID3
+  length for where audio starts, first frame header for the rate.
 - **Zero server load.** Range requests go to Podbean's CDN; we serve a modal.
 - **Waveform decoded at 8 kHz** for display only (101 MB transient, cached as
   peaks in IndexedDB). Full-rate decode would be 555 MB and is never needed.
@@ -439,9 +476,14 @@ the same place.
 
 - `serve.py` binds `127.0.0.1` only and is stdlib `http.server` — correct for
   local, not for deployment.
-- No git repo initialised yet (`.gitignore` is written and ready).
-- No tests. The pipeline is deterministic and rebuilds in ~2½ minutes, so
-  `refresh.py` → check counts is currently the test.
+- No git *remote*. Commits are local only, so the work exists on one machine.
+- No test suite. The pipeline is deterministic and rebuilds in ~2½ minutes, so
+  `refresh.py` → check counts is the test for ingest. The clip cutter was
+  verified against live episodes (see the audio spec) but those checks live in
+  the scratchpad, not the repo — worth promoting to a committed script.
+- The waveform needs the whole episode (30–105 MB) before it draws. The modal
+  is usable without it and peaks are cached after the first open, but the first
+  open on a slow connection is a wait.
 - **Always use `refresh.py`.** The three steps must run in order; running
   `ingest.py` alone against a fresh database leaves no tags and no re-airs.
   Search degrades gracefully now rather than 500ing, but the data is missing.

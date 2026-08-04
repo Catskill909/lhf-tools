@@ -117,7 +117,7 @@ def decorate(conn, rows, match=None):
             r["moments"] = []
         try:
             for m in conn.execute(
-                f"""SELECT s.episode_id, s.start_sec, s.text,
+                f"""SELECT s.episode_id, s.start_sec, s.end_sec, s.text,
                            snippet(segments_fts, 0, '<mark>', '</mark>', '…', 18) AS excerpt
                     FROM segments_fts f
                     JOIN segments s ON s.id = f.rowid
@@ -125,7 +125,9 @@ def decorate(conn, rows, match=None):
                     ORDER BY s.episode_id, rank""", [match] + ids):
                 bucket = by_id[m["episode_id"]]["moments"]
                 if len(bucket) < 3:
-                    bucket.append({"start_sec": m["start_sec"], "excerpt": m["excerpt"]})
+                    bucket.append({"start_sec": m["start_sec"],
+                                   "end_sec": m["end_sec"],
+                                   "excerpt": m["excerpt"]})
         except sqlite3.OperationalError:
             pass          # malformed query already surfaced by the main search
 
@@ -434,6 +436,23 @@ class Handler(BaseHTTPRequestHandler):
             self.end_headers()
             return self.wfile.write(body)
 
+        # One episode, for shared moment links (?ep=&from=&to=) that open the
+        # clip editor without running a search first.
+        m = re.fullmatch(r"/api/episode/(\d+)", path)
+        if m:
+            conn = connect()
+            try:
+                row = conn.execute(
+                    """SELECT e.id, e.title, e.published_at, e.duration_sec,
+                              e.audio_url, e.episode_url, s.name AS show_name
+                       FROM episodes e JOIN shows s ON s.id = e.show_id
+                       WHERE e.id = ?""", (int(m.group(1)),)).fetchone()
+            finally:
+                conn.close()
+            if not row:
+                return self._send(404, json.dumps({"error": "no such episode"}))
+            return self._send(200, json.dumps(dict(row)))
+
         m = re.fullmatch(r"/episode/(\d+)/transcript", path)
         if m:
             conn = connect()
@@ -467,6 +486,18 @@ class Handler(BaseHTTPRequestHandler):
                     return self._send(200, fh.read(), "text/html; charset=utf-8")
             except FileNotFoundError:
                 return self._send(404, b"static/index.html missing", "text/plain")
+
+        # The UI was one file until the audio editor arrived; its modules load
+        # as real ES modules, so they need to be served with a JS mime type.
+        if path.endswith((".js", ".css")):
+            name = os.path.basename(path)          # basename kills ../ traversal
+            full = os.path.join(STATIC, name)
+            kind = "text/javascript" if name.endswith(".js") else "text/css"
+            try:
+                with open(full, "rb") as fh:
+                    return self._send(200, fh.read(), kind + "; charset=utf-8")
+            except FileNotFoundError:
+                return self._send(404, b"not found", "text/plain")
 
         return self._send(404, json.dumps({"error": "not found"}))
 

@@ -666,6 +666,79 @@
   }
   #exportDone[hidden] { display: none; }
 
+
+  /* ---------------------------------------------------------- clip */
+  .clip-btn {
+    background: none; border: 1px solid var(--rule-hard); border-radius: 2px;
+    color: var(--ink-3); font: inherit; font-size: 0.66rem;
+    letter-spacing: 0.08em; text-transform: uppercase;
+    padding: 0.1rem 0.4rem; cursor: pointer; margin-left: 0.5rem;
+  }
+  .clip-btn:hover { color: var(--spot-ink); border-color: var(--spot); }
+  .clip-btn:focus-visible { outline: 2px solid var(--focus); outline-offset: 1px; }
+
+  #clipModal .modal { width: min(760px, 100%); }
+  .wave-label {
+    font-size: 0.64rem; letter-spacing: 0.11em; text-transform: uppercase;
+    color: var(--ink-3); margin: 0 0 0.3rem;
+  }
+  .wave-box {
+    position: relative; background: var(--paper-2);
+    border: 1px solid var(--rule); border-radius: 3px;
+    margin-bottom: 0.9rem;
+  }
+  .wave-box canvas { display: block; width: 100%; height: 68px; cursor: crosshair; }
+  .wave-box.zoom canvas { height: 96px; }
+
+  /* Handles sit on the zoomed view where precision matters. */
+  .handle {
+    position: absolute; top: 0; bottom: 0; width: 11px;
+    margin-left: -5px; cursor: ew-resize; background: none; border: none;
+    padding: 0; z-index: 2;
+  }
+  .handle::before {
+    content: ""; position: absolute; left: 4px; top: 0; bottom: 0;
+    width: 3px; background: var(--spot);
+  }
+  .handle::after {
+    content: ""; position: absolute; left: 0; right: 0; height: 11px;
+    background: var(--spot); border-radius: 2px;
+  }
+  .handle.in::after  { top: 0; }
+  .handle.out::after { bottom: 0; }
+  .handle:focus-visible { outline: 2px solid var(--focus); outline-offset: 1px; }
+
+  .clip-times {
+    display: flex; gap: 1.4rem; flex-wrap: wrap; align-items: baseline;
+    font-family: ui-monospace, Consolas, monospace;
+    font-variant-numeric: tabular-nums; font-size: 0.86rem;
+    padding: 0.7rem 0; border-top: 1px solid var(--rule);
+  }
+  .clip-times .k {
+    font-family: inherit; font-size: 0.62rem; letter-spacing: 0.1em;
+    text-transform: uppercase; color: var(--ink-3); margin-right: 0.35rem;
+  }
+  .clip-times .len { margin-left: auto; color: var(--spot-ink); font-weight: 600; }
+
+  .clip-tools { display: flex; gap: 0.4rem; flex-wrap: wrap; padding-bottom: 0.3rem; }
+  .tool {
+    background: none; border: 1px solid var(--rule-hard); border-radius: 2px;
+    color: var(--ink-2); font: inherit; font-size: 0.74rem;
+    padding: 0.25rem 0.55rem; cursor: pointer; white-space: nowrap;
+  }
+  .tool:hover { color: var(--ink); border-color: var(--ink-3); }
+  .tool:focus-visible { outline: 2px solid var(--focus); outline-offset: 1px; }
+
+  .clip-status {
+    font-size: 0.78rem; color: var(--ink-2); min-height: 1.3em;
+    padding-top: 0.2rem;
+  }
+  .clip-status .bar {
+    display: block; height: 3px; background: var(--rule-hard);
+    border-radius: 2px; margin-top: 0.35rem; overflow: hidden;
+  }
+  .clip-status .bar i { display: block; height: 100%; background: var(--spot); width: 0; }
+
   /* --------------------------------------------------------- to top
      Borrows the same button language as Help / Theme / Sort so it reads as
      part of the furniture rather than a widget bolted on. Lives in the right
@@ -790,6 +863,50 @@
     <button class="try" id="footHelp" style="margin-left:.4rem">Search help</button>
   </footer>
 
+</div>
+
+<div class="backdrop" id="clipModal" hidden>
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="clipTitle">
+    <div class="modal-head">
+      <div>
+        <h2 class="display" id="clipTitle">Clip</h2>
+        <p id="clipEp">—</p>
+      </div>
+      <button id="clipClose" aria-label="Close">&times;</button>
+    </div>
+
+    <div class="modal-body">
+      <p class="wave-label">Whole episode — drag to move the selection</p>
+      <div class="wave-box"><canvas id="waveAll"></canvas></div>
+
+      <p class="wave-label">Selection — drag the handles to trim</p>
+      <div class="wave-box zoom" id="zoomBox">
+        <canvas id="waveZoom"></canvas>
+        <button class="handle in"  id="hIn"  aria-label="In point"></button>
+        <button class="handle out" id="hOut" aria-label="Out point"></button>
+      </div>
+
+      <div class="clip-times">
+        <span><span class="k">In</span><b id="tIn">0:00.00</b></span>
+        <span><span class="k">Out</span><b id="tOut">0:00.00</b></span>
+        <span class="len"><span class="k">Length</span><b id="tLen">0.0s</b></span>
+      </div>
+
+      <div class="clip-tools">
+        <button class="tool" id="playSel">▶ Play selection</button>
+        <button class="tool" id="playLead">▶ With 2s lead-in</button>
+        <button class="tool" id="snapIn">Snap in to silence</button>
+        <button class="tool" id="snapOut">Snap out to silence</button>
+      </div>
+
+      <div class="clip-status" id="clipStatus"></div>
+    </div>
+
+    <div class="modal-actions">
+      <button class="btn-quiet" id="clipCancel">Cancel</button>
+      <button class="btn-primary" id="clipGo">Download MP3</button>
+    </div>
+  </div>
 </div>
 
 <div class="backdrop" id="exportModal" hidden>
@@ -927,6 +1044,26 @@
       </section>
 
       <section class="help-sec">
+        <h3>Making a clip</h3>
+        <p class="lede">Next to each timestamp is a <b>Clip</b> button. It opens
+          the episode's waveform with that passage already selected — drag the
+          handles to trim, play it back to check the edit, then download it as
+          an MP3.</p>
+        <p class="lede">The clip is cut straight from the original audio without
+          re-encoding, so it's identical in quality to the broadcast. Snap to
+          silence nudges a cut into the gap between words rather than through
+          the middle of one. The file name carries the show, date and timecode,
+          so a clip still says where it came from months later.</p>
+      </section>
+
+      <section class="help-sec">
+        <h3>Sharing what you found</h3>
+        <p class="lede">The address bar always reflects what you're looking at,
+          so any search can be copied and sent to someone — filters, sort order
+          and all. Links can also point straight at a single moment.</p>
+      </section>
+
+      <section class="help-sec">
         <h3>Tags</h3>
         <p class="lede">The names under each episode are people, bands, museums
           and books the producers linked in the show notes — a hand-curated index,
@@ -946,6 +1083,8 @@
           <div><kbd>/</kbd> search</div>
           <div><kbd>?</kbd> this help</div>
           <div><kbd>Esc</kbd> clear, then reset, then close</div>
+          <div><kbd>←</kbd> <kbd>→</kbd> nudge a clip handle 0.1s</div>
+          <div><kbd>Shift</kbd> + <kbd>←</kbd> <kbd>→</kbd> nudge a full second</div>
         </div>
       </section>
 
@@ -959,7 +1098,10 @@
   </div>
 </div>
 
-<script>
+<script type="module">
+import { cutClip, clipFilename, probeMp3 } from "./mp3cut.js";
+import { getPeaks, drawWave, snapToSilence } from "./waveform.js";
+
 const $  = s => document.querySelector(s);
 const state = { q: "", show: null, year: null, encore: false, person: null, personLabel: "", sort: "newest" };
 let timer, lastReq = 0;
@@ -1068,6 +1210,11 @@ async function run() {
 
   syncChips();
 
+  // Mirror the search into the address bar. Two reasons: a result set can be
+  // sent to a colleague, and laborheritage.org can link straight in with ?q=
+  // from its own search box — the external entry point Harold asked for.
+  history.replaceState(null, "", p.toString() ? "?" + p : location.pathname);
+
   const req = ++lastReq;
   const data = await (await fetch("/api/search?" + p)).json();
   if (req !== lastReq) return;          // a newer keystroke already won
@@ -1123,7 +1270,9 @@ async function run() {
         `<button class="moment" data-audio="${esc(r.audio_url || "")}"
            data-t="${Math.floor(m.start_sec || 0)}" data-ep="${r.id}">
            <span class="t">${hms(m.start_sec)}</span>
-           <span>${m.excerpt || ""}</span>
+           <span>${m.excerpt || ""}<button class="clip-btn" data-clip="${r.id}"
+             data-from="${m.start_sec}" data-to="${m.end_sec || (m.start_sec + 30)}"
+             title="Make a clip from here">Clip</button></span>
          </button>`).join("")}
        <div class="player" id="player-${r.id}"></div>
       </div>` : "";
@@ -1156,6 +1305,13 @@ async function run() {
 
   // Play from a spoken moment. One player at a time; reuse it if the same
   // episode is already loaded so seeking within an episode doesn't restart.
+  document.querySelectorAll(".clip-btn").forEach(b =>
+    b.addEventListener("click", ev => {
+      ev.stopPropagation();
+      const ep = data.results.find(r => String(r.id) === b.dataset.clip);
+      if (ep) openClip(ep, +b.dataset.from, +b.dataset.to);
+    }));
+
   document.querySelectorAll(".moment").forEach(b =>
     b.addEventListener("click", () => {
       const url = b.dataset.audio, t = +b.dataset.t, host = $("#player-" + b.dataset.ep);
@@ -1196,6 +1352,7 @@ addEventListener("keydown", e => {
   if (!$("#help").hidden) return;              // modal owns the keyboard
   if (sortOpen()) return;                      // so does the sort menu
   if (exportOpen()) return;                    // and the export dialog
+  if (clipOpen()) return;                      // and the clip editor
   if (e.key === "/" && document.activeElement !== $("#q")) { e.preventDefault(); $("#q").focus(); }
   if (e.key === "Escape") {
     if (document.activeElement === $("#q") && state.q) $("#clear").click();
@@ -1490,7 +1647,251 @@ addEventListener("keydown", e => {
   if (e.key === "Escape" && exportOpen()) { e.preventDefault(); closeExport(); }
 });
 
-loadFacets().then(run);
+/* ---------- clip editor ---------- */
+const clipModal = $("#clipModal");
+let clip = null;          // {url,title,show,date,peaks,duration,in,out,audio}
+let clipFocus = null;
+const ZOOM_PAD = 6;       // seconds of context either side of the selection
+
+const fmt = t => {
+  t = Math.max(0, t);
+  const m = Math.floor(t / 60), s = t % 60;
+  return `${m}:${s.toFixed(2).padStart(5, "0")}`;
+};
+const zoomWindow = () => ({
+  from: Math.max(0, clip.in - ZOOM_PAD),
+  to: Math.min(clip.duration, clip.out + ZOOM_PAD),
+});
+
+function paintClip() {
+  const sel = { from: clip.in, to: clip.out };
+  const z = zoomWindow();
+
+  // The waveform is a 30-100 MB download; everything else works without it,
+  // so the modal stays usable while it arrives rather than blocking on it.
+  if (clip.peaks) {
+    drawWave($("#waveAll"), clip.peaks, {
+      duration: clip.duration, from: 0, to: clip.duration,
+      selection: sel, playhead: clip.audio ? clip.audio.currentTime : null,
+    });
+    drawWave($("#waveZoom"), clip.peaks, {
+      duration: clip.duration, from: z.from, to: z.to,
+      selection: sel, playhead: clip.audio ? clip.audio.currentTime : null,
+    });
+  }
+  $("#snapIn").disabled = $("#snapOut").disabled = !clip.peaks;
+
+  const w = $("#zoomBox").clientWidth, span = z.to - z.from;
+  $("#hIn").style.left  = ((clip.in  - z.from) / span) * w + "px";
+  $("#hOut").style.left = ((clip.out - z.from) / span) * w + "px";
+
+  $("#tIn").textContent = fmt(clip.in);
+  $("#tOut").textContent = fmt(clip.out);
+  const len = clip.out - clip.in;
+  $("#tLen").textContent = `${len.toFixed(1)}s`;
+  // The rate is measured per file, not assumed — bitrate varies by episode.
+  const bps = clip.probe ? clip.probe.bytesPerSec : 0;
+  $("#clipGo").textContent = bps
+    ? `Download MP3 · ${(len * bps / 1048576).toFixed(1)} MB`
+    : "Download MP3";
+}
+
+function clipSay(msg, pct) {
+  $("#clipStatus").innerHTML = msg
+    ? msg + (pct != null ? `<span class="bar"><i style="width:${pct}%"></i></span>` : "")
+    : "";
+}
+
+async function openClip(ep, fromSec, toSec) {
+  clipFocus = document.activeElement;
+  clip = {
+    url: ep.audio_url, title: ep.title, show: ep.show_name,
+    date: ep.published_at, id: ep.id,
+    in: fromSec, out: toSec, duration: ep.duration_sec || 0,
+    peaks: null, audio: null, probe: null, abort: new AbortController(),
+  };
+  $("#clipEp").textContent = `${ep.title} · ${ep.show_name}`;
+  clipModal.hidden = false;
+  $("#clipClose").focus();
+  paintClip();
+  clipSay("Loading waveform…", 0);
+
+  // Cheap and independent of the waveform — gives us the true bitrate, so the
+  // download size is right and the cut lands where it should.
+  probeMp3(clip.url, { signal: clip.abort.signal }).then(p => { if (clip) { clip.probe = p; if (clip.peaks) paintClip(); } })
+                    .catch(() => {});
+
+  try {
+    const { peaks, duration, cached } = await getPeaks(clip.url, `ep-${ep.id}`, {
+      signal: clip.abort.signal,
+      onProgress: (l, t) => clipSay(
+        `Loading audio… ${(l / 1048576).toFixed(0)} MB`, t ? (l / t) * 100 : null),
+    });
+    clip.peaks = peaks;
+    clip.duration = duration || clip.duration;
+    clipSay(cached ? "" : "Ready.");
+    paintClip();
+  } catch (e) {
+    if (clip && e.name !== "AbortError") clipSay("Couldn't load the audio: " + e.message);
+  }
+}
+
+function closeClip() {
+  if (clip) {
+    clip.abort.abort();                  // don't keep pulling 75 MB nobody wants
+    if (clip.audio) { clip.audio.pause(); clip.audio = null; }
+  }
+  clipModal.hidden = true;
+  clip = null;
+  if (clipFocus) clipFocus.focus();
+}
+const clipOpen = () => !clipModal.hidden;
+
+$("#clipClose").addEventListener("click", closeClip);
+$("#clipCancel").addEventListener("click", closeClip);
+clipModal.addEventListener("mousedown", e => { if (e.target === clipModal) closeClip(); });
+
+/* drag the handles on the zoomed view */
+function dragHandle(el, which) {
+  el.addEventListener("mousedown", e => {
+    e.preventDefault();
+    const box = $("#zoomBox");
+    const move = ev => {
+      if (!clip) return;
+      const r = box.getBoundingClientRect();
+      const z = zoomWindow();
+      let t = z.from + ((ev.clientX - r.left) / r.width) * (z.to - z.from);
+      t = Math.max(0, Math.min(clip.duration, t));
+      if (which === "in") clip.in = Math.min(t, clip.out - 0.2);
+      else clip.out = Math.max(t, clip.in + 0.2);
+      paintClip();
+    };
+    const up = () => {
+      removeEventListener("mousemove", move);
+      removeEventListener("mouseup", up);
+    };
+    addEventListener("mousemove", move);
+    addEventListener("mouseup", up);
+  });
+  // Arrow keys nudge — dragging can't land on a word boundary.
+  el.addEventListener("keydown", e => {
+    if (!clip) return;
+    const step = e.shiftKey ? 1 : 0.1;
+    let d = 0;
+    if (e.key === "ArrowLeft") d = -step;
+    else if (e.key === "ArrowRight") d = step;
+    else return;
+    e.preventDefault();
+    if (which === "in") clip.in = Math.max(0, Math.min(clip.in + d, clip.out - 0.2));
+    else clip.out = Math.min(clip.duration, Math.max(clip.out + d, clip.in + 0.2));
+    paintClip();
+  });
+}
+dragHandle($("#hIn"), "in");
+dragHandle($("#hOut"), "out");
+
+/* click the overview to move the whole selection there */
+$("#waveAll").addEventListener("click", e => {
+  if (!clip || !clip.peaks) return;
+  const r = e.currentTarget.getBoundingClientRect();
+  const t = ((e.clientX - r.left) / r.width) * clip.duration;
+  const len = clip.out - clip.in;
+  clip.in = Math.max(0, Math.min(t - len / 2, clip.duration - len));
+  clip.out = clip.in + len;
+  paintClip();
+});
+
+function playRange(from, to) {
+  if (!clip) return;
+  if (!clip.audio) {
+    clip.audio = new Audio(clip.url);
+    clip.audio.preload = "none";
+  }
+  const a = clip.audio;
+  a.currentTime = from;
+  a.play().catch(() => clipSay("Playback blocked by the browser."));
+  const tick = () => {
+    if (!clip || !clip.audio) return;
+    paintClip();
+    if (a.currentTime >= to) { a.pause(); return; }
+    requestAnimationFrame(tick);
+  };
+  requestAnimationFrame(tick);
+}
+$("#playSel").addEventListener("click", () => playRange(clip.in, clip.out));
+$("#playLead").addEventListener("click", () => playRange(Math.max(0, clip.in - 2), clip.out));
+$("#snapIn").addEventListener("click", () => {
+  clip.in = Math.min(snapToSilence(clip.peaks, clip.duration, clip.in), clip.out - 0.2);
+  paintClip();
+});
+$("#snapOut").addEventListener("click", () => {
+  clip.out = Math.max(snapToSilence(clip.peaks, clip.duration, clip.out), clip.in + 0.2);
+  paintClip();
+});
+
+$("#clipGo").addEventListener("click", async () => {
+  if (!clip) return;
+  const btn = $("#clipGo");
+  btn.disabled = true;
+  clipSay("Cutting…");
+  try {
+    const { blob, duration } = await cutClip(clip.url, clip.in, clip.out, {
+      probe: clip.probe,
+      meta: {
+        title: `${clip.title} (${fmt(clip.in)}–${fmt(clip.out)})`,
+        artist: clip.show,
+        album: "LHF Digital Asset Manager",
+        comment: `Clip from ${clip.title}, ${(clip.date || "").slice(0, 10)}`,
+      },
+    });
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = clipFilename(clip.show, clip.date, clip.title, clip.in, clip.out);
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(a.href), 10000);
+    clipSay(`Saved ${duration.toFixed(1)}s.`);
+  } catch (e) {
+    clipSay("Couldn't cut that: " + e.message);
+  } finally {
+    btn.disabled = false;
+  }
+});
+
+addEventListener("keydown", e => {
+  if (e.key === "Escape" && clipOpen()) { e.preventDefault(); closeClip(); }
+});
+addEventListener("resize", () => { if (clipOpen() && clip && clip.peaks) paintClip(); });
+
+/* ---------- deep links ---------- */
+function readURL() {
+  const p = new URLSearchParams(location.search);
+  state.q = p.get("q") || "";
+  state.show = p.get("show");
+  state.year = p.get("year");
+  state.encore = p.get("encore") === "1";
+  state.person = p.get("person");
+  state.personLabel = p.get("person") || "";
+  if (SORTS.some(([k]) => k === p.get("sort"))) state.sort = p.get("sort");
+  $("#q").value = state.q;
+  if (state.q) $("#clear").style.display = "";
+  return p;
+}
+
+/* ?ep=123&from=522&to=549 opens that episode's clip editor directly, so a
+   moment can be shared as a link rather than described in an email. */
+async function openFromURL(p) {
+  const id = p.get("ep");
+  if (!id) return;
+  const from = parseFloat(p.get("from")), to = parseFloat(p.get("to"));
+  if (!isFinite(from) || !isFinite(to)) return;
+  try {
+    const ep = await (await fetch("/api/episode/" + encodeURIComponent(id))).json();
+    if (ep && ep.audio_url) openClip(ep, from, to);
+  } catch { /* a bad link shouldn't break the page */ }
+}
+
+const _p = readURL();
+loadFacets().then(run).then(() => openFromURL(_p));
 </script>
 </body>
 </html>
