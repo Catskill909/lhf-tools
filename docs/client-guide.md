@@ -34,20 +34,20 @@ same way.
 
 **200 episodes · 143 hours · both shows**, updating itself daily.
 
-> **[screenshot: main search page]**
+![The archive — 200 episodes, both shows, filters and sorting](screenshots/01-search.png)
 
 **It searches what was said, not just the show notes.** Searching the phrase
 *"picket line"* finds 59 episodes — only **2** mention it in the written
 description. The other 57 turned up because someone said it out loud. Click a
 timestamp and the episode plays from that second.
 
-> **[screenshot: result with "Heard in this episode" and timestamps]**
+![Searching the phrase "picket line" — matches found in the spoken audio, with timestamps](screenshots/02-heard.png)
 
 **It spots repeats.** The archive works out when a programme has aired more than
 once and says so under the episode: **8 repeated on the same show, 5 that ran on
 both** — including *Striking At Kings* and *MLK in Memphis*.
 
-> **[screenshot: the "Also ran" line]**
+![An episode flagged as having run three times, with the dates](screenshots/03-also-ran.png)
 
 **It cuts clips.** Press the scissors on the player and you get the waveform
 with that passage already selected. Drag the handles, zoom in, snap the cut to
@@ -55,7 +55,8 @@ the gap between words, listen back, download the MP3. It's copied out of the
 original file rather than re-recorded, so it's identical to what went out, and
 the filename carries the show, date and timecode.
 
-> **[screenshot: the clip editor]**
+> **[screenshot: the clip editor — grab one from your browser; headless
+> screenshots can't finish loading the waveform]**
 
 **Tags** — 232 people, bands, museums and books, taken from the links in your
 own show notes rather than guessed. Click one to see every episode featuring it.
@@ -63,7 +64,7 @@ own show notes rather than guessed. Click one to see every episode featuring it.
 **Export** — whatever's on screen downloads as a spreadsheet, with links back to
 each episode, its transcript and the audio.
 
-> **[screenshot: export panel]**
+![The export panel — CSV, clipboard or JSON](screenshots/05-export.png)
 
 **Links** — the address bar always matches what you're looking at, so any search
 can be pasted to a colleague, or pointed at a single moment. That's also how a

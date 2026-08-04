@@ -1464,7 +1464,9 @@ async function run() {
   const narrowed = !!(state.q || state.show || state.year || state.encore || state.person);
   lastTotal = n; lastScope = describeScope();
   $("#statusText").innerHTML = state.q
-    ? `<b>${n}</b> result${n === 1 ? "" : "s"} for “${esc(state.q)}”${shown}${person}`
+    // A phrase search is already quoted; wrapping it again reads as ""picket line"".
+    ? `<b>${n}</b> result${n === 1 ? "" : "s"} for ${/^".*"$/.test(state.q.trim())
+        ? esc(state.q.trim()) : `“${esc(state.q)}”`}${shown}${person}`
     : `<b>${n}</b> episodes${shown}${person}`;
   syncSort();
   const dp = $("#dropPerson");
