@@ -245,6 +245,7 @@ problem is solved, search now reaches the audio — and topics are the next step
 | `ingest/transcripts.py` | Podcast 2.0 `.srt` → `segments`. Idempotent; `--retry` re-attempts failures. |
 | `refresh.py` | Runs all three pipeline steps in order; `--loop 24h` schedules itself. |
 | `docs/export-spec.md` | Export design + the CSV details that decide whether it imports cleanly. **Built.** |
+| `docs/client-guide.md` | **Send this one.** Feature + usage guide for LHF, with screenshot slots. Every figure verified against the database. |
 | `docs/audio-editor-spec.md` | Browser-side clip editor: design, decisions and verification. **Built.** |
 | `ingest/enrich.py` | Deterministic enrichment, **no AI**. Re-airs + linked entities. Safe to re-run. |
 | `ingest/schema.sql` | Tables, FTS5 index, triggers. Already has `transcript_source` and a source-agnostic `segments` table. |
