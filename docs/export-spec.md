@@ -52,13 +52,47 @@ has been quietly valuable throughout.
 
 ---
 
+## What we actually hold (verified)
+
+Worth stating precisely, because it determines what an export can contain:
+
+| | Stored? | Detail |
+|---|---|---|
+| Full transcript text | ✅ | ~49k chars for a 55-min episode; 882k words total |
+| Timing markers | ✅ | Per passage — `start_sec` / `end_sec` |
+| Cue-level precision | ❌ | ~1,970 source cues merged into ~140 passages (~25s each) for search quality |
+| Speaker labels | ❌ | Not present in the source `.srt` |
+| Audio | ❌ | Deliberate — URL only |
+
+**This is why two URLs, not one.** They aren't redundant; they point at
+different fidelities:
+
+- **`source_url`** — Podbean's original `.srt`, full cue-level precision. What
+  you'd want to regenerate subtitles or re-process from scratch.
+- **`archive_url`** — our transcript view: cleaned, passage-timed, searchable,
+  stable. What you'd want to read or cite.
+
+Plus **`episode_url`** for the human-facing Podbean page.
+
+> **Recommendation:** also store the raw `.srt` verbatim. At ~83 KB × 144 that's
+> ~12 MB against a 33 MB database — trivial — and it removes the last dependency
+> on Podbean's CDN. Right now, if those URLs rot we permanently lose cue-level
+> precision. One column, a few lines in `transcripts.py`.
+
+---
+
 ## Columns
 
-Default set, matching what the interface shows:
+Export carries **URLs and harvested metadata — not bulk text.** One row per
+episode, so it behaves in a spreadsheet.
 
 ```
-show · title · published · duration_min · episode_url · audio_url
-is_encore · tags · reair_dates · transcript_url · has_transcript
+show · title · published · duration_min · is_encore
+tags · reair_dates · has_transcript · transcript_words
+episode_url    →  the Podbean page (for people)
+source_url     →  the original .srt (full cue precision)
+archive_url    →  our transcript view (cleaned, searchable)
+audio_url      →  direct MP3
 ```
 
 Two refinements worth building:
@@ -83,8 +117,9 @@ looks like it worked.
 
 | Option | When | Note |
 |---|---|---|
-| **`transcript_url` column** *(default)* | Always | Points at our own transcript view, not Podbean's CDN — ours is stable and readable in a browser. |
+| **URL columns** *(default)* | Always | Both `source_url` and `archive_url` — different fidelities, both useful. |
 | **`.zip` of `.srt` files** | Checkbox in the modal | `zipfile` is stdlib. Named `YYYY-MM-DD_show_title.srt`. Warn when the selection is large. |
+| **Passage-level CSV** | Separate export | One row per passage: `episode, start_sec, end_sec, text`. The unit researchers actually want — it pivots. |
 | **Inline transcript column** | Only when the result set is ≤ 20 episodes | Enable the option below that threshold and grey it out above, with the reason stated. Prevents the silent-truncation trap. |
 
 A **transcript view route** (`/episode/<id>/transcript`) is a prerequisite for
@@ -151,6 +186,8 @@ point is that export and screen can't drift apart.
 
 ## Build order
 
+0. **Store the raw `.srt`** — ~12 MB, removes the last CDN dependency. Do this
+   first; it's cheap and it's the only irreversible gap.
 1. **Copy for Sheets + CSV** — covers most real demand in a couple of hours
 2. **Transcript view route** (`/episode/<id>/transcript`) — needed for links,
    and valuable on its own
