@@ -6,3 +6,4 @@ secrets/
 *.sqlite
 *.sqlite-wal
 *.sqlite-shm
+.DS_Store
