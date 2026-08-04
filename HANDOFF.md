@@ -100,7 +100,7 @@ search, jump-to-moment, re-air detection and tags. See the tier ladder in
 - Public embed for laborheritage.org
 - Deployment (Docker/Coolify), auth for the internal view, off-box backups
 - Failure notification on the refresh loop (it logs to stderr; nobody watches stderr)
-- **Next up: audio editing / clip extraction** — see the parked idea below
+- **Next up: audio editing / clip extraction** — specced in `docs/audio-editor-spec.md`
 
 ## Scorecard against Harold's original email
 
@@ -189,6 +189,7 @@ problem is solved, search now reaches the audio — and topics are the next step
 | `ingest/transcripts.py` | Podcast 2.0 `.srt` → `segments`. Idempotent; `--retry` re-attempts failures. |
 | `refresh.py` | Runs all three pipeline steps in order; `--loop 24h` schedules itself. |
 | `docs/export-spec.md` | Export design + the CSV details that decide whether it imports cleanly. **Built.** |
+| `docs/audio-editor-spec.md` | Browser-side clip editor. **Read the memory constraint first.** |
 | `ingest/enrich.py` | Deterministic enrichment, **no AI**. Re-airs + linked entities. Safe to re-run. |
 | `ingest/schema.sql` | Tables, FTS5 index, triggers. Already has `transcript_source` and a source-agnostic `segments` table. |
 | `serve.py` | JSON API + serves the UI. Stdlib `http.server`; swap for FastAPI at deploy. |
