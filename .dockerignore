@@ -1,0 +1,17 @@
+# The database lives in a volume, never in the image — baking in a 200 MB
+# snapshot would make every deploy slower and instantly stale.
+data/
+*.sqlite
+*.sqlite-shm
+*.sqlite-wal
+
+.git/
+.gitignore
+__pycache__/
+*.pyc
+.DS_Store
+
+# Dev-only: tests need node, which the runtime image doesn't have.
+tests/
+docs/
+*.md

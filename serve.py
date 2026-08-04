@@ -504,22 +504,28 @@ class Handler(BaseHTTPRequestHandler):
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--port", type=int, default=8000)
+    ap.add_argument("--port", type=int, default=int(os.environ.get("PORT", 8000)))
+    # Loopback by default: running this on a laptop should not quietly expose
+    # the archive to the rest of the network. A container has to be told to
+    # listen on 0.0.0.0 or the proxy in front of it can't reach the process.
+    ap.add_argument("--host", default=os.environ.get("LHF_HOST", "127.0.0.1"),
+                    help="bind address (default 127.0.0.1; use 0.0.0.0 in a container)")
     args = ap.parse_args()
 
     if not os.path.exists(DB_PATH):
         raise SystemExit(
-            f"No database at {DB_PATH}\nRun:  python3 ingest/ingest.py"
+            f"No database at {DB_PATH}\nRun:  python3 refresh.py"
         )
 
     conn = connect()
     n = conn.execute("SELECT COUNT(*) c FROM episodes").fetchone()["c"]
     conn.close()
 
+    shown = "localhost" if args.host in ("127.0.0.1", "0.0.0.0") else args.host
     print(f"LHF Digital Asset Manager — {n} episodes")
-    print(f"  http://localhost:{args.port}")
+    print(f"  http://{shown}:{args.port}  (bound to {args.host})")
     print("  ctrl-c to stop")
-    ThreadingHTTPServer(("127.0.0.1", args.port), Handler).serve_forever()
+    ThreadingHTTPServer((args.host, args.port), Handler).serve_forever()
 
 
 if __name__ == "__main__":

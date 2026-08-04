@@ -28,6 +28,7 @@ Then open <http://localhost:8000>. Ctrl-C to stop the server.
 
 ```bash
 python3 serve.py --port 9000      # different port
+python3 serve.py --host 0.0.0.0   # reachable from other machines (see below)
 python3 ingest/ingest.py --stats  # stats + search sanity check, no fetch
 DATABASE_PATH=/tmp/x.sqlite python3 serve.py   # point at another database
 ```
@@ -35,6 +36,10 @@ DATABASE_PATH=/tmp/x.sqlite python3 serve.py   # point at another database
 Re-running is safe any time — everything keys on the RSS `<guid>`, so a second
 run updates rows in place rather than duplicating them. With no new episodes
 it's a ~2 second no-op.
+
+**The server binds to `127.0.0.1` by default** — running it on a laptop should
+not quietly put the archive on the café wifi. `--host 0.0.0.0` opens it up, and
+that is what the container sets.
 
 ## Keeping it up to date
 
@@ -64,9 +69,45 @@ against the container.
 Whichever you choose, **back the SQLite file up off-box first**. The feeds
 re-scrape for free; 882k words of transcript don't.
 
+## Deploying
+
+```bash
+docker compose up --build        # web on :8000, plus a daily refresh worker
+```
+
+Or in Coolify: point it at the repo, add a **volume mounted at `/data`**, and
+deploy. Everything that must survive a redeploy lives there and nowhere else.
+
+| | |
+|---|---|
+| `DATABASE_PATH` | `/data/lhf.sqlite` — put it on the volume, not in the image |
+| `LHF_HOST` | `0.0.0.0` in a container, or the proxy can't reach the process |
+| `PORT` | `8000` |
+
+**First deploy takes a few minutes.** The volume starts empty, so the `web`
+container builds the database before serving — roughly 2½ minutes of feed and
+transcript fetching. Without that bootstrap the first deploy would crash-loop
+on a missing database, which looks like a broken build rather than an empty
+disk.
+
+The `refresh` container **waits** for that database rather than building its
+own; two processes ingesting the same feeds into one SQLite file would race.
+Running the worker on its own? `docker compose run --rm refresh once` first.
+
+Nothing is installed at build time. The app is stdlib-only and the front end
+has no build step, so the image is the Python interpreter plus this repo —
+no lockfile, nothing to drift.
+
+**No authentication.** Everything served is already-published podcast material,
+and `episode_notes` is not exposed by the API. If internal-only fields are
+added later, put auth in front of it before deploying again.
+
 ## Layout
 
 ```
+Dockerfile             python:3.12-slim, stdlib only, nothing to install
+docker-compose.yml     web + daily refresh worker, sharing one volume
+docker-entrypoint.sh   serve | refresh | once — and the first-run bootstrap
 refresh.py             run the whole pipeline in order
 ingest/ingest.py       feed → SQLite
 ingest/transcripts.py  Podcast 2.0 .srt → segments
@@ -254,8 +295,9 @@ FTS5 syntax worth knowing: `"exact phrase"`, `labor NOT history`,
 
 ## Next
 
-- **Deploy** — Dockerfile + Coolify. Everything works locally; the client has
-  no URL yet, and nothing else moves the project forward as much.
+- **Deploy it.** The container files are written and the pipeline is proven,
+  but this has never been built or run as an image — there is no Docker on the
+  dev machine. Coolify will be the first thing to build it.
 - AI extraction pass over `description_text` + transcripts → `topics`,
   un-hyperlinked guests, interviewer roles (~$7 batched). The last gap in the
   original brief.

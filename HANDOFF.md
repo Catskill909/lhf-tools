@@ -143,9 +143,15 @@ search, jump-to-moment, re-air detection and tags. See the tier ladder in
 - The 55 episodes with no feed transcript (~$9.52 via Google STT)
 - One broken transcript link on Podbean's side ("MLK in Memphis" 404s);
   `python3 ingest/transcripts.py --retry` will pick it up if they fix it
-- Deployment (Docker/Coolify), auth for the internal view, off-box backups —
-  **this is now the highest-value remaining task.** Everything else is built;
-  the client still has no URL.
+- **Deployment.** The container files now exist — `Dockerfile`,
+  `docker-compose.yml`, `docker-entrypoint.sh` — and `serve.py` takes a
+  `--host` flag so it can bind `0.0.0.0` behind a proxy. But **none of it has
+  been built**: there is no Docker on the dev machine, so Coolify will be the
+  first thing to run it. Still the highest-value remaining task; the client has
+  no URL.
+- **No git remote.** Commits are local only. Coolify deploys from a repo, so
+  this has to happen first — and it is the only off-machine copy of the work.
+- Off-box backups of the volume. It is the only copy of the scraped archive.
 - Failure notification on the refresh loop (it logs to stderr; nobody watches stderr)
 - A styled embed widget for laborheritage.org. The `?q=` deep link means a
   plain search box already works — the widget is polish, not plumbing.
@@ -507,9 +513,15 @@ correctly positioned and genuinely lossless.
 
 ### Known rough edges
 
-- `serve.py` binds `127.0.0.1` only and is stdlib `http.server` — correct for
-  local, not for deployment.
+- `serve.py` is stdlib `http.server`. It now takes `--host`/`LHF_HOST` so a
+  container can bind `0.0.0.0` (verified both ways: `0.0.0.0` answers on the
+  LAN address, the default refuses it). Threaded and fine for this traffic, but
+  it is not a hardened server — keep it behind Coolify's proxy.
 - No git *remote*. Commits are local only, so the work exists on one machine.
+- The Docker image has never been built. The entrypoint's branching was tested
+  with a stubbed `python3` (all four paths, including the first-run bootstrap
+  and the worker's wait-for-database), and Python 3.12 compatibility was checked
+  by auditing every import — but that is not the same as a build.
 - Ingest has no test suite; it's deterministic and rebuilds in ~2½ minutes, so
   `refresh.py` → check counts is the test. The clip editor does have tests
   (`tests/`) — see "Tests" below.

@@ -633,38 +633,39 @@ episodes_fts  <span class="c">-- FTS5: title, description_text, transcript_text,
   <section>
     <span class="eyebrow">Deployment</span>
     <h2>Docker + Coolify</h2>
-    <p>Single image, two entrypoints — web and worker — sharing one volume. Nothing here needs orchestration beyond that.</p>
+    <p>Single image, two entrypoints — web and worker — sharing one volume. Nothing here needs orchestration beyond that. <strong>This is what shipped;</strong> the earlier sketch on this page assumed FastAPI and a local Whisper worker, and neither exists — the app is Python standard library only, and the transcripts came free from the feed.</p>
     <pre><code>services:
   web:
     build: .
-    command: uvicorn app.main:app --host 0.0.0.0 --port 8000
+    command: ["serve"]              <span class="c"># builds the DB on first run, then serves</span>
+    ports:
+      - "8000:8000"
     volumes:
-      - lhf-data:/data                <span class="c"># SQLite lives here</span>
+      - lhf-data:/data              <span class="c"># SQLite lives here</span>
     environment:
       DATABASE_PATH: /data/lhf.sqlite
-      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY}
-      ADMIN_PASSWORD: ${ADMIN_PASSWORD}
+      LHF_HOST: 0.0.0.0             <span class="c"># a loopback bind is unreachable behind a proxy</span>
+      PORT: 8000
+    restart: unless-stopped
 
-  worker:
+  refresh:
     build: .
-    command: nice -n 19 python -m app.worker
+    command: ["refresh"]            <span class="c"># polls the feeds daily, then sleeps</span>
     volumes:
       - lhf-data:/data
-      - lhf-models:/models            <span class="c"># Whisper weights — survives redeploys</span>
-      - lhf-scratch:/scratch          <span class="c"># MP3s in flight, deleted after each</span>
     environment:
       DATABASE_PATH: /data/lhf.sqlite
-      HF_HOME: /models
-      WHISPER_MODEL: large-v3-turbo
-      WHISPER_THREADS: "4"            <span class="c"># leave cores for everything else</span>
-    deploy:
-      resources:
-        limits:
-          cpus: "4"</code></pre>
+    restart: unless-stopped
+    depends_on:
+      - web                         <span class="c"># web creates the DB; this one waits for it</span>
+
+volumes:
+  lhf-data:</code></pre>
     <ul>
-      <li><strong>Model volume is the important one.</strong> Without <code>lhf-models</code> persisted, every redeploy re-downloads 1.5&nbsp;GB before the worker does anything useful.</li>
-      <li><strong>SQLite on a volume:</strong> enable WAL mode. One writer (worker) and one reader (web) is fine; just don't let the backfill hold long write transactions while the UI is being demoed.</li>
-      <li><strong>Sizing:</strong> web is genuinely tiny — 512&nbsp;MB is plenty. The worker wants ~3&nbsp;GB while transcribing and can be stopped entirely once the backfill is done, since weekly upkeep is minutes.</li>
+      <li><strong>No model volume, no API keys, nothing to install.</strong> The one dependency is the Python interpreter. What this section originally budgeted for — 1.5&nbsp;GB of Whisper weights, a scratch volume for MP3s in flight — never became necessary.</li>
+      <li><strong>The first deploy is the one that surprises you.</strong> The volume starts empty and <code>serve.py</code> exits without a database, so the entrypoint builds it first — about 2½ minutes. Without that, a first deploy crash-loops and looks like a broken build.</li>
+      <li><strong>SQLite on a volume:</strong> WAL mode is on, which is what makes one writer (refresh) and one reader (web) safe on the same file. Both containers must mount the same volume.</li>
+      <li><strong>Sizing:</strong> both containers are tiny — 512&nbsp;MB each is plenty. There is no transcription process to feed. The clip editor and waveform decoding all happen in the visitor's browser, so traffic costs this box almost nothing.</li>
       <li><strong>Backups:</strong> <code>sqlite3 .backup</code> on a schedule to a second volume path. The database is rebuildable from the feeds, but transcripts cost days of CPU to regenerate — those are the bytes worth protecting.</li>
       <li><strong>Secrets:</strong> only the Anthropic key on the local path. If we fall back to Google, its JSON goes in as a Coolify file mount — never in the image, never in git. Put <code>secrets/</code> in <code>.gitignore</code> on day one, before any key exists locally.</li>
     </ul>

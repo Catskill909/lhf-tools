@@ -1,0 +1,38 @@
+# Two containers from one image, sharing one volume.
+#
+# `web` serves the site and owns first-run database creation. `refresh` polls
+# the feeds daily. They are split so that a long ingest can never block or
+# restart the site, and so Coolify shows you which one failed.
+#
+# SQLite is in WAL mode, which is what makes a reader and a writer on the same
+# file safe. Both containers must therefore mount the *same* volume.
+
+services:
+  web:
+    build: .
+    command: ["serve"]
+    environment:
+      DATABASE_PATH: /data/lhf.sqlite
+      LHF_HOST: 0.0.0.0          # the proxy can't reach a loopback bind
+      PORT: 8000
+    ports:
+      - "8000:8000"              # Coolify puts its own proxy in front of this
+    volumes:
+      - lhf-data:/data
+    restart: unless-stopped
+
+  refresh:
+    build: .
+    command: ["refresh"]
+    environment:
+      DATABASE_PATH: /data/lhf.sqlite
+    volumes:
+      - lhf-data:/data
+    restart: unless-stopped
+    depends_on:
+      - web                      # web creates the database; this one waits for it
+
+volumes:
+  lhf-data:
+    # Everything that must survive a redeploy is in here and nowhere else.
+    # Back this up — it is the only copy of the scraped archive.
