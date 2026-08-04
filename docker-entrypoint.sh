@@ -1,47 +1,78 @@
 #!/bin/sh
 # One image, two jobs. `serve` runs the site; `refresh` runs the update loop.
 #
-# The reason this script exists rather than a bare CMD: on a first deploy the
-# volume is empty, and serve.py exits when there is no database. Without a
-# bootstrap the very first deploy would crash-loop, which looks like a broken
-# build rather than an empty disk.
+# The important thing this script does is open the port immediately.
+#
+# The first version built the whole archive before starting the server, and
+# that failed to deploy: the container isn't listening during the build, so
+# every health check fails, the orchestrator calls the container unhealthy and
+# restarts it, and the build begins again. A deploy loop that never finishes.
+# Coolify allowed about 55 seconds; the build takes around 143.
+#
+# So now an empty database is created in under a second, the server starts
+# against it, and the archive is fetched in the background. The site answers
+# straight away — briefly with nothing in it — and fills in behind itself.
 set -e
 
 DB="${DATABASE_PATH:-/data/lhf.sqlite}"
+MARK="$(dirname "$DB")/.bootstrapped"
 
-bootstrap() {
-  if [ ! -f "$DB" ]; then
-    echo "No database at $DB — building it. First run takes a few minutes."
-    # refresh.py runs ingest, transcripts and enrich in the required order.
-    python3 /app/refresh.py
-  fi
+# schema.sql alone is enough for the API to answer: searches return nothing and
+# the tag/re-air lookups degrade gracefully on the tables enrich.py adds later.
+init_schema() {
+  python3 - "$DB" <<'PY'
+import sqlite3, sys
+conn = sqlite3.connect(sys.argv[1])
+conn.executescript(open("/app/ingest/schema.sql").read())
+conn.close()
+PY
+}
+
+build_in_background() {
+  (
+    if python3 /app/refresh.py; then
+      touch "$MARK"
+      echo "First build complete — the archive is now populated."
+    else
+      # Leaving the marker absent is deliberate: the refresh worker waits for
+      # it, so a failed first build doesn't get compounded by a second process.
+      echo "First build FAILED. The site is up but empty; see the errors above." >&2
+    fi
+  ) &
 }
 
 case "${1:-serve}" in
   serve)
-    bootstrap
+    if [ ! -f "$DB" ]; then
+      echo "No database at $DB."
+      echo "Creating an empty one so the site can answer immediately;"
+      echo "the archive will fill in behind it (a couple of minutes)."
+      init_schema
+      build_in_background
+    else
+      # An existing database from an older deploy won't have the marker, and
+      # the refresh worker would wait for it forever.
+      [ -f "$MARK" ] || touch "$MARK"
+    fi
     exec python3 /app/serve.py
     ;;
   refresh)
-    # The web container owns first-run creation. If this one bootstrapped too,
-    # a first deploy would have two processes ingesting the same feeds into the
-    # same SQLite file at once. Wait for it to appear instead.
+    # The web container owns the first build. Two processes ingesting the same
+    # feeds into one SQLite file would race, so wait for it to finish.
     #
     # Running this service on its own? Use `once` first to build the database.
-    waited=0
-    while [ ! -f "$DB" ]; do
-      if [ "$waited" -eq 0 ]; then
-        echo "Waiting for $DB — the web container builds it on first run."
-      fi
-      waited=$((waited + 10))
-      sleep 10
-    done
+    if [ ! -f "$MARK" ]; then
+      echo "Waiting for the first build to finish before starting the loop."
+      while [ ! -f "$MARK" ]; do sleep 15; done
+    fi
     # Both shows are weekly, so daily is already generous. --quiet-if-nothing-new
     # keeps the logs readable so a real failure stands out.
     exec python3 /app/refresh.py --loop 24h --quiet-if-nothing-new
     ;;
   once)
-    exec python3 /app/refresh.py
+    init_schema
+    python3 /app/refresh.py
+    touch "$MARK"
     ;;
   *)
     exec "$@"

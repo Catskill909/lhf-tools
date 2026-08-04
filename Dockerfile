@@ -17,6 +17,13 @@ ENV PYTHONUNBUFFERED=1 \
     LHF_HOST=0.0.0.0 \
     PORT=8000
 
+# curl is here for the orchestrator, not for us. Coolify runs its own health
+# check inside the container with curl or wget, and python:3.12-slim has
+# neither — the first deploy failed with "curl: not found" on every attempt.
+RUN apt-get update \
+ && apt-get install -y --no-install-recommends curl \
+ && rm -rf /var/lib/apt/lists/*
+
 WORKDIR /app
 COPY . /app
 
@@ -29,16 +36,12 @@ EXPOSE 8000
 # Uses the app's own API, so it reports the database is readable rather than
 # merely that a process is listening.
 #
-# The start period is load-bearing, not padding. On a first deploy the container
-# builds the database before it listens at all — measured at 143s here, but it
-# is network bound and a VPS sharing its uplink with twenty other containers
-# will be slower. Failures inside the start period don't count, so too short a
-# grace would mark the container unhealthy mid-bootstrap, get it restarted, and
-# begin the build again — a deploy loop that never finishes. 15 minutes is six
-# times the measured run; it only delays the first healthy verdict.
-HEALTHCHECK --interval=30s --timeout=5s --start-period=15m --retries=3 \
-  CMD python3 -c "import urllib.request,sys; \
-sys.exit(0 if urllib.request.urlopen('http://127.0.0.1:8000/api/facets', timeout=4).status == 200 else 1)"
+# A short grace is now correct: the entrypoint opens the port in about a second
+# and fetches the archive in the background, so there is no long window where
+# the container is alive but silent. (Coolify overrides this with its own check
+# anyway — this one is for plain `docker run` and compose.)
+HEALTHCHECK --interval=30s --timeout=5s --start-period=30s --retries=3 \
+  CMD curl -fsS http://127.0.0.1:8000/api/facets -o /dev/null || exit 1
 
 ENTRYPOINT ["/app/docker-entrypoint.sh"]
 CMD ["serve"]

@@ -143,12 +143,14 @@ search, jump-to-moment, re-air detection and tags. See the tier ladder in
 - The 55 episodes with no feed transcript (~$9.52 via Google STT)
 - One broken transcript link on Podbean's side ("MLK in Memphis" 404s);
   `python3 ingest/transcripts.py --retry` will pick it up if they fix it
-- **Deployment.** The container files now exist — `Dockerfile`,
-  `docker-compose.yml`, `docker-entrypoint.sh` — and `serve.py` takes a
-  `--host` flag so it can bind `0.0.0.0` behind a proxy. But **none of it has
-  been built**: there is no Docker on the dev machine, so Coolify will be the
-  first thing to run it. Still the highest-value remaining task; the client has
-  no URL.
+- **Deployment.** First attempt on Coolify failed and taught us three things,
+  all now fixed: Coolify runs its own health check (not the Dockerfile's), it
+  shells out to `curl` which `python:3.12-slim` doesn't have, and — the real
+  bug — building the archive *before* starting the server means nothing is
+  listening during the build, so the container is killed as unhealthy and the
+  build restarts forever. The container now opens the port in **1 second** and
+  fetches the archive in the background.
+  **Coolify's "Ports Exposes" must be set to 8000**; it defaults to 3000.
 - Off-box backups of the volume. It is the only copy of the scraped archive.
 - Failure notification on the refresh loop (it logs to stderr; nobody watches stderr)
 - A styled embed widget for laborheritage.org. The `?q=` deep link means a

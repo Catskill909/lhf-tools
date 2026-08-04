@@ -84,19 +84,27 @@ Or in Coolify: point it at **https://github.com/Catskill909/lhf-tools**, add a
 | `LHF_HOST` | `0.0.0.0` in a container, or the proxy can't reach the process |
 | `PORT` | `8000` |
 
-**The first deploy builds the archive before it serves anything.** The volume
-starts empty, so the `web` container runs the whole pipeline first — feeds,
-144 transcript files, then enrichment. Measured end to end from nothing:
-**143 seconds**, producing 200 episodes, 14,937 passages, 701 tags and 28
-re-air links.
+**The first deploy serves immediately and fills in behind itself.** The volume
+starts empty, so the container creates an empty database (well under a second),
+starts the server, and fetches the archive in the background — about 143
+seconds for 200 episodes, 14,937 passages, 701 tags and 28 re-air links. The
+site is up throughout; it just has nothing in it for the first minute or two.
 
-That is network bound, so a busy VPS will be slower. The health check has a
-15-minute start period to cover it: failures inside the start period don't
-count, but too short a grace would mark the container unhealthy mid-build, get
-it restarted, and begin the build again, forever.
+**This is the shape it has to be.** The first version built the archive *before*
+starting the server, and it would not deploy: nothing is listening during the
+build, so every health check fails, the orchestrator declares the container
+unhealthy and restarts it, and the build starts over. Coolify allows about 55
+seconds. Time to first response is now **1 second**.
 
-Without the bootstrap at all, the first deploy would crash-loop on a missing
-database, which looks like a broken build rather than an empty disk.
+### Coolify settings that matter
+
+Coolify runs its **own** health check and ignores the one in the Dockerfile:
+
+- **Set "Ports Exposes" to `8000`.** It defaults to 3000, and the check fails
+  against a port nothing is listening on.
+- `curl` is installed in the image for this reason. Coolify's check shells out
+  to `curl` or `wget`, and `python:3.12-slim` ships with neither — the first
+  deploy failed with `curl: not found` on every attempt.
 
 The `refresh` container **waits** for that database rather than building its
 own; two processes ingesting the same feeds into one SQLite file would race.
