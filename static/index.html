@@ -440,13 +440,35 @@
   }
   .modal-head h2 { margin: 0; font-size: 1.25rem; }
   .modal-head p { margin: 0.25rem 0 0; font-size: 0.8rem; color: var(--ink-3); }
-  #helpClose {
+  /* One close control for all three dialogues — the clip and export ones were
+     unstyled native buttons. Rotation was the first instinct and it is wasted
+     on this glyph: a multiplication sign maps onto itself at 90 degrees, so it
+     would cost a repaint and show nothing. It lifts and fills instead. */
+  .modal-head > button {
+    flex: none;
+    width: 34px; height: 34px; border-radius: 50%;
+    display: grid; place-items: center;
     background: none; border: 1px solid var(--rule); color: var(--ink-2);
-    border-radius: 2px; cursor: pointer; font: inherit; font-size: 1.15rem;
-    line-height: 1; padding: 0.25rem 0.5rem;
+    cursor: pointer; font: inherit; font-size: 1.2rem; line-height: 1;
+    padding: 0;
+    transition: transform 0.2s cubic-bezier(0.2, 0.7, 0.3, 1),
+                background 0.18s ease, color 0.18s ease, border-color 0.18s ease;
   }
-  #helpClose:hover { color: var(--spot-ink); border-color: var(--spot); }
-  #helpClose:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+  .modal-head > button:hover {
+    background: var(--spot); border-color: var(--spot); color: var(--paper);
+    transform: scale(1.09);
+    box-shadow: 0 3px 12px rgba(216, 80, 58, 0.35);
+  }
+  .modal-head > button:active { transform: scale(0.94); box-shadow: none; }
+  .modal-head > button:focus-visible {
+    outline: 2px solid var(--focus); outline-offset: 2px;
+    border-color: var(--spot);
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .modal-head > button, .modal-head > button:hover, .modal-head > button:active {
+      transition: none; transform: none;
+    }
+  }
 
   .modal-body { padding: 0.4rem 1.6rem 1.6rem; }
 
@@ -692,7 +714,7 @@
     display: grid; place-items: center;
     width: 30px; height: 30px; border-radius: 50%;
     background: none; border: none; padding: 0; cursor: pointer;
-    color: var(--ink-3);
+    color: var(--ink);
     transition: background 0.16s ease, color 0.16s ease;
   }
   .pl-edit svg { width: 17px; height: 17px; fill: currentColor; }
@@ -750,16 +772,18 @@
   .zoom-ctl button {
     width: 22px; height: 22px; border-radius: 50%;
     background: none; border: none; cursor: pointer;
-    color: var(--ink-2); font: inherit; font-size: 0.9rem; line-height: 1;
+    color: var(--ink); font: inherit; font-size: 0.9rem; line-height: 1;
     display: grid; place-items: center;
     transition: background 0.14s ease, color 0.14s ease;
   }
   .zoom-ctl button:hover:not(:disabled) { background: var(--spot-soft); color: var(--spot-ink); }
   .zoom-ctl button:disabled { opacity: 0.3; cursor: default; }
   .zoom-ctl button:focus-visible { outline: 2px solid var(--focus); outline-offset: 1px; }
+  /* Same weight as the in/out readouts below — it's a value you read, not a
+     label you ignore. */
   #zoomLabel {
     font-family: ui-monospace, Consolas, monospace; font-variant-numeric: tabular-nums;
-    font-size: 0.64rem; color: var(--ink-3); min-width: 3.1rem; text-align: center;
+    font-size: 0.7rem; color: var(--ink); min-width: 3.2rem; text-align: center;
   }
   .wave-box {
     position: relative; background: var(--paper-2);
