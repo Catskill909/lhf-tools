@@ -76,6 +76,7 @@ serve.py               JSON API + serves the UI and its JS
 static/index.html      the interface (markup, styles, app code — no build step)
 static/mp3cut.js       lossless MP3 clip extraction (probe + frame copy)
 static/waveform.js     peaks, IndexedDB cache, canvas waveform, snap-to-silence
+tests/                 clip editor tests (node; dev only, not shipped)
 data/lhf.sqlite        the database (gitignored)
 ```
 
@@ -171,6 +172,21 @@ tags and 14 detected re-airs.
   `?ep=123&from=522&to=549` opens a single moment. `?q=` is the integration
   point for a search box on laborheritage.org.
 - Light/dark, keyboard shortcuts, help modal with runnable examples
+
+## Tests
+
+```bash
+node tests/test-waveform.mjs     # pure — peak reduction, snap-to-silence
+node tests/verify-clips.mjs      # live — needs the server running + network
+```
+
+Node is a **dev-only** dependency; nothing at runtime uses it.
+
+`verify-clips.mjs` cuts real clips from randomly chosen episodes and then
+searches the source file for the clip's bytes. An exact match at the expected
+offset proves the cut is both correctly positioned and genuinely lossless —
+duration alone would not, since a clip can be the right length and come from
+the wrong place.
 
 ## ⚠️ The feed only returns 100 episodes per show
 

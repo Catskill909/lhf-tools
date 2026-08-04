@@ -668,11 +668,17 @@
 
 
   /* ---------------------------------------------------------- clip */
+  /* A button cannot legally nest inside a button — the parser silently closes
+     the outer one and the layout is then whatever error recovery decided.
+     The row makes the pairing explicit. */
+  .moment-row { display: flex; align-items: flex-start; gap: 0.4rem; }
+  .moment-row .moment { flex: 1; min-width: 0; }
   .clip-btn {
+    flex: none; align-self: center;
     background: none; border: 1px solid var(--rule-hard); border-radius: 2px;
     color: var(--ink-3); font: inherit; font-size: 0.66rem;
     letter-spacing: 0.08em; text-transform: uppercase;
-    padding: 0.1rem 0.4rem; cursor: pointer; margin-left: 0.5rem;
+    padding: 0.1rem 0.4rem; cursor: pointer;
   }
   .clip-btn:hover { color: var(--spot-ink); border-color: var(--spot); }
   .clip-btn:focus-visible { outline: 2px solid var(--focus); outline-offset: 1px; }
@@ -726,7 +732,8 @@
     color: var(--ink-2); font: inherit; font-size: 0.74rem;
     padding: 0.25rem 0.55rem; cursor: pointer; white-space: nowrap;
   }
-  .tool:hover { color: var(--ink); border-color: var(--ink-3); }
+  .tool:hover:not(:disabled) { color: var(--ink); border-color: var(--ink-3); }
+  .tool:disabled { opacity: 0.4; cursor: default; }
   .tool:focus-visible { outline: 2px solid var(--focus); outline-offset: 1px; }
 
   .clip-status {
@@ -1225,6 +1232,16 @@ async function run() {
     return;
   }
 
+  // A shared ?person= link carries only the normalised (lowercased) name.
+  // Recover the display spelling from the results before anything is painted —
+  // syncChips() doesn't own this chip, the status line below does.
+  if (state.person && !state.personLabel) {
+    for (const r of data.results) {
+      const hit = (r.mentions || []).find(m => m.norm_text === state.person);
+      if (hit) { state.personLabel = hit.text; break; }
+    }
+  }
+
   const n = data.total ?? data.count;
   const shown = data.truncated ? ` <span style="opacity:.6">(showing ${data.count})</span>` : "";
   const person = state.person
@@ -1267,13 +1284,16 @@ async function run() {
 
     const moments = (r.moments && r.moments.length) ? `
       <div class="moments">${r.moments.map(m =>
-        `<button class="moment" data-audio="${esc(r.audio_url || "")}"
-           data-t="${Math.floor(m.start_sec || 0)}" data-ep="${r.id}">
-           <span class="t">${hms(m.start_sec)}</span>
-           <span>${m.excerpt || ""}<button class="clip-btn" data-clip="${r.id}"
-             data-from="${m.start_sec}" data-to="${m.end_sec || (m.start_sec + 30)}"
-             title="Make a clip from here">Clip</button></span>
-         </button>`).join("")}
+        `<div class="moment-row">
+           <button class="moment" data-audio="${esc(r.audio_url || "")}"
+             data-t="${Math.floor(m.start_sec || 0)}" data-ep="${r.id}">
+             <span class="t">${hms(m.start_sec)}</span>
+             <span>${m.excerpt || ""}</span>
+           </button>
+           <button class="clip-btn" data-clip="${r.id}" data-from="${m.start_sec}"
+             data-to="${m.end_sec || (m.start_sec + 30)}"
+             title="Make a clip from here">Clip</button>
+         </div>`).join("")}
        <div class="player" id="player-${r.id}"></div>
       </div>` : "";
 
@@ -1328,13 +1348,14 @@ async function run() {
       else audio.addEventListener("loadedmetadata", go, { once: true });
     }));
 
-  document.querySelectorAll(".ent").forEach(b =>
+  document.querySelectorAll(".ent").forEach(b => {
     b.addEventListener("click", () => {
       state.person = state.person === b.dataset.person ? null : b.dataset.person;
       state.personLabel = b.textContent;
       run();
       scrollTo({ top: 0, behavior: "smooth" });
-    }));
+    });
+  });
 }
 
 $("#q").addEventListener("input", e => {
@@ -1658,10 +1679,15 @@ const fmt = t => {
   const m = Math.floor(t / 60), s = t % 60;
   return `${m}:${s.toFixed(2).padStart(5, "0")}`;
 };
-const zoomWindow = () => ({
-  from: Math.max(0, clip.in - ZOOM_PAD),
-  to: Math.min(clip.duration, clip.out + ZOOM_PAD),
-});
+const zoomWindow = () => {
+  // duration can be 0 if the feed omitted it and the decode hasn't landed yet;
+  // falling back to the selection keeps the maths finite.
+  const dur = clip.duration || clip.out + ZOOM_PAD;
+  return {
+    from: Math.max(0, clip.in - ZOOM_PAD),
+    to: Math.max(clip.in + 0.5, Math.min(dur, clip.out + ZOOM_PAD)),
+  };
+};
 
 function paintClip() {
   const sel = { from: clip.in, to: clip.out };
@@ -1708,7 +1734,7 @@ async function openClip(ep, fromSec, toSec) {
     url: ep.audio_url, title: ep.title, show: ep.show_name,
     date: ep.published_at, id: ep.id,
     in: fromSec, out: toSec, duration: ep.duration_sec || 0,
-    peaks: null, audio: null, probe: null, abort: new AbortController(),
+    peaks: null, audio: null, probe: null, raf: 0, abort: new AbortController(),
   };
   $("#clipEp").textContent = `${ep.title} · ${ep.show_name}`;
   clipModal.hidden = false;
@@ -1739,6 +1765,7 @@ async function openClip(ep, fromSec, toSec) {
 function closeClip() {
   if (clip) {
     clip.abort.abort();                  // don't keep pulling 75 MB nobody wants
+    cancelAnimationFrame(clip.raf);
     if (clip.audio) { clip.audio.pause(); clip.audio = null; }
   }
   clipModal.hidden = true;
@@ -1754,12 +1781,16 @@ clipModal.addEventListener("mousedown", e => { if (e.target === clipModal) close
 /* drag the handles on the zoomed view */
 function dragHandle(el, which) {
   el.addEventListener("mousedown", e => {
+    if (!clip) return;
     e.preventDefault();
     const box = $("#zoomBox");
+    // Frozen at mousedown. Recomputing it per move would feed the handle's own
+    // movement back into the window it is measured against, and it races away
+    // from the cursor.
+    const z = zoomWindow();
     const move = ev => {
       if (!clip) return;
       const r = box.getBoundingClientRect();
-      const z = zoomWindow();
       let t = z.from + ((ev.clientX - r.left) / r.width) * (z.to - z.from);
       t = Math.max(0, Math.min(clip.duration, t));
       if (which === "in") clip.in = Math.min(t, clip.out - 0.2);
@@ -1804,19 +1835,28 @@ $("#waveAll").addEventListener("click", e => {
 function playRange(from, to) {
   if (!clip) return;
   if (!clip.audio) {
-    clip.audio = new Audio(clip.url);
-    clip.audio.preload = "none";
+    clip.audio = new Audio();
+    clip.audio.preload = "metadata";      // seeking needs the duration first
+    clip.audio.src = clip.url;
   }
   const a = clip.audio;
-  a.currentTime = from;
-  a.play().catch(() => clipSay("Playback blocked by the browser."));
-  const tick = () => {
-    if (!clip || !clip.audio) return;
-    paintClip();
-    if (a.currentTime >= to) { a.pause(); return; }
-    requestAnimationFrame(tick);
+  cancelAnimationFrame(clip.raf);         // a second click replaces the loop
+
+  const begin = () => {
+    if (!clip || clip.audio !== a) return;
+    a.currentTime = from;                 // ignored before metadata arrives
+    a.play().catch(() => clipSay("Playback blocked by the browser."));
+    const tick = () => {
+      if (!clip || clip.audio !== a) return;
+      paintClip();
+      if (a.currentTime >= to) { a.pause(); return; }
+      clip.raf = requestAnimationFrame(tick);
+    };
+    clip.raf = requestAnimationFrame(tick);
   };
-  requestAnimationFrame(tick);
+
+  if (a.readyState >= 1) begin();
+  else a.addEventListener("loadedmetadata", begin, { once: true });
 }
 $("#playSel").addEventListener("click", () => playRange(clip.in, clip.out));
 $("#playLead").addEventListener("click", () => playRange(Math.max(0, clip.in - 2), clip.out));
@@ -1870,7 +1910,7 @@ function readURL() {
   state.year = p.get("year");
   state.encore = p.get("encore") === "1";
   state.person = p.get("person");
-  state.personLabel = p.get("person") || "";
+  state.personLabel = "";          // filled in from the rendered tags
   if (SORTS.some(([k]) => k === p.get("sort"))) state.sort = p.get("sort");
   $("#q").value = state.q;
   if (state.q) $("#clear").style.display = "";

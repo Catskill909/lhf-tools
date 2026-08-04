@@ -190,6 +190,10 @@
     line-height: 1;
   }
   .phase-head h3 { margin: 0; font-size: 1.05rem; }
+  .phase-head h3 em {
+    font-style: normal; font-weight: 400; font-size: 0.82rem;
+    color: var(--flag); letter-spacing: 0.02em;
+  }
   .phase-head .est {
     font-family: ui-monospace, monospace;
     font-size: 0.7rem;
@@ -258,6 +262,13 @@
     <span class="internal">Internal — not for client</span>
     <h1>LHF Podcast Archive — Build Plan</h1>
     <p>Working plan for the podcast search engine. Stack: Python + FastAPI, SQLite/FTS5, Docker, Coolify. Companion to the client-facing planning memo.</p>
+  </div>
+
+  <div class="callout warn">
+    <span class="label">Read this first — the plan below was overtaken by events</span>
+    <p>This document was written before we discovered that <strong>the feeds already publish transcripts</strong> in the Podcast&nbsp;2.0 <code>&lt;podcast:transcript&gt;</code> namespace. 144 of 200 episodes carry one, free. That removed most of the transcription problem this plan spends its first half solving, and cut the projected cost from ~$102 to ~$9.52 for the remaining gap.</p>
+    <p>What actually got built: <strong>ingest, transcripts, deterministic enrichment, full-text search, the interface, spreadsheet export and a lossless browser-side clip editor</strong> — with no AI and no Google Cloud account. The one phase still outstanding is the AI extraction pass for topics and un-hyperlinked guests (~$7 batched).</p>
+    <p>The costing sections are kept because they remain the right analysis <em>if</em> the 55 untranscribed episodes or the pre-feed backlog ever need doing. Treat the phase list as history, not as a to-do list — <code>HANDOFF.md</code> is the current state.</p>
   </div>
 
   <section>
@@ -533,7 +544,7 @@ episodes_fts  <span class="c">-- FTS5: title, description_text, transcript_text,
     <div class="phase">
       <div class="phase-head">
         <span class="num">0</span>
-        <h3>Spike — de-risk the two unknowns</h3>
+        <h3>Spike — de-risk the two unknowns <em>— superseded</em></h3>
         <span class="est">half a day</span>
       </div>
       <p>Before building anything structural, answer the three questions that could invalidate the plan:</p>
@@ -548,7 +559,7 @@ episodes_fts  <span class="c">-- FTS5: title, description_text, transcript_text,
     <div class="phase">
       <div class="phase-head">
         <span class="num">1</span>
-        <h3>Ingest — Tier 1</h3>
+        <h3>Ingest — Tier 1 <em>— built</em></h3>
         <span class="est">~1 day</span>
       </div>
       <ul>
@@ -563,7 +574,7 @@ episodes_fts  <span class="c">-- FTS5: title, description_text, transcript_text,
     <div class="phase">
       <div class="phase-head">
         <span class="num">2</span>
-        <h3>AI extraction — Tier 2</h3>
+        <h3>AI extraction — Tier 2 <em>— the one piece still outstanding</em></h3>
         <span class="est">~1–2 days</span>
       </div>
       <ul>
@@ -576,7 +587,7 @@ episodes_fts  <span class="c">-- FTS5: title, description_text, transcript_text,
     <div class="phase">
       <div class="phase-head">
         <span class="num">3</span>
-        <h3>Search API + internal UI</h3>
+        <h3>Search API + internal UI <em>— built, on stdlib not FastAPI</em></h3>
         <span class="est">~2–3 days</span>
       </div>
       <ul>
@@ -590,7 +601,7 @@ episodes_fts  <span class="c">-- FTS5: title, description_text, transcript_text,
     <div class="phase">
       <div class="phase-head">
         <span class="num">4</span>
-        <h3>Transcription — Tier 3</h3>
+        <h3>Transcription — Tier 3 <em>— mostly unnecessary; 144 came free</em></h3>
         <span class="est">~2 days + backfill runtime</span>
       </div>
       <ul>
@@ -607,13 +618,14 @@ episodes_fts  <span class="c">-- FTS5: title, description_text, transcript_text,
     <div class="phase">
       <div class="phase-head">
         <span class="num">5</span>
-        <h3>Public widget + automation</h3>
+        <h3>Public widget + automation <em>— automation built; widget and alerting not</em></h3>
         <span class="est">~2 days</span>
       </div>
       <ul>
         <li>Read-only public search endpoint, rate-limited, no internal fields exposed. Embed as an iframe on laborheritage.org — simplest thing that survives whatever their site is built on.</li>
-        <li>Scheduled job (weekly, since both shows are weekly): poll feeds → ingest new → extract → transcribe → index. The whole pipeline unattended.</li>
-        <li>Failure notification, even if it's just an email on exception. A silent broken cron is how this quietly rots in six months.</li>
+        <li><strong>Built</strong> — <code>refresh.py</code> runs the whole pipeline in order, with <code>--loop 24h</code> and exponential backoff. The ordering that used to be easy to get wrong is now impossible to get wrong.</li>
+        <li>Failure notification, even if it's just an email on exception. A silent broken cron is how this quietly rots in six months. <strong>Still outstanding</strong> — it logs to stderr, and nobody watches stderr.</li>
+        <li>The <code>?q=</code> deep link means laborheritage.org can already link into a search from its own box; the styled embed is polish rather than plumbing.</li>
       </ul>
     </div>
   </section>

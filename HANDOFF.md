@@ -472,15 +472,27 @@ that parses SRT/DOCX into the `segments` table with `transcript_source =
 'descript'`. Nothing else changes — extraction, search, and UI all read from
 the same place.
 
+### Tests
+
+```bash
+node tests/test-waveform.mjs        # pure: peak reduction + snap-to-silence
+node tests/verify-clips.mjs         # live: needs the server running + network
+```
+
+`verify-clips.mjs` picks episodes at random each run, so it covers the bitrate
+spread over time rather than pinning one fixture. It checks duration, filename,
+and — the one that matters — that the clip's bytes appear **verbatim** in the
+source at the expected offset. That single check proves the cut is both
+correctly positioned and genuinely lossless.
+
 ### Known rough edges
 
 - `serve.py` binds `127.0.0.1` only and is stdlib `http.server` — correct for
   local, not for deployment.
 - No git *remote*. Commits are local only, so the work exists on one machine.
-- No test suite. The pipeline is deterministic and rebuilds in ~2½ minutes, so
-  `refresh.py` → check counts is the test for ingest. The clip cutter was
-  verified against live episodes (see the audio spec) but those checks live in
-  the scratchpad, not the repo — worth promoting to a committed script.
+- Ingest has no test suite; it's deterministic and rebuilds in ~2½ minutes, so
+  `refresh.py` → check counts is the test. The clip editor does have tests
+  (`tests/`) — see "Tests" below.
 - The waveform needs the whole episode (30–105 MB) before it draws. The modal
   is usable without it and peaks are cached after the first open, but the first
   open on a slow connection is a wait.
@@ -489,7 +501,5 @@ the same place.
   Search degrades gracefully now rather than 500ing, but the data is missing.
 - One transcript URL in Podbean's feed 404s ("MLK in Memphis") — their broken
   link, not ours. `transcripts.py --retry` re-attempts failures.
-- `docs/build-plan.html` still lists Phase 1 (ingest) as upcoming — it's done.
-  Worth reconciling if the doc gets shared internally again.
 - The client memo's cost scenarios assume backlogs of 100/300/600 per show.
   Still valid as projections, but we now know the *feed* only reaches 100.
