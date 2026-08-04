@@ -163,14 +163,15 @@ tags and 14 detected re-airs.
 - **Filters** — show, year, encores-only, by tag, with All / Reset
 - **Export** — CSV / TSV / JSON of the current result set, built for clean
   spreadsheet import (UTF-8 BOM, ISO dates, numeric durations, TRUE/FALSE)
-- **Clip extraction** — a **Clip** button on every moment opens a waveform
-  editor with the passage selected: drag handles, arrow-key nudge, snap to
-  silence, play with lead-in, then download an MP3 **cut losslessly from the
-  source** (no re-encode; within one 26 ms frame of the mark). Entirely in the
-  browser — audio streams from the CDN and never touches this server.
-- **Shareable links** — the address bar carries the full search state, and
-  `?ep=123&from=522&to=549` opens a single moment. `?q=` is the integration
-  point for a search box on laborheritage.org.
+- **Clip extraction** — the scissors at the right of the player opens a
+  waveform editor on what you're listening to: drag handles, arrow-key nudge,
+  zoom with the selection always centred, snap to silence, audition either cut
+  point, then download an MP3 **cut losslessly from the source** (no re-encode;
+  within one 26 ms frame of the mark). Entirely in the browser — audio streams
+  from the CDN and never touches this server.
+- **Shareable links** — the address bar carries the full search state;
+  `?ep=123&from=522&to=549` opens a single moment and `?help` opens the guide.
+  `?q=` is the integration point for a search box on laborheritage.org.
 - Light/dark, keyboard shortcuts, help modal with runnable examples
 
 ## Tests

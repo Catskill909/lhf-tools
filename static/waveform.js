@@ -192,6 +192,29 @@ export function drawWave(canvas, peaks, {
   }
 }
 
+/* ------------------------------------------------------ zoom window */
+
+/**
+ * The visible time range for the zoomed view.
+ *
+ * Centred on the selection and always wide enough to contain all of it plus
+ * `pad` seconds either side, so both handles stay on screen at every zoom
+ * level. Clamped to the file: near either end the window slides inward rather
+ * than being squashed, which would silently change the zoom level.
+ *
+ * Pure, so the clamping can be tested without a browser.
+ */
+export function clipWindow({ inSec, outSec, pad, duration, centre = null }) {
+  const dur = duration || outSec + pad;
+  const span = Math.min(dur, (outSec - inSec) + pad * 2);
+  const mid = centre == null ? (inSec + outSec) / 2 : centre;
+  let from = mid - span / 2, to = mid + span / 2;
+  if (from < 0) { to -= from; from = 0; }
+  if (to > dur) { from -= to - dur; to = dur; }
+  from = Math.max(0, from);
+  return { from, to: Math.max(from + 0.25, to) };
+}
+
 /* ------------------------------------------------- snap to silence */
 
 /**

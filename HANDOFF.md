@@ -81,13 +81,23 @@ search, jump-to-moment, re-air detection and tags. See the tier ladder in
 - Clipboard option for pasting straight into an open sheet
 
 **Clip extraction** *(all in the browser — our server does nothing)*
-- **Clip** button on every timestamped moment, opening a waveform editor with
-  that passage already selected
+- A **scissors icon at the right-hand end of the player transport** opens the
+  audio editor. It sits where a producer already is once they've found the
+  spot, rather than on every line of text above it. It seeds from the passage
+  that opened the player, or from wherever you've scrubbed to if you've moved
+  away — "edit what you're listening to".
+- Opening the editor **pauses the player**; the modal covers the transport, so
+  audio left running is audible but unreachable.
 - Two waveforms — whole episode for context, zoomed selection for precision —
   with draggable in/out handles, arrow-key nudge (±0.1s, ±1s with Shift), and
   a live in / out / length readout
-- **Play selection** and **play with a 2-second lead-in**, because you judge an
-  edit by hearing the approach to it
+- **Zoom** (− / + or scroll wheel) with the **selection always centred**, so
+  what you're adjusting never wanders off screen. The window always contains
+  the whole selection plus context, so both handles stay grabbable at every
+  zoom level — tested as an invariant.
+- **Play selection**, **play with a 2-second lead-in**, and **audition in /
+  audition out** (two seconds either side of a single cut) — an edit is judged
+  by ear, and usually one edge at a time
 - **Snap to silence** puts a cut in the gap between words instead of through
   the middle of one
 - Downloads as MP3 **cut straight from the source with no re-encoding** — the
@@ -103,6 +113,7 @@ search, jump-to-moment, re-air detection and tags. See the tier ladder in
 - Every search is reflected in the address bar — filters, tag, sort and all —
   so a result set can be sent to a colleague as a link
 - `?ep=123&from=522&to=549` opens the clip editor on a single moment
+- `?help` opens the guide directly, for linking someone to the instructions
 - `?q=` is the **public integration point**: laborheritage.org can put a search
   box on its own page and link straight in, with no API work
 
@@ -111,7 +122,12 @@ search, jump-to-moment, re-air detection and tags. See the tier ladder in
   seek (arrows ±5s, shift ±30s, space). Replaces the native control bar, which
   can't be styled consistently across browsers.
 - Light/dark, follows the OS, with a manual toggle
-- Help modal documenting every search feature, with runnable examples
+- Help modal documenting every search *and* editing feature, with runnable
+  examples. Set in columns across a wide dialogue so it reads as a guide
+  rather than a long scroll.
+- The clip editor is a full-width editing surface (up to 1600px), with
+  waveform heights scaled to the viewport and a scrolling body so Download
+  never slides out of reach on a short display.
 - Keyboard: `/` search, `?` help, `Esc` clear → reset → close
 - Back-to-top in the gutter; floats centred on tablet and phone
 - Responsive; no build step, single HTML file

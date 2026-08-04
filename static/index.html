@@ -449,8 +449,25 @@
   #helpClose:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
 
   .modal-body { padding: 0.4rem 1.6rem 1.6rem; }
-  .help-sec { padding-top: 1.3rem; }
-  .help-sec + .help-sec { border-top: 1px solid var(--rule); }
+
+  #help .modal { width: min(1180px, 96vw); }
+  /* Columns rather than a grid: grid rows align to the tallest cell and leave
+     ragged gaps under the short sections. Columns pack them tight, and a guide
+     read top-to-bottom in a column is the natural way to set this. */
+  #help .modal-body {
+    column-width: 22rem; column-gap: 2.4rem;
+  }
+  #help .help-sec { break-inside: avoid; }
+  /* Every section carries its own rule, so the columns stay legible however
+     they wrap — an adjacent-sibling rule breaks the moment they reflow. */
+  .help-sec { padding-top: 1.3rem; border-top: 1px solid var(--rule); }
+  #help .help-sec.wide { column-span: all; }
+  .help-list {
+    margin: 0.4rem 0 0; padding-left: 1.05rem;
+    font-size: 0.86rem; line-height: 1.55; color: var(--ink-2);
+  }
+  .help-list li { margin-bottom: 0.3rem; }
+  .help-list b { color: var(--ink); font-weight: 600; }
   .help-sec > h3 {
     margin: 0 0 0.15rem; font-size: 0.68rem; letter-spacing: 0.12em;
     text-transform: uppercase; color: var(--spot-ink); font-weight: 600;
@@ -668,33 +685,93 @@
 
 
   /* ---------------------------------------------------------- clip */
-  /* A button cannot legally nest inside a button — the parser silently closes
-     the outer one and the layout is then whatever error recovery decided.
-     The row makes the pairing explicit. */
-  .moment-row { display: flex; align-items: flex-start; gap: 0.4rem; }
-  .moment-row .moment { flex: 1; min-width: 0; }
-  .clip-btn {
-    flex: none; align-self: center;
-    background: none; border: 1px solid var(--rule-hard); border-radius: 2px;
-    color: var(--ink-3); font: inherit; font-size: 0.66rem;
-    letter-spacing: 0.08em; text-transform: uppercase;
-    padding: 0.1rem 0.4rem; cursor: pointer;
+  /* Edit lives at the right end of the transport, where a producer already is
+     when they've found the spot — not on every line of text above it. */
+  .pl-edit {
+    position: relative; flex: none;
+    display: grid; place-items: center;
+    width: 30px; height: 30px; border-radius: 50%;
+    background: none; border: none; padding: 0; cursor: pointer;
+    color: var(--ink-3);
+    transition: background 0.16s ease, color 0.16s ease;
   }
-  .clip-btn:hover { color: var(--spot-ink); border-color: var(--spot); }
-  .clip-btn:focus-visible { outline: 2px solid var(--focus); outline-offset: 1px; }
+  .pl-edit svg { width: 17px; height: 17px; fill: currentColor; }
+  .pl-edit:hover { background: var(--spot-soft); color: var(--spot-ink); }
+  .pl-edit:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
 
-  #clipModal .modal { width: min(760px, 100%); }
+  .pl-tip {
+    position: absolute; bottom: calc(100% + 9px); right: 50%;
+    transform: translate(50%, 3px);
+    background: var(--ink); color: var(--paper);
+    font-size: 0.7rem; letter-spacing: 0.04em; white-space: nowrap;
+    padding: 0.3rem 0.55rem; border-radius: 4px;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.22);
+    opacity: 0; pointer-events: none;
+    transition: opacity 0.16s ease, transform 0.16s ease;
+  }
+  .pl-tip::after {
+    content: ""; position: absolute; top: 100%; left: 50%; margin-left: -4px;
+    border: 4px solid transparent; border-top-color: var(--ink);
+  }
+  .pl-edit:hover .pl-tip,
+  .pl-edit:focus-visible .pl-tip { opacity: 1; transform: translate(50%, 0); }
+  @media (prefers-reduced-motion: reduce) {
+    .pl-tip, .pl-edit { transition: none; }
+  }
+
+  /* An editing surface, not a dialogue box — it should use the screen the way
+     a waveform wants to be used: wide. Held as a flex column with a scrolling
+     body so Download never scrolls out of reach on a short display. */
+  #clipModal { padding: 3vh 1rem; }
+  #clipModal .modal {
+    width: min(1600px, 97vw);
+    max-height: 94vh;
+    display: flex; flex-direction: column;
+  }
+  #clipModal .modal-head, #clipModal .modal-actions { flex: none; }
+  #clipModal .modal-body {
+    flex: 1 1 auto; overflow-y: auto;
+    display: flex; flex-direction: column;
+  }
   .wave-label {
     font-size: 0.64rem; letter-spacing: 0.11em; text-transform: uppercase;
     color: var(--ink-3); margin: 0 0 0.3rem;
+  }
+  .wave-head {
+    display: flex; align-items: baseline; justify-content: space-between;
+    gap: 1rem; margin-bottom: 0.3rem;
+  }
+  .wave-head .wave-label { margin: 0; }
+  .zoom-ctl {
+    display: flex; align-items: center; gap: 0.15rem;
+    border: 1px solid var(--rule-hard); border-radius: 999px;
+    padding: 0.08rem 0.12rem;
+  }
+  .zoom-ctl button {
+    width: 22px; height: 22px; border-radius: 50%;
+    background: none; border: none; cursor: pointer;
+    color: var(--ink-2); font: inherit; font-size: 0.9rem; line-height: 1;
+    display: grid; place-items: center;
+    transition: background 0.14s ease, color 0.14s ease;
+  }
+  .zoom-ctl button:hover:not(:disabled) { background: var(--spot-soft); color: var(--spot-ink); }
+  .zoom-ctl button:disabled { opacity: 0.3; cursor: default; }
+  .zoom-ctl button:focus-visible { outline: 2px solid var(--focus); outline-offset: 1px; }
+  #zoomLabel {
+    font-family: ui-monospace, Consolas, monospace; font-variant-numeric: tabular-nums;
+    font-size: 0.64rem; color: var(--ink-3); min-width: 3.1rem; text-align: center;
   }
   .wave-box {
     position: relative; background: var(--paper-2);
     border: 1px solid var(--rule); border-radius: 3px;
     margin-bottom: 0.9rem;
   }
-  .wave-box canvas { display: block; width: 100%; height: 68px; cursor: crosshair; }
-  .wave-box.zoom canvas { height: 96px; }
+  .wave-box canvas {
+    display: block; width: 100%; cursor: crosshair;
+    height: clamp(58px, 9vh, 112px);
+  }
+  /* The zoomed view is where the work happens, so it gets the room. */
+  .wave-box.zoom canvas { height: clamp(148px, 26vh, 320px); }
 
   /* Handles sit on the zoomed view where precision matters. */
   .handle {
@@ -886,7 +963,14 @@
       <p class="wave-label">Whole episode — drag to move the selection</p>
       <div class="wave-box"><canvas id="waveAll"></canvas></div>
 
-      <p class="wave-label">Selection — drag the handles to trim</p>
+      <div class="wave-head">
+        <p class="wave-label">Selection — drag the handles to trim</p>
+        <div class="zoom-ctl">
+          <button id="zoomOut" aria-label="Zoom out">&minus;</button>
+          <span id="zoomLabel">6.0s</span>
+          <button id="zoomIn" aria-label="Zoom in">+</button>
+        </div>
+      </div>
       <div class="wave-box zoom" id="zoomBox">
         <canvas id="waveZoom"></canvas>
         <button class="handle in"  id="hIn"  aria-label="In point"></button>
@@ -902,6 +986,8 @@
       <div class="clip-tools">
         <button class="tool" id="playSel">▶ Play selection</button>
         <button class="tool" id="playLead">▶ With 2s lead-in</button>
+        <button class="tool" id="audIn">▶ Audition in</button>
+        <button class="tool" id="audOut">▶ Audition out</button>
         <button class="tool" id="snapIn">Snap in to silence</button>
         <button class="tool" id="snapOut">Snap out to silence</button>
       </div>
@@ -1052,22 +1138,74 @@
 
       <section class="help-sec">
         <h3>Making a clip</h3>
-        <p class="lede">Next to each timestamp is a <b>Clip</b> button. It opens
-          the episode's waveform with that passage already selected — drag the
-          handles to trim, play it back to check the edit, then download it as
-          an MP3.</p>
-        <p class="lede">The clip is cut straight from the original audio without
-          re-encoding, so it's identical in quality to the broadcast. Snap to
-          silence nudges a cut into the gap between words rather than through
-          the middle of one. The file name carries the show, date and timecode,
-          so a clip still says where it came from months later.</p>
+        <p class="lede">Click a timestamp to start playing, then press the
+          <b>scissors</b> at the right-hand end of the player. That opens the
+          audio editor on what you're listening to — the passage you clicked if
+          you're still inside it, otherwise wherever you've scrubbed to.</p>
+        <p class="lede">The clip is copied straight out of the original file
+          without re-encoding, so it is identical in quality to the broadcast,
+          not a second-generation copy. Cuts land within a fortieth of a second
+          of the mark.</p>
+      </section>
+
+      <section class="help-sec">
+        <h3>The audio editor</h3>
+        <p class="lede">Two waveforms. The top one is the whole episode — click
+          anywhere on it to move the selection there. The bottom one is the
+          selection close up, and it's where the work gets done.</p>
+        <ul class="help-list">
+          <li><b>Drag the red handles</b> to set the in and out points.</li>
+          <li><b>Zoom</b> with the &minus; and + buttons, or the scroll wheel
+            over the lower waveform. The selection stays centred, so what you're
+            adjusting never wanders off screen.</li>
+          <li><b>Arrow keys</b> nudge a selected handle by 0.1s — hold
+            <kbd>Shift</kbd> for a full second. Dragging can't reliably land on
+            a word boundary; nudging can.</li>
+        </ul>
+      </section>
+
+      <section class="help-sec">
+        <h3>Hearing the edit before you commit</h3>
+        <p class="lede">An edit is judged by ear, not by eye, so there are four
+          ways to listen:</p>
+        <ul class="help-list">
+          <li><b>Play selection</b> — exactly what will be downloaded.</li>
+          <li><b>With 2s lead-in</b> — starts just before the cut. You hear the
+            approach to an edit, which is how you can tell it's in the right
+            place.</li>
+          <li><b>Audition in</b> and <b>Audition out</b> — two seconds either
+            side of a single cut point, for checking one edge at a time.</li>
+        </ul>
+      </section>
+
+      <section class="help-sec">
+        <h3>Snap to silence</h3>
+        <p class="lede">Moves a cut point to the nearest gap between words. A
+          cut through the middle of a syllable sounds broken; one that lands in
+          the pause sounds deliberate. It only searches a second and a half
+          either way, so it tidies a mark rather than moving it somewhere else.</p>
+        <p class="lede">It needs the waveform, so it stays greyed out until the
+          audio has finished loading.</p>
+      </section>
+
+      <section class="help-sec">
+        <h3>What you get</h3>
+        <p class="lede">An MP3 named for where it came from — show, date, title
+          and timecode, like
+          <code>LHPH_2026-02-12_Striking-At-Kings_4330-4353.mp3</code> — so a
+          clip sitting in a folder in six months still explains itself. The same
+          details are written into the file's tags.</p>
+        <p class="lede">The download button shows the size before you commit to
+          it. All of this happens in your browser; the audio comes straight from
+          the podcast host.</p>
       </section>
 
       <section class="help-sec">
         <h3>Sharing what you found</h3>
         <p class="lede">The address bar always reflects what you're looking at,
           so any search can be copied and sent to someone — filters, sort order
-          and all. Links can also point straight at a single moment.</p>
+          and all. A link can also point at a single moment, opening the editor
+          on it.</p>
       </section>
 
       <section class="help-sec">
@@ -1084,7 +1222,7 @@
           quick answer to "have we run this already?"</p>
       </section>
 
-      <section class="help-sec">
+      <section class="help-sec wide">
         <h3>Keyboard</h3>
         <div class="keys">
           <div><kbd>/</kbd> search</div>
@@ -1107,7 +1245,7 @@
 
 <script type="module">
 import { cutClip, clipFilename, probeMp3 } from "./mp3cut.js";
-import { getPeaks, drawWave, snapToSilence } from "./waveform.js";
+import { getPeaks, drawWave, snapToSilence, clipWindow } from "./waveform.js";
 
 const $  = s => document.querySelector(s);
 const state = { q: "", show: null, year: null, encore: false, person: null, personLabel: "", sort: "newest" };
@@ -1284,16 +1422,12 @@ async function run() {
 
     const moments = (r.moments && r.moments.length) ? `
       <div class="moments">${r.moments.map(m =>
-        `<div class="moment-row">
-           <button class="moment" data-audio="${esc(r.audio_url || "")}"
-             data-t="${Math.floor(m.start_sec || 0)}" data-ep="${r.id}">
-             <span class="t">${hms(m.start_sec)}</span>
-             <span>${m.excerpt || ""}</span>
-           </button>
-           <button class="clip-btn" data-clip="${r.id}" data-from="${m.start_sec}"
-             data-to="${m.end_sec || (m.start_sec + 30)}"
-             title="Make a clip from here">Clip</button>
-         </div>`).join("")}
+        `<button class="moment" data-audio="${esc(r.audio_url || "")}"
+           data-t="${Math.floor(m.start_sec || 0)}" data-ep="${r.id}"
+           data-from="${m.start_sec}" data-to="${m.end_sec || (m.start_sec + 30)}">
+           <span class="t">${hms(m.start_sec)}</span>
+           <span>${m.excerpt || ""}</span>
+         </button>`).join("")}
        <div class="player" id="player-${r.id}"></div>
       </div>` : "";
 
@@ -1325,13 +1459,6 @@ async function run() {
 
   // Play from a spoken moment. One player at a time; reuse it if the same
   // episode is already loaded so seeking within an episode doesn't restart.
-  document.querySelectorAll(".clip-btn").forEach(b =>
-    b.addEventListener("click", ev => {
-      ev.stopPropagation();
-      const ep = data.results.find(r => String(r.id) === b.dataset.clip);
-      if (ep) openClip(ep, +b.dataset.from, +b.dataset.to);
-    }));
-
   document.querySelectorAll(".moment").forEach(b =>
     b.addEventListener("click", () => {
       const url = b.dataset.audio, t = +b.dataset.t, host = $("#player-" + b.dataset.ep);
@@ -1340,8 +1467,11 @@ async function run() {
       document.querySelectorAll(".player audio").forEach(a => {
         if (a.parentElement !== host) { a.pause(); a.parentElement.innerHTML = ""; }
       });
+      const ep = data.results.find(r => String(r.id) === b.dataset.ep);
       let audio = host.querySelector("audio");
-      if (!audio) { host.innerHTML = ""; audio = buildPlayer(host, url); }
+      if (!audio) { host.innerHTML = ""; audio = buildPlayer(host, url, ep); }
+      // Remember which passage opened the player, so Edit audio starts there.
+      host.querySelector(".pl")._range = { from: +b.dataset.from, to: +b.dataset.to };
       b.classList.add("playing");
       const go = () => { audio.currentTime = t; audio.play().catch(() => {}); };
       if (audio.readyState >= 1) go();
@@ -1429,7 +1559,7 @@ addEventListener("keydown", e => {
 
 
 /** Minimal transport: play/pause, seekable track, elapsed / total. */
-function buildPlayer(host, url) {
+function buildPlayer(host, url, ep) {
   const audio = document.createElement("audio");
   audio.preload = "metadata"; audio.src = url;
 
@@ -1441,7 +1571,18 @@ function buildPlayer(host, url) {
          aria-valuemin="0" aria-valuenow="0">
       <span class="pl-fill"></span><span class="pl-knob"></span>
     </div>
-    <span class="pl-time"><b>0:00</b> / --:--</span>`;
+    <span class="pl-time"><b>0:00</b> / --:--</span>
+    <button class="pl-edit" aria-label="Edit audio">
+      <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+        <path d="M9.64 7.64c.23-.5.36-1.05.36-1.64 0-2.21-1.79-4-4-4S2 3.79 2 6s1.79 4 4
+                 4c.59 0 1.14-.13 1.64-.36L10 12l-2.36 2.36C7.14 14.13 6.59 14 6 14c-2.21
+                 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4c0-.59-.13-1.14-.36-1.64L12 14l7
+                 7h3v-1L9.64 7.64zM6 8c-1.1 0-2-.89-2-2s.9-2 2-2 2 .89 2 2-.9 2-2
+                 2zm0 12c-1.1 0-2-.89-2-2s.9-2 2-2 2 .89 2 2-.9 2-2 2zm6-7.5c-.28
+                 0-.5-.22-.5-.5s.22-.5.5-.5.5.22.5.5-.22.5-.5.5zM19 3l-6 6 2 2 7-7V3z"/>
+      </svg>
+      <span class="pl-tip" role="tooltip">Edit audio</span>
+    </button>`;
   host.appendChild(wrap);
   host.appendChild(audio);
 
@@ -1449,7 +1590,21 @@ function buildPlayer(host, url) {
         track = wrap.querySelector(".pl-track"),
         fill  = wrap.querySelector(".pl-fill"),
         knob  = wrap.querySelector(".pl-knob"),
-        time  = wrap.querySelector(".pl-time");
+        time  = wrap.querySelector(".pl-time"),
+        edit  = wrap.querySelector(".pl-edit");
+
+  wrap._range = null;
+  edit.addEventListener("click", e => {
+    e.stopPropagation();
+    if (!ep) return;
+    // Edit where you're listening: keep the passage that opened the player if
+    // you're still inside it, otherwise start from wherever you scrubbed to.
+    const r = wrap._range, now = audio.currentTime || 0;
+    const inside = r && now >= r.from - 1 && now <= r.to + 1;
+    const from = inside ? r.from : now;
+    const to = inside ? r.to : Math.min(now + 30, audio.duration || now + 30);
+    openClip(ep, from, to);
+  });
 
   const paint = () => {
     const d = audio.duration || 0, c = audio.currentTime || 0;
@@ -1672,22 +1827,52 @@ addEventListener("keydown", e => {
 const clipModal = $("#clipModal");
 let clip = null;          // {url,title,show,date,peaks,duration,in,out,audio}
 let clipFocus = null;
-const ZOOM_PAD = 6;       // seconds of context either side of the selection
+const PAD_MIN = 0.25, PAD_MAX = 300;   // seconds of context either side
+const PAD_STEP = 1.6;                  // one click of the zoom control
 
 const fmt = t => {
   t = Math.max(0, t);
   const m = Math.floor(t / 60), s = t % 60;
   return `${m}:${s.toFixed(2).padStart(5, "0")}`;
 };
-const zoomWindow = () => {
-  // duration can be 0 if the feed omitted it and the decode hasn't landed yet;
-  // falling back to the selection keeps the maths finite.
-  const dur = clip.duration || clip.out + ZOOM_PAD;
-  return {
-    from: Math.max(0, clip.in - ZOOM_PAD),
-    to: Math.max(clip.in + 0.5, Math.min(dur, clip.out + ZOOM_PAD)),
+/* The zoomed view is centred on the selection and always shows the whole of
+   it plus `clip.pad` seconds of context each side — so both handles stay on
+   screen at every zoom level, and the thing you're adjusting stays put. */
+const computeWindow = () => clipWindow({
+  inSec: clip.in, outSec: clip.out, pad: clip.pad,
+  duration: clip.duration, centre: clip.view,
+});
+
+// While dragging, the window must not move: it is what the cursor position is
+// measured against, and recomputing it from the handle being dragged feeds the
+// handle's own movement back into the measurement.
+const zoomWindow = () => clip.frozen || computeWindow();
+
+/* Ease the view back to centre after a drag or a zoom, rather than snapping. */
+function recentre(now = false) {
+  cancelAnimationFrame(clip.viewRaf);
+  const target = (clip.in + clip.out) / 2;
+  if (now || clip.view == null) { clip.view = target; paintClip(); return; }
+  const step = () => {
+    if (!clip) return;
+    const d = target - clip.view;
+    if (Math.abs(d) < 0.02) { clip.view = target; paintClip(); return; }
+    clip.view += d * 0.28;
+    paintClip();
+    clip.viewRaf = requestAnimationFrame(step);
   };
-};
+  clip.viewRaf = requestAnimationFrame(step);
+}
+
+function setZoom(pad, animate = false) {
+  const dur = clip.duration || clip.out + PAD_MIN;
+  clip.pad = Math.max(PAD_MIN, Math.min(PAD_MAX, Math.min(pad, dur)));
+  $("#zoomLabel").textContent = clip.pad >= 10
+    ? `${Math.round(clip.pad)}s` : `${clip.pad.toFixed(1)}s`;
+  $("#zoomIn").disabled = clip.pad <= PAD_MIN + 1e-6;
+  $("#zoomOut").disabled = clip.pad >= Math.min(PAD_MAX, dur) - 1e-6;
+  recentre(!animate);
+}
 
 function paintClip() {
   const sel = { from: clip.in, to: clip.out };
@@ -1695,6 +1880,7 @@ function paintClip() {
 
   // The waveform is a 30-100 MB download; everything else works without it,
   // so the modal stays usable while it arrives rather than blocking on it.
+  if (!clip.peaks) baseline($("#waveAll"), $("#waveZoom"));
   if (clip.peaks) {
     drawWave($("#waveAll"), clip.peaks, {
       duration: clip.duration, from: 0, to: clip.duration,
@@ -1706,6 +1892,7 @@ function paintClip() {
     });
   }
   $("#snapIn").disabled = $("#snapOut").disabled = !clip.peaks;
+  $("#audIn").disabled = $("#audOut").disabled = false;
 
   const w = $("#zoomBox").clientWidth, span = z.to - z.from;
   $("#hIn").style.left  = ((clip.in  - z.from) / span) * w + "px";
@@ -1722,6 +1909,23 @@ function paintClip() {
     : "Download MP3";
 }
 
+/* Before the waveform arrives the boxes are empty, which looks like a failure
+   rather than a wait. A centre line reads as silence-so-far. */
+function baseline(...canvases) {
+  for (const c of canvases) {
+    const dpr = window.devicePixelRatio || 1;
+    const w = c.clientWidth, h = c.clientHeight;
+    if (!w || !h) continue;
+    if (c.width !== w * dpr || c.height !== h * dpr) { c.width = w * dpr; c.height = h * dpr; }
+    const g = c.getContext("2d");
+    g.setTransform(dpr, 0, 0, dpr, 0, 0);
+    g.clearRect(0, 0, w, h);
+    g.fillStyle = getComputedStyle(document.documentElement)
+      .getPropertyValue("--rule-hard").trim() || "#3a372f";
+    g.fillRect(0, Math.round(h / 2), w, 1);
+  }
+}
+
 function clipSay(msg, pct) {
   $("#clipStatus").innerHTML = msg
     ? msg + (pct != null ? `<span class="bar"><i style="width:${pct}%"></i></span>` : "")
@@ -1734,12 +1938,19 @@ async function openClip(ep, fromSec, toSec) {
     url: ep.audio_url, title: ep.title, show: ep.show_name,
     date: ep.published_at, id: ep.id,
     in: fromSec, out: toSec, duration: ep.duration_sec || 0,
-    peaks: null, audio: null, probe: null, raf: 0, abort: new AbortController(),
+    peaks: null, audio: null, probe: null, raf: 0, viewRaf: 0,
+    pad: 6, view: null, frozen: null, abort: new AbortController(),
   };
+
+  // The modal covers the transport, so a player left running is audio you can
+  // hear but can't reach.
+  document.querySelectorAll(".player audio").forEach(a => a.pause());
+  document.querySelectorAll(".moment.playing").forEach(x => x.classList.remove("playing"));
   $("#clipEp").textContent = `${ep.title} · ${ep.show_name}`;
   clipModal.hidden = false;
   $("#clipClose").focus();
-  paintClip();
+  // Open framed on the passage, with a little context either side.
+  setZoom(Math.max(2, Math.min(6, (toSec - fromSec) / 2)));
   clipSay("Loading waveform…", 0);
 
   // Cheap and independent of the waveform — gives us the true bitrate, so the
@@ -1755,6 +1966,7 @@ async function openClip(ep, fromSec, toSec) {
     });
     clip.peaks = peaks;
     clip.duration = duration || clip.duration;
+    setZoom(clip.pad);
     clipSay(cached ? "" : "Ready.");
     paintClip();
   } catch (e) {
@@ -1766,6 +1978,7 @@ function closeClip() {
   if (clip) {
     clip.abort.abort();                  // don't keep pulling 75 MB nobody wants
     cancelAnimationFrame(clip.raf);
+    cancelAnimationFrame(clip.viewRaf);
     if (clip.audio) { clip.audio.pause(); clip.audio = null; }
   }
   clipModal.hidden = true;
@@ -1784,10 +1997,7 @@ function dragHandle(el, which) {
     if (!clip) return;
     e.preventDefault();
     const box = $("#zoomBox");
-    // Frozen at mousedown. Recomputing it per move would feed the handle's own
-    // movement back into the window it is measured against, and it races away
-    // from the cursor.
-    const z = zoomWindow();
+    const z = clip.frozen = computeWindow();
     const move = ev => {
       if (!clip) return;
       const r = box.getBoundingClientRect();
@@ -1800,6 +2010,7 @@ function dragHandle(el, which) {
     const up = () => {
       removeEventListener("mousemove", move);
       removeEventListener("mouseup", up);
+      if (clip) { clip.frozen = null; recentre(); }
     };
     addEventListener("mousemove", move);
     addEventListener("mouseup", up);
@@ -1814,8 +2025,8 @@ function dragHandle(el, which) {
     else return;
     e.preventDefault();
     if (which === "in") clip.in = Math.max(0, Math.min(clip.in + d, clip.out - 0.2));
-    else clip.out = Math.min(clip.duration, Math.max(clip.out + d, clip.in + 0.2));
-    paintClip();
+    else clip.out = Math.min(clip.duration || Infinity, Math.max(clip.out + d, clip.in + 0.2));
+    recentre();
   });
 }
 dragHandle($("#hIn"), "in");
@@ -1858,15 +2069,25 @@ function playRange(from, to) {
   if (a.readyState >= 1) begin();
   else a.addEventListener("loadedmetadata", begin, { once: true });
 }
+$("#zoomIn").addEventListener("click", () => setZoom(clip.pad / PAD_STEP, true));
+$("#zoomOut").addEventListener("click", () => setZoom(clip.pad * PAD_STEP, true));
+$("#waveZoom").addEventListener("wheel", e => {
+  if (!clip) return;
+  e.preventDefault();
+  setZoom(clip.pad * (e.deltaY > 0 ? PAD_STEP : 1 / PAD_STEP));
+}, { passive: false });
+
 $("#playSel").addEventListener("click", () => playRange(clip.in, clip.out));
 $("#playLead").addEventListener("click", () => playRange(Math.max(0, clip.in - 2), clip.out));
+$("#audIn").addEventListener("click", () => playRange(Math.max(0, clip.in - 2), clip.in + 2));
+$("#audOut").addEventListener("click", () => playRange(Math.max(0, clip.out - 2), clip.out + 2));
 $("#snapIn").addEventListener("click", () => {
   clip.in = Math.min(snapToSilence(clip.peaks, clip.duration, clip.in), clip.out - 0.2);
-  paintClip();
+  recentre();
 });
 $("#snapOut").addEventListener("click", () => {
   clip.out = Math.max(snapToSilence(clip.peaks, clip.duration, clip.out), clip.in + 0.2);
-  paintClip();
+  recentre();
 });
 
 $("#clipGo").addEventListener("click", async () => {
@@ -1920,6 +2141,7 @@ function readURL() {
 /* ?ep=123&from=522&to=549 opens that episode's clip editor directly, so a
    moment can be shared as a link rather than described in an email. */
 async function openFromURL(p) {
+  if (p.has("help")) openHelp();          // so the guide can be linked to directly
   const id = p.get("ep");
   if (!id) return;
   const from = parseFloat(p.get("from")), to = parseFloat(p.get("to"));

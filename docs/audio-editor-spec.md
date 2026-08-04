@@ -166,12 +166,25 @@ difference between "roughly there" and "on the word."
 
 **Decisions aimed at production work, not general audio editing:**
 
+- **The entry point is the player, not the text.** A clip button on every
+  timestamp was tried first and was wrong: it stretched the full width of the
+  results column, competed with the excerpt it sat next to, and didn't read as
+  an edit control. A scissors icon at the right-hand end of the transport is
+  where a producer already is once they've found the spot. It seeds from the
+  passage that opened the player, or from wherever they scrubbed to.
+- **Zoom keeps the selection centred.** The window is always wide enough to
+  hold the whole selection plus context, so both handles stay grabbable at any
+  zoom level. That invariant is tested (`clipWindow` in `tests/`), because it
+  is the one property the drag UI cannot work without.
 - **Snap to silence.** The single most useful aid. We already have the peak
   data — find the nearest local minimum and put the cut there. A clean cut
   lands in the gap between words; a cut mid-syllable sounds broken. One
   keystroke.
 - **Play with lead-in** — 2 seconds before the in-point. You judge an edit by
   hearing the approach to it, not the clip in isolation.
+- **Audition in / audition out** — two seconds either side of one cut point.
+  Edits are usually wrong at one edge, and checking that edge shouldn't mean
+  sitting through the whole clip.
 - **Length shown prominently.** These people fill broadcast slots. "How long is
   it" is the question, not "where does it end."
 - **Nudge ±0.1 s** by arrow key. Dragging can't hit a word boundary.
