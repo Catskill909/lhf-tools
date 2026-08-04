@@ -189,7 +189,7 @@ problem is solved, search now reaches the audio — and topics are the next step
 | `ingest/transcripts.py` | Podcast 2.0 `.srt` → `segments`. Idempotent; `--retry` re-attempts failures. |
 | `refresh.py` | Runs all three pipeline steps in order; `--loop 24h` schedules itself. |
 | `docs/export-spec.md` | Export design + the CSV details that decide whether it imports cleanly. **Built.** |
-| `docs/audio-editor-spec.md` | Browser-side clip editor. **Read the memory constraint first.** |
+| `docs/audio-editor-spec.md` | Browser-side clip editor: lossless MP3 frame-copy export, 5 phases. |
 | `ingest/enrich.py` | Deterministic enrichment, **no AI**. Re-airs + linked entities. Safe to re-run. |
 | `ingest/schema.sql` | Tables, FTS5 index, triggers. Already has `transcript_source` and a source-agnostic `segments` table. |
 | `serve.py` | JSON API + serves the UI. Stdlib `http.server`; swap for FastAPI at deploy. |
@@ -399,37 +399,23 @@ Not planned, just captured. Roughly cheapest first:
 The thread: they don't just need to *find* things, they need to *use* them on
 air. Search was the prerequisite; the tools above are the actual job.
 
-## Idea parked: clip extraction
+## Clip extraction — now specced
 
-Raised at the end of the session, worth writing down while it's fresh.
+Fully specced in `docs/audio-editor-spec.md`. The headline decisions:
 
-Now that every spoken moment has a timestamp and an inline player, the archive
-knows exactly where any passage starts and ends. That's most of what you need
-to let someone **select a range and pull a clip out of the audio** — for a
-promo, a social post, or dropping a segment into a future show.
+- **Export by copying MP3 frames, not re-encoding.** Verified against a real
+  file: 626/627-byte frames, 26.12 ms each, 24,000 bytes/sec exactly. A clip is
+  the frames between two timestamps, copied byte-for-byte. Bit-identical to the
+  source, instant, ~80 lines, no library. A 2-min clip is 2.9 MB.
+- **Cut accuracy is one frame (26 ms)** — inaudible in speech.
+- **Zero server load.** Range requests go to Podbean's CDN; we serve a modal.
+- **Waveform decoded at 8 kHz** for display only (101 MB transient, cached as
+  peaks in IndexedDB). Full-rate decode would be 555 MB and is never needed.
+- **No wavesurfer** — reversed from an earlier draft. With no decode needed for
+  export, the requirement is just peaks + two handles + a playhead: ~150 lines
+  of canvas, full control of the look, no 100 KB dependency.
 
-Why it fits this client specifically: Chris is already looking for material to
-replay. "Find the moment, mark in and out, export" is the same workflow he does
-in Descript, but starting from a search across the whole archive rather than
-one project file.
-
-Rough shape if it gets picked up:
-
-- **Selection** is nearly free — passages already carry `start_sec` / `end_sec`;
-  the UI would need in/out handles on the player track.
-- **Preview** is free — set `currentTime`, stop at the out point. No server work.
-- **Export** is the real decision. Client-side is possible for simple cuts
-  (fetch the byte range, though MP3 frame boundaries make naive slicing lossy),
-  but a small server-side `ffmpeg` call is far more predictable and gives clean
-  cuts plus format choice.
-- **Shareable links** — `?ep=123&from=522&to=549` would let someone send a
-  colleague an exact passage without exporting anything at all. That's the
-  cheapest version of this idea and probably the one to build first.
-
-Worth checking with LHF whether they'd actually use it before building —
-it's a genuinely different product surface, not a refinement of search.
-
----
+Five phases, ~2 days. Risk is in the waveform decode, not the cutting.
 
 ## Picking it back up
 
