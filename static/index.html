@@ -4,6 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>LHF Digital Asset Manager</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%231b1a17'/%3E%3Cg fill='%23d8503a'%3E%3Crect x='6' y='13' width='3' height='6' rx='1.5'/%3E%3Crect x='11.5' y='9' width='3' height='14' rx='1.5'/%3E%3Crect x='17' y='5.5' width='3' height='21' rx='1.5'/%3E%3Crect x='22.5' y='11' width='3' height='10' rx='1.5'/%3E%3C/g%3E%3C/svg%3E">
 <style>
   /* ---------------------------------------------------------------
      Two-color letterpress logic: ink + one spot red on paper stock.
@@ -786,12 +787,12 @@
     font-size: 0.7rem; color: var(--ink); min-width: 3.2rem; text-align: center;
   }
   .wave-box {
-    position: relative; background: var(--paper-2);
+    position: relative; overflow: hidden; background: var(--paper-2);
     border: 1px solid var(--rule); border-radius: 3px;
     margin-bottom: 0.9rem;
   }
   .wave-box canvas {
-    display: block; width: 100%; cursor: crosshair;
+    display: block; width: 100%; cursor: crosshair; user-select: none;
     height: clamp(58px, 9vh, 112px);
   }
   /* The zoomed view is where the work happens, so it gets the room. */
@@ -805,6 +806,12 @@
     display: grid; place-items: center; align-content: center; gap: 0.6rem;
     pointer-events: none;
   }
+  /* Without this the `hidden` attribute does nothing: it works by applying
+     display:none from the UA stylesheet, and any author display rule beats it.
+     The spinner loaded correctly and then sat on top of the finished waveform
+     forever, which read as "audio loading is broken" when it had in fact
+     already finished. Every other hidden element here has the same companion. */
+  .wave-load[hidden] { display: none; }
   .wave-load .ring { width: 46px; height: 46px; overflow: visible; }
   .wave-load circle {
     fill: none; stroke-width: 2.5;
@@ -1963,9 +1970,12 @@ function paintClip() {
   $("#snapIn").disabled = $("#snapOut").disabled = !clip.peaks;
   $("#audIn").disabled = $("#audOut").disabled = false;
 
-  const w = $("#zoomBox").clientWidth, span = z.to - z.from;
-  $("#hIn").style.left  = ((clip.in  - z.from) / span) * w + "px";
-  $("#hOut").style.left = ((clip.out - z.from) / span) * w + "px";
+  const w = $("#zoomBox").clientWidth, span = Math.max(1e-6, z.to - z.from);
+  // Clamped so a handle whose value sits outside the frozen drag window pins to
+  // the edge rather than being positioned over unrelated parts of the page.
+  const at = t => Math.max(0, Math.min(w, ((t - z.from) / span) * w));
+  $("#hIn").style.left  = at(clip.in) + "px";
+  $("#hOut").style.left = at(clip.out) + "px";
 
   $("#tIn").textContent = fmt(clip.in);
   $("#tOut").textContent = fmt(clip.out);
@@ -2023,6 +2033,10 @@ function clipSay(msg, pct) {
 }
 
 async function openClip(ep, fromSec, toSec) {
+  // Opening a second clip must stop the first download. Otherwise its progress
+  // callbacks keep driving the spinner over the clip that already finished,
+  // and its peaks land in whichever episode is open by the time it resolves.
+  if (clip) clip.abort.abort();
   clipFocus = document.activeElement;
   clip = {
     url: ep.audio_url, title: ep.title, show: ep.show_name,
@@ -2049,10 +2063,13 @@ async function openClip(ep, fromSec, toSec) {
   probeMp3(clip.url, { signal: clip.abort.signal }).then(p => { if (clip) { clip.probe = p; if (clip.peaks) paintClip(); } })
                     .catch(() => {});
 
+  const me = clip;                    // anything below must check it still owns the modal
+
   try {
     const { peaks, duration, cached } = await getPeaks(clip.url, `ep-${ep.id}`, {
-      signal: clip.abort.signal,
+      signal: me.abort.signal,
       onProgress: (l, t) => {
+        if (clip !== me) return;      // a superseded download talks to nobody
         if (!t) return showLoad(`Loading audio · ${mb(l)} MB`);
         // The download finishes well before the waveform does; decoding has no
         // progress to report, so say what's happening rather than sit at 100%.
@@ -2060,6 +2077,7 @@ async function openClip(ep, fromSec, toSec) {
         showLoad(`${mb(l)} of ${mb(t)} MB`, l / t);
       },
     });
+    if (clip !== me) return;
     clip.peaks = peaks;
     clip.duration = duration || clip.duration;
     setZoom(clip.pad);
@@ -2067,8 +2085,9 @@ async function openClip(ep, fromSec, toSec) {
     clipSay("");
     paintClip();
   } catch (e) {
+    if (clip !== me) return;          // superseded or closed — not our spinner to clear
     hideLoad();
-    if (clip && e.name !== "AbortError") clipSay("Couldn't load the audio: " + e.message);
+    if (e.name !== "AbortError") clipSay("Couldn't load the audio: " + e.message);
   }
 }
 
@@ -2132,14 +2151,32 @@ dragHandle($("#hIn"), "in");
 dragHandle($("#hOut"), "out");
 
 /* click the overview to move the whole selection there */
-$("#waveAll").addEventListener("click", e => {
-  if (!clip || !clip.peaks) return;
-  const r = e.currentTarget.getBoundingClientRect();
-  const t = ((e.clientX - r.left) / r.width) * clip.duration;
+/* Move the whole selection to a point on the overview, keeping its length.
+   recentre() is the part that was missing: without it the selection moved but
+   the zoomed view below stayed where it was, so the handles ended up outside
+   the visible window and the lower waveform looked frozen. */
+function overviewSeek(clientX) {
+  const r = $("#waveAll").getBoundingClientRect();
+  const dur = clip.duration || 0;
   const len = clip.out - clip.in;
-  clip.in = Math.max(0, Math.min(t - len / 2, clip.duration - len));
-  clip.out = clip.in + len;
-  paintClip();
+  const t = ((clientX - r.left) / r.width) * dur;
+  clip.in = Math.max(0, Math.min(t - len / 2, Math.max(0, dur - len)));
+  clip.out = Math.min(dur || clip.in + len, clip.in + len);
+  recentre(true);                     // instant: the view must track the pointer
+}
+
+// The label says "drag to move the selection", so let it drag, not just click.
+$("#waveAll").addEventListener("mousedown", e => {
+  if (!clip || !clip.peaks) return;
+  e.preventDefault();
+  overviewSeek(e.clientX);
+  const move = ev => { if (clip && clip.peaks) overviewSeek(ev.clientX); };
+  const up = () => {
+    removeEventListener("mousemove", move);
+    removeEventListener("mouseup", up);
+  };
+  addEventListener("mousemove", move);
+  addEventListener("mouseup", up);
 });
 
 function playRange(from, to) {

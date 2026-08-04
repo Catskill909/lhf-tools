@@ -487,6 +487,22 @@ class Handler(BaseHTTPRequestHandler):
             except FileNotFoundError:
                 return self._send(404, b"static/index.html missing", "text/plain")
 
+        # index.html carries an inline SVG icon, so browsers shouldn't ask for
+        # this at all — but crawlers and older clients do, and a 404 in the
+        # console reads as something being broken.
+        if path == "/favicon.ico":
+            icon = (
+                b"<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'>"
+                b"<rect width='32' height='32' rx='7' fill='#1b1a17'/>"
+                b"<g fill='#d8503a'>"
+                b"<rect x='6' y='13' width='3' height='6' rx='1.5'/>"
+                b"<rect x='11.5' y='9' width='3' height='14' rx='1.5'/>"
+                b"<rect x='17' y='5.5' width='3' height='21' rx='1.5'/>"
+                b"<rect x='22.5' y='11' width='3' height='10' rx='1.5'/>"
+                b"</g></svg>"
+            )
+            return self._send(200, icon, "image/svg+xml")
+
         # The UI was one file until the audio editor arrived; its modules load
         # as real ES modules, so they need to be served with a JS mime type.
         if path.endswith((".js", ".css")):
