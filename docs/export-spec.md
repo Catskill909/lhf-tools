@@ -1,6 +1,11 @@
 # Export — specification
 
-**Status:** specced, not built.
+**Status: BUILT** (4 Aug 2026). CSV / TSV / JSON export of the current result
+set, plus the `/episode/<id>/transcript` route. Verified: 78 results on screen,
+78 rows exported.
+
+Still outstanding from this spec: column picker, `.zip` transcript bundle,
+passage-level CSV, Dublin Core XML, citations, and storing the raw `.srt`.
 
 ## The principle
 

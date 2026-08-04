@@ -23,7 +23,9 @@ It found 22 encores and 5 programmes that ran on both — which I think is the
 "have we run this already" problem Chris described.
 
 There's also a Help button explaining the search options, with examples you can
-click to try.
+click to try, and an Export button — whatever you're looking at downloads as a
+spreadsheet that opens straight in Google Sheets, with links back to each
+episode, its transcript and the audio.
 
 Still to come is proper topic tagging and catching the guests who weren't
 linked in the show notes. I'll put together a first pass and send you a draft

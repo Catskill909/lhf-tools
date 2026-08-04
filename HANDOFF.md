@@ -67,6 +67,19 @@ search, jump-to-moment, re-air detection and tags. See the tier ladder in
   their own show notes. Click one to see every episode featuring it.
 - 22 encores flagged automatically from title convention
 
+**Export**
+- CSV / TSV / JSON of **exactly what's on screen** — same filters, same order,
+  same count. Calls `search()` rather than reimplementing the query, so the
+  file and the screen can't drift apart.
+- CSV written for spreadsheet import: UTF-8 BOM (Excel mangles "No Pasarán"
+  without it), ISO dates that parse as dates, numeric durations that sum,
+  `TRUE`/`FALSE` that Sheets treats as booleans
+- Three URL columns at different fidelities — Podbean page, original `.srt`,
+  and our cleaned transcript at `/episode/<id>/transcript`
+- Transcript text deliberately excluded: ~49k chars per episode against a
+  50k-character spreadsheet cell cap would truncate silently
+- Clipboard option for pasting straight into an open sheet
+
 **Interface**
 - Custom audio transport — play/pause, seekable track, elapsed/total, keyboard
   seek (arrows ±5s, shift ±30s, space). Replaces the native control bar, which
@@ -86,6 +99,8 @@ search, jump-to-moment, re-air detection and tags. See the tier ladder in
   `python3 ingest/transcripts.py --retry` will pick it up if they fix it
 - Public embed for laborheritage.org
 - Deployment (Docker/Coolify), auth for the internal view, off-box backups
+- Failure notification on the refresh loop (it logs to stderr; nobody watches stderr)
+- **Next up: audio editing / clip extraction** — see the parked idea below
 
 ## Scorecard against Harold's original email
 
@@ -106,6 +121,7 @@ search, jump-to-moment, re-air detection and tags. See the tier ladder in
 |---|---|
 | Search what was *said* on air | 144 transcripts, 882k words, pulled from the feed |
 | Jump to the exact moment | Click a timestamp, hear it — no Podbean cooperation needed |
+| Spreadsheet export | Whatever's on screen, ready for Sheets or Excel |
 
 **The fair summary:** the internal tool Chris described is finished and then
 some. The one genuine gap is **topics** (and the guests who weren't
@@ -137,6 +153,10 @@ problem is solved, search now reaches the audio — and topics are the next step
 > - **Proper search tools** — exact phrases, AND/OR/NOT, wildcards, searching a
 >   single field, and six ways to sort. There's a Help button explaining all of
 >   it, with examples you can click to run.
+> - **Export to a spreadsheet.** Whatever you're looking at — filtered however
+>   you've filtered it — downloads as a file that opens straight in Google
+>   Sheets or Excel, with dates, lengths and yes/no columns ready to sort and
+>   filter. Each row carries links to the episode, its transcript and the audio.
 >
 > **What's next**
 >
@@ -167,7 +187,8 @@ problem is solved, search now reaches the audio — and topics are the next step
 |---|---|
 | `ingest/ingest.py` | RSS → SQLite. Idempotent, keys on `<guid>`. Also the weekly-cron path. |
 | `ingest/transcripts.py` | Podcast 2.0 `.srt` → `segments`. Idempotent; `--retry` re-attempts failures. |
-| `refresh.py` | Runs all three pipeline steps in order. The weekly-cron entry point. |
+| `refresh.py` | Runs all three pipeline steps in order; `--loop 24h` schedules itself. |
+| `docs/export-spec.md` | Export design + the CSV details that decide whether it imports cleanly. **Built.** |
 | `ingest/enrich.py` | Deterministic enrichment, **no AI**. Re-airs + linked entities. Safe to re-run. |
 | `ingest/schema.sql` | Tables, FTS5 index, triggers. Already has `transcript_source` and a source-agnostic `segments` table. |
 | `serve.py` | JSON API + serves the UI. Stdlib `http.server`; swap for FastAPI at deploy. |

@@ -121,6 +121,8 @@ The UI is just a client — swap it for anything without touching the backend.
 |---|---|
 | `GET /api/search?q=&show=&year=&encore=&limit=` | ranked results with highlighted snippets |
 | `GET /api/facets` | shows, years, and totals for the filter chips |
+| `GET /api/export?format=csv\|tsv\|json&…` | the current result set as a file; same filter params as search |
+| `GET /episode/<id>/transcript` | plain-text transcript for one episode |
 
 `serve.py` is stdlib `http.server` — fine for local work. For deployment,
 swap in FastAPI behind the same two routes; the front end won't know.
@@ -152,6 +154,8 @@ tags and 14 detected re-airs.
 - **Re-air detection** — flags encores and programmes that ran on both shows
 - **Tags** — 232 people/orgs/books from the producers' own hyperlinks
 - **Filters** — show, year, encores-only, by tag, with All / Reset
+- **Export** — CSV / TSV / JSON of the current result set, built for clean
+  spreadsheet import (UTF-8 BOM, ISO dates, numeric durations, TRUE/FALSE)
 - Light/dark, keyboard shortcuts, help modal with runnable examples
 
 ## ⚠️ The feed only returns 100 episodes per show
