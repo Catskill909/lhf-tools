@@ -374,6 +374,37 @@
     background: var(--spot-soft); border-color: var(--spot); color: var(--spot-ink);
   }
 
+  /* Topics are inferred, tags are hand-linked. The gold left rule is the same
+     device the re-air line uses for "the archive worked this out", which is
+     exactly what a topic is. */
+  .ents.topics { margin-top: 0.55rem; }
+  .ent.topic { border-color: var(--gold); color: var(--ink-2); }
+  .ent.topic:hover { border-color: var(--gold); color: var(--ink); }
+  .ent.topic[aria-pressed="true"] {
+    background: color-mix(in srgb, var(--gold) 16%, transparent);
+    border-color: var(--gold); color: var(--ink);
+  }
+
+  /* Who was in it — a sentence, not a chip row. */
+  .people {
+    margin-top: 0.45rem; font-size: 0.79rem; color: var(--ink-2);
+    display: flex; flex-wrap: wrap; gap: 0.1rem 0.35rem; align-items: baseline;
+  }
+  .people .lbl {
+    font-size: 0.66rem; letter-spacing: 0.09em; text-transform: uppercase;
+    color: var(--ink-3);
+  }
+  .who {
+    background: none; border: none; padding: 0; font: inherit; cursor: pointer;
+    color: var(--ink); text-decoration: underline;
+    text-decoration-color: var(--rule-hard); text-underline-offset: 2px;
+  }
+  .who:hover { color: var(--spot-ink); text-decoration-color: var(--spot); }
+  .who:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+  .who[aria-pressed="true"] { color: var(--spot-ink); text-decoration-color: var(--spot); }
+
+  .active-topic { border-color: var(--gold); background: color-mix(in srgb, var(--gold) 16%, transparent); color: var(--ink); }
+
   .active-person {
     display: inline-flex; align-items: baseline; gap: 0.45rem;
     border: 1px solid var(--spot); background: var(--spot-soft);
@@ -1011,8 +1042,8 @@
   <ol class="results" id="results"></ol>
 
   <footer>
-    <b>Searching titles, show notes and transcripts.</b> Topic tagging and full
-    guest extraction layer onto this same database without changing the interface.
+    <b>Searching titles, show notes and transcripts</b>, with topics, guests and
+    interviewers worked out from the words themselves.
     <button class="try" id="footHelp" style="margin-left:.4rem">Search help</button>
   </footer>
 
@@ -1292,6 +1323,23 @@
       </section>
 
       <section class="help-sec">
+        <h3><span class="swatch" style="background:var(--gold)"></span>Topics</h3>
+        <p class="lede">Show notes say what happened, not what an episode is
+          <em>about</em>. The gold-edged topics are read from the notes and the
+          transcript, so they exist even where nobody wrote them down. Click one
+          to see everything on that subject. Unlike Tags, these are inferred —
+          right nearly always, but worth a glance before you cite them.</p>
+      </section>
+
+      <section class="help-sec">
+        <h3>Guests and interviewers</h3>
+        <p class="lede">Who was on, and who was asking. Read from the same pass,
+          which catches the guests who were never hyperlinked. Click any name to
+          see every episode they appear in — the producers' links and the ones
+          found in the audio both count.</p>
+      </section>
+
+      <section class="help-sec">
         <h3><span class="swatch" style="background:var(--gold)"></span>Also ran</h3>
         <p class="lede">A gold line under an episode means the same programme
           aired more than once — as an encore, or on both shows. That's the
@@ -1312,8 +1360,8 @@
     </div>
 
     <div class="modal-foot">
-      Searching episode titles, show notes and transcripts. Topic tagging and
-      full guest lists are coming next.
+      Searching episode titles, show notes and transcripts, plus topics, guests
+      and interviewers read out of the episodes themselves.
     </div>
 
   </div>
@@ -1324,7 +1372,7 @@ import { cutClip, clipFilename, probeMp3 } from "./mp3cut.js";
 import { getPeaks, drawWave, snapToSilence, clipWindow } from "./waveform.js";
 
 const $  = s => document.querySelector(s);
-const state = { q: "", show: null, year: null, encore: false, person: null, personLabel: "", sort: "newest" };
+const state = { q: "", show: null, year: null, encore: false, person: null, personLabel: "", topic: null, topicLabel: "", sort: "newest" };
 let timer, lastReq = 0;
 const CORPUS = { episodes: 0, hours: 0 };
 
@@ -1396,7 +1444,7 @@ function syncChips() {
       : (state[kind] || "") === val;      // "" is the All chip
     c.setAttribute("aria-pressed", String(active));
   });
-  const dirty = !!(state.q || state.show || state.year || state.encore || state.person);
+  const dirty = !!(state.q || state.show || state.year || state.encore || state.person || state.topic);
   $("#resetAll").hidden = !dirty;
 }
 
@@ -1413,6 +1461,7 @@ function onChip(e) {
 function resetAll() {
   state.q = ""; state.show = null; state.year = null; state.encore = false;
   state.person = null; state.personLabel = "";
+  state.topic = null; state.topicLabel = "";
   $("#q").value = "";
   $("#clear").style.display = "none";
   run();
@@ -1427,6 +1476,7 @@ async function run() {
   if (state.year)   p.set("year", state.year);
   if (state.encore) p.set("encore", "1");
   if (state.person) p.set("person", state.person);
+  if (state.topic)  p.set("topic", state.topic);
   p.set("sort", state.sort);
 
   syncChips();
@@ -1451,8 +1501,17 @@ async function run() {
   // syncChips() doesn't own this chip, the status line below does.
   if (state.person && !state.personLabel) {
     for (const r of data.results) {
-      const hit = (r.mentions || []).find(m => m.norm_text === state.person);
-      if (hit) { state.personLabel = hit.text; break; }
+      const hit = (r.mentions || []).find(m => m.norm_text === state.person)
+               || (r.people || []).find(p => p.normalized_name === state.person);
+      if (hit) { state.personLabel = hit.text || hit.name; break; }
+    }
+  }
+  // Same for ?topic= — the URL carries the normalised form, the pill shows
+  // the spelling the catalogue uses.
+  if (state.topic && !state.topicLabel) {
+    for (const r of data.results) {
+      const hit = (r.topics || []).find(t => t.normalized_name === state.topic);
+      if (hit) { state.topicLabel = hit.name; break; }
     }
   }
 
@@ -1461,17 +1520,24 @@ async function run() {
   const person = state.person
     ? ` <span class="active-person">tagged ${esc(state.personLabel || state.person)}<button id="dropPerson" aria-label="Remove this filter">&times;</button></span>`
     : "";
-  const narrowed = !!(state.q || state.show || state.year || state.encore || state.person);
+  const topicPill = state.topic
+    ? ` <span class="active-person active-topic">about ${esc(state.topicLabel || state.topic)}<button id="dropTopic" aria-label="Remove this filter">&times;</button></span>`
+    : "";
+  const narrowed = !!(state.q || state.show || state.year || state.encore || state.person || state.topic);
   lastTotal = n; lastScope = describeScope();
   $("#statusText").innerHTML = state.q
     // A phrase search is already quoted; wrapping it again reads as ""picket line"".
     ? `<b>${n}</b> result${n === 1 ? "" : "s"} for ${/^".*"$/.test(state.q.trim())
-        ? esc(state.q.trim()) : `“${esc(state.q)}”`}${shown}${person}`
-    : `<b>${n}</b> episodes${shown}${person}`;
+        ? esc(state.q.trim()) : `“${esc(state.q)}”`}${shown}${person}${topicPill}`
+    : `<b>${n}</b> episodes${shown}${person}${topicPill}`;
   syncSort();
   const dp = $("#dropPerson");
   if (dp) dp.addEventListener("click", () => {
     state.person = null; state.personLabel = ""; run();
+  });
+  const dt = $("#dropTopic");
+  if (dt) dt.addEventListener("click", () => {
+    state.topic = null; state.topicLabel = ""; run();
   });
 
   if (!data.count) {
@@ -1516,6 +1582,33 @@ async function run() {
            title="Show every episode tagged ${esc(m.text)}">${esc(m.text)}</button>`
       ).join("")}</div>` : "";
 
+    // Topics sit above Tags and are styled apart from them on purpose: a tag
+    // is a thing the producers linked, a topic is what the episode is about.
+    // Same control, different provenance — and the difference matters when
+    // someone is deciding whether to trust it.
+    const topics = (r.topics && r.topics.length) ? `
+      <div class="ents topics"><span class="lbl">Topics</span>${r.topics.map(t =>
+        `<button class="ent topic" data-topic="${esc(t.normalized_name)}"
+           aria-pressed="${state.topic === t.normalized_name}"
+           title="Show every episode about ${esc(t.name)}">${esc(t.name)}</button>`
+      ).join("")}</div>` : "";
+
+    // Who was in it. Reads as a sentence rather than a chip row, because
+    // "interviewed by X, with Y" is the question a producer is actually
+    // asking — and mentioned-only names are left off to keep it short.
+    const byRole = role => (r.people || []).filter(p => p.role === role);
+    const nameBtn = p =>
+      `<button class="who" data-person="${esc(p.normalized_name)}"
+         aria-pressed="${state.person === p.normalized_name}"
+         title="Show every episode with ${esc(p.name)}">${esc(p.name)}</button>`;
+    const guests = byRole("guest"), askers = byRole("interviewer");
+    const people = (guests.length || askers.length) ? `
+      <p class="people">
+        ${askers.length ? `<span class="lbl">Interviewed by</span> ${askers.map(nameBtn).join(", ")}` : ""}
+        ${askers.length && guests.length ? `<span class="dot">·</span>` : ""}
+        ${guests.length ? `<span class="lbl">${askers.length ? "with" : "Featuring"}</span> ${guests.map(nameBtn).join(", ")}` : ""}
+      </p>` : "";
+
     return `<li class="row">
       <div class="when mono"><span>${d.md}</span><span class="yr">${d.yr}</span></div>
       <div>
@@ -1527,8 +1620,10 @@ async function run() {
         <h2><a href="${esc(r.episode_url)}" target="_blank" rel="noopener">${esc(r.title)}</a></h2>
         ${r.excerpt_from === "transcript" ? `<div class="from-tx">Heard in this episode</div>` : ""}
         <p class="excerpt${r.excerpt_from === "transcript" ? " spoken" : ""}">${r.excerpt || ""}</p>
+        ${people}
         ${moments}
         ${reair}
+        ${topics}
         ${ents}
       </div>
     </li>`;
@@ -1556,10 +1651,21 @@ async function run() {
       else audio.addEventListener("loadedmetadata", go, { once: true });
     }));
 
-  document.querySelectorAll(".ent").forEach(b => {
+  // Tag chips and the guest/interviewer names in the people line are the same
+  // filter, so they share a handler — a name is a name however it was found.
+  document.querySelectorAll(".ent[data-person], .who").forEach(b => {
     b.addEventListener("click", () => {
       state.person = state.person === b.dataset.person ? null : b.dataset.person;
-      state.personLabel = b.textContent;
+      state.personLabel = b.textContent.trim();
+      run();
+      scrollTo({ top: 0, behavior: "smooth" });
+    });
+  });
+
+  document.querySelectorAll(".ent.topic").forEach(b => {
+    b.addEventListener("click", () => {
+      state.topic = state.topic === b.dataset.topic ? null : b.dataset.topic;
+      state.topicLabel = b.textContent.trim();
       run();
       scrollTo({ top: 0, behavior: "smooth" });
     });
@@ -1815,6 +1921,7 @@ function currentQuery() {
   if (state.year)   p.set("year", state.year);
   if (state.encore) p.set("encore", "1");
   if (state.person) p.set("person", state.person);
+  if (state.topic)  p.set("topic", state.topic);
   p.set("sort", state.sort);
   return p;
 }
@@ -1826,6 +1933,7 @@ function describeScope() {
   if (state.year)   bits.push(state.year);
   if (state.encore) bits.push("encores only");
   if (state.person) bits.push(`tagged ${state.personLabel}`);
+  if (state.topic)  bits.push(`about ${state.topicLabel || state.topic}`);
   return bits.filter(Boolean).join(" · ") || "the whole archive";
 }
 
@@ -2278,6 +2386,8 @@ function readURL() {
   state.encore = p.get("encore") === "1";
   state.person = p.get("person");
   state.personLabel = "";          // filled in from the rendered tags
+  state.topic = p.get("topic");
+  state.topicLabel = "";           // ditto, from the rendered topics
   if (SORTS.some(([k]) => k === p.get("sort"))) state.sort = p.get("sort");
   $("#q").value = state.q;
   if (state.q) $("#clear").style.display = "";

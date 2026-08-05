@@ -34,6 +34,19 @@ def connect():
     return conn
 
 
+def table_exists(conn, name):
+    """
+    The extraction tables are optional — the archive works without them, and a
+    database that has never had extract.py run against it must not 500 on a
+    filter that references them. Filters have to check before they build SQL;
+    decorate() can get away with catching OperationalError, but a WHERE clause
+    that mentions a missing table poisons the whole query including the count.
+    """
+    return conn.execute(
+        "SELECT 1 FROM sqlite_master WHERE type='table' AND name=?", (name,)
+    ).fetchone() is not None
+
+
 # Anything here means the user is writing a real query, not just typing words.
 # Covers LC/library conventions: boolean operators, grouping, phrases,
 # truncation, proximity, and field-scoped search (title:strike).
@@ -80,7 +93,7 @@ def fts_query(raw):
 
 
 def decorate(conn, rows, match=None):
-    """Attach re-airs, tags, and (when searching) matching spoken moments."""
+    """Attach re-airs, tags, topics, people and matching spoken moments."""
     if not rows:
         return []
     out = [dict(r) for r in rows]
@@ -99,6 +112,7 @@ def decorate(conn, rows, match=None):
     by_id = {r["id"]: r for r in out}
     for r in out:
         r["reairs"], r["mentions"], r["moments"] = [], [], []
+        r["topics"], r["people"] = [], []
 
     # Enrichment tables may not exist yet (fresh database, or a refresh still
     # in flight). Search should still work — degrade, don't 500.
@@ -108,6 +122,33 @@ def decorate(conn, rows, match=None):
                 WHERE episode_id IN ({marks}) AND is_boilerplate = 0
                 ORDER BY text""", ids):
             by_id[m["episode_id"]]["mentions"].append(dict(m))
+    except sqlite3.OperationalError:
+        pass
+
+    # Topics and people come from the AI extraction pass, which is optional —
+    # the archive is fully usable without it, so an un-extracted database must
+    # degrade to empty lists rather than erroring.
+    try:
+        for t in conn.execute(
+            f"""SELECT et.episode_id, t.name, t.normalized_name
+                FROM episode_topics et JOIN topics t ON t.id = et.topic_id
+                WHERE et.episode_id IN ({marks})
+                ORDER BY t.name COLLATE NOCASE""", ids):
+            by_id[t["episode_id"]]["topics"].append(dict(t))
+    except sqlite3.OperationalError:
+        pass
+
+    try:
+        # Role order, not alphabetical: a card should read "interviewed by X,
+        # with guests Y and Z", which is the order a producer thinks in.
+        for p in conn.execute(
+            f"""SELECT ep.episode_id, p.name, p.normalized_name, ep.role, ep.confidence
+                FROM episode_people ep JOIN people p ON p.id = ep.person_id
+                WHERE ep.episode_id IN ({marks})
+                ORDER BY CASE ep.role WHEN 'host' THEN 0 WHEN 'interviewer' THEN 1
+                                      WHEN 'guest' THEN 2 ELSE 3 END,
+                         p.name COLLATE NOCASE""", ids):
+            by_id[p["episode_id"]]["people"].append(dict(p))
     except sqlite3.OperationalError:
         pass
 
@@ -161,7 +202,7 @@ SORTS = {
 
 
 def search(conn, q="", show=None, year=None, encore=None, person=None,
-           sort=None, limit=200):
+           topic=None, role=None, sort=None, limit=200):
     where, params = [], []
 
     match = fts_query(q)
@@ -200,10 +241,30 @@ def search(conn, q="", show=None, year=None, encore=None, person=None,
     if encore == "1":
         where.append("e.is_encore = 1")
     if person:
-        where.append(
-            "e.id IN (SELECT episode_id FROM mentions "
-            "WHERE norm_text = ? AND is_boilerplate = 0)")
+        # A name can reach the catalogue two ways: the producers hyperlinked it,
+        # or the extraction pass heard it. Clicking a name must find every
+        # episode either way, so this is a union rather than a choice — and the
+        # people half is wrapped, because that table only exists after
+        # extraction has been run at least once.
+        clauses = ["e.id IN (SELECT episode_id FROM mentions "
+                   "WHERE norm_text = ? AND is_boilerplate = 0)"]
         params.append(person)
+        if table_exists(conn, "episode_people"):
+            clauses.append(
+                "e.id IN (SELECT ep.episode_id FROM episode_people ep "
+                "JOIN people p ON p.id = ep.person_id "
+                "WHERE p.normalized_name = ?" +
+                (" AND ep.role = ?)" if role else ")"))
+            params.append(person)
+            if role:
+                params.append(role)
+        where.append("(" + " OR ".join(clauses) + ")")
+
+    if topic and table_exists(conn, "episode_topics"):
+        where.append(
+            "e.id IN (SELECT et.episode_id FROM episode_topics et "
+            "JOIN topics t ON t.id = et.topic_id WHERE t.normalized_name = ?)")
+        params.append(topic)
 
     if where:
         sql += " AND " + " AND ".join(where)
@@ -235,6 +296,12 @@ def search(conn, q="", show=None, year=None, encore=None, person=None,
 
 
 def entities(conn, limit=400):
+    # mentions is created by enrich.py, not schema.sql, so it genuinely does
+    # not exist on a first boot — the container serves an empty database while
+    # it fills in behind itself, and this endpoint used to 500 for that whole
+    # window. Same guard the topics/people endpoints use.
+    if not table_exists(conn, "mentions"):
+        return {"count": 0, "entities": []}
     rows = conn.execute(
         """SELECT text, norm_text, COUNT(DISTINCT episode_id) AS n,
                   MAX(url) AS url
@@ -243,6 +310,41 @@ def entities(conn, limit=400):
            ORDER BY n DESC, text COLLATE NOCASE
            LIMIT ?""", (limit,)).fetchall()
     return {"count": len(rows), "entities": [dict(r) for r in rows]}
+
+
+def topics(conn, limit=400):
+    """The subject vocabulary, commonest first — the topic browse list."""
+    if not table_exists(conn, "episode_topics"):
+        return {"count": 0, "topics": [], "extracted": False}
+    rows = conn.execute(
+        """SELECT t.name, t.normalized_name, COUNT(DISTINCT et.episode_id) AS n
+           FROM episode_topics et JOIN topics t ON t.id = et.topic_id
+           GROUP BY t.id ORDER BY n DESC, t.name COLLATE NOCASE
+           LIMIT ?""", (limit,)).fetchall()
+    # schema.sql creates these tables up front, so their existence proves
+    # nothing — "extracted" has to mean "has rows", or the UI renders an empty
+    # topics panel on every archive that has never run the pass.
+    return {"count": len(rows), "topics": [dict(r) for r in rows],
+            "extracted": bool(rows)}
+
+
+def people(conn, role=None, limit=400):
+    """Guests and interviewers, for the browse lists and the ?person= links."""
+    if not table_exists(conn, "episode_people"):
+        return {"count": 0, "people": [], "extracted": False}
+    sql = """SELECT p.name, p.normalized_name, ep.role,
+                    COUNT(DISTINCT ep.episode_id) AS n
+             FROM episode_people ep JOIN people p ON p.id = ep.person_id"""
+    params = []
+    if role:
+        sql += " WHERE ep.role = ?"
+        params.append(role)
+    sql += """ GROUP BY p.id, ep.role
+               ORDER BY n DESC, p.name COLLATE NOCASE LIMIT ?"""
+    params.append(limit)
+    rows = conn.execute(sql, params).fetchall()
+    return {"count": len(rows), "people": [dict(r) for r in rows],
+            "extracted": bool(rows)}
 
 
 # ---------------------------------------------------------------- export
@@ -255,6 +357,9 @@ EXPORT_COLUMNS = [
     ("published",        "Published"),
     ("duration_min",     "Duration (min)"),
     ("is_encore",        "Encore"),
+    ("topics",           "Topics"),
+    ("guests",           "Guests"),
+    ("interviewer",      "Interviewer"),
     ("tags",             "Tags"),
     ("reair_dates",      "Also aired"),
     ("has_transcript",   "Transcript"),
@@ -297,6 +402,11 @@ def export_rows(conn, base_url, **kw):
             "duration_min": round((r["duration_sec"] or 0) / 60) or "",
             # TRUE/FALSE gives Sheets checkbox filtering; 1/0 would be numeric.
             "is_encore": "TRUE" if r["is_encore"] else "FALSE",
+            "topics": "; ".join(t["name"] for t in r.get("topics", [])),
+            "guests": "; ".join(p["name"] for p in r.get("people", [])
+                                if p["role"] == "guest"),
+            "interviewer": "; ".join(p["name"] for p in r.get("people", [])
+                                     if p["role"] == "interviewer"),
             "tags": "; ".join(m["text"] for m in r.get("mentions", [])),
             "reair_dates": "; ".join(
                 (a["published_at"] or "")[:10] for a in r.get("reairs", [])),
@@ -414,6 +524,8 @@ class Handler(BaseHTTPRequestHandler):
                     year=one("year"),
                     encore=one("encore"),
                     person=one("person"),
+                    topic=one("topic"),
+                    role=one("role"),
                     sort=one("sort"),
                     limit=min(int(one("limit") or 200), 1000),
                 )
@@ -429,6 +541,22 @@ class Handler(BaseHTTPRequestHandler):
                 conn.close()
             return self._send(200, json.dumps(data))
 
+        if path == "/api/topics":
+            conn = connect()
+            try:
+                data = topics(conn)
+            finally:
+                conn.close()
+            return self._send(200, json.dumps(data))
+
+        if path == "/api/people":
+            conn = connect()
+            try:
+                data = people(conn, role=one("role"))
+            finally:
+                conn.close()
+            return self._send(200, json.dumps(data))
+
         if path == "/api/export":
             fmt = (one("format") or "csv").lower()
             conn = connect()
@@ -436,7 +564,8 @@ class Handler(BaseHTTPRequestHandler):
                 rows, err = export_rows(
                     conn, f"http://{self.headers.get('Host', 'localhost:8000')}",
                     q=one("q") or "", show=one("show"), year=one("year"),
-                    encore=one("encore"), person=one("person"), sort=one("sort"))
+                    encore=one("encore"), person=one("person"),
+                    topic=one("topic"), role=one("role"), sort=one("sort"))
             finally:
                 conn.close()
             if err:

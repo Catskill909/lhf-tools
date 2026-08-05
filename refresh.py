@@ -15,6 +15,14 @@ Three steps that must run in sequence, because each depends on the last:
 Running one without the others leaves the app half-built. This exists so that
 can't happen by accident.
 
+ingest/extract.py — the AI pass for topics, guests and interviewers — is
+deliberately NOT one of them. It is the only step that needs a dependency, an
+API key and money, and this loop runs unattended inside the container. A daily
+job that can fail on an expired key, or quietly spend, is a different kind of
+thing from one that re-reads a public feed. Run it by hand after a batch of new
+episodes; the archive is fully usable in the meantime, just without topics on
+the newest few.
+
 Everything is idempotent: a re-run with no new episodes is a cheap no-op that
 updates existing rows in place. Both shows publish weekly, so daily is ample.
 

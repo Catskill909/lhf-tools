@@ -2,7 +2,9 @@
 
 > **Status: Phases 1–4 shipped.** 144 transcripts, 14,937 passages, 882,346
 > words, with jump-to-timestamp playback. Phases 5–6 remain: the 55-episode
-> gap (~$9.52) and AI enrichment over the transcripts (~$7).
+> gap (~$9.52) and AI enrichment over the transcripts — now **written and
+> tested but never run**, and measured at **$4.35** for the archive rather than
+> the ~$7 estimated here. See `docs/ai-layer.md`.
 
 **The finding that reframes this:** 145 of 200 episodes (72%) already publish
 full `.srt` transcripts in their RSS feeds, via the Podcast 2.0
@@ -129,11 +131,16 @@ the transcription source.
 
 ## Phase 6 — Enrichment over transcripts
 
-**Effort: ~1 day. Cost: ~$7 batched.**
+**Effort: built. Cost: $4.35 batched for the archive, ~2¢ per new episode**
+(measured, superseding the ~$7 estimated when this was written).
 
 Re-run the AI extraction with transcripts in context: guests never mentioned in
 show notes, topics, interviewer attribution, per-episode summaries. This is the
 Tier 2 pass described in the client memo, now with far better input.
+
+**Now written as `ingest/extract.py` and wired through the API, filters, export
+and UI — but never run.** It needs a key, a client decision, and an admin screen
+to run it from. `docs/ai-layer.md` is the decision doc.
 
 ---
 

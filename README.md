@@ -24,6 +24,9 @@ python3 ingest/enrich.py        # links      -> tags, re-air detection
 Skipping a step leaves the app half-built (a fresh database without the
 enrichment step has no tags and the API errors on a missing table).
 
+There is a fourth step, `ingest/extract.py`, which is **not** part of
+`refresh.py` — see [Topics, guests and interviewers](#topics-guests-and-interviewers).
+
 Then open <http://localhost:8000>. Ctrl-C to stop the server.
 
 ```bash
@@ -128,6 +131,7 @@ refresh.py             run the whole pipeline in order
 ingest/ingest.py       feed → SQLite
 ingest/transcripts.py  Podcast 2.0 .srt → segments
 ingest/enrich.py       deterministic enrichment (tags, re-airs) — no AI
+ingest/extract.py      the one AI step: topics, guests, interviewers
 ingest/schema.sql      tables, FTS5 index, triggers
 serve.py               JSON API + serves the UI and its JS
 static/index.html      the interface (markup, styles, app code — no build step)
@@ -173,6 +177,66 @@ stemmer. Stemming stores stems, which breaks prefix matching mid-word and makes
 `organiz*` behave unpredictably. Whole-word indexing plus explicit truncation
 gives the same recall and is predictable — which matters for cataloguers.
 
+## Topics, guests and interviewers
+
+⚠️ **Written and tested, but never run. There is no AI anywhere in production
+and no extracted data in the database.** See [docs/ai-layer.md](docs/ai-layer.md)
+for what this would add, what it costs, and what has to exist before it should
+be run for real.
+
+The last gap in the original brief, and the only place AI earns its keep here.
+Show notes describe an episode but never classify it, most guests are
+hyperlinked but not all, and nothing anywhere records who was asking the
+questions. `ingest/extract.py` reads the notes and the transcript and works out
+all three.
+
+```bash
+pip install anthropic                        # the project's only dependency
+export ANTHROPIC_API_KEY=sk-ant-...          # in production: a Coolify env var
+
+python3 ingest/extract.py --dry-run          # build and cost the batch, send nothing
+python3 ingest/extract.py                    # submit, wait, collect, build
+python3 ingest/extract.py --rebuild          # re-derive tables from stored output, free
+```
+
+`--dry-run` needs no key and no network — it builds every request against the
+real database and prices the job.
+
+**It is not part of `refresh.py`.** That loop runs unattended in the container
+and must stay stdlib-only, keyless and free; this step is none of those. Run it
+after a batch of new episodes — it only processes episodes it hasn't seen, so a
+re-run costs only what's new. Everything else works without it; the UI simply
+shows no topics.
+
+**It should not stay a shell command.** Anything that spends money and rewrites
+catalogue data wants an admin screen in front of it — trigger, cost preview,
+progress, diff — which the site does not yet have and needs for other reasons
+too (staff notes, tag corrections, `replayed_at` all have schema and no UI).
+
+Measured cost, batched, against the real archive:
+
+| | Tokens | Cost |
+|---|---|---|
+| Per episode | ~7,000 in, ~350 out | **$0.022** |
+| Initial run, 200 episodes | 1.55M | **$4.35** |
+| Ongoing, ~104 episodes/year | — | **~$2.26/year** |
+
+Two things make the output a catalogue rather than a pile of strings:
+
+- **A seeded vocabulary.** Asked for free-form topics across 200 episodes, any
+  model returns "unions", "labor unions" and "unionization" as three separate
+  topics. `extract.py` carries a ~50-term labor-history taxonomy the model must
+  prefer, and may only coin two new terms per episode when nothing fits. It
+  rides in the cached prompt prefix, so consistency is free.
+- **Raw output is kept.** Every response is stored verbatim in `extractions`.
+  A better *prompt* means paying again; a better *parser* means `--rebuild`,
+  which costs nothing and takes a second.
+
+Producer hyperlinks stay ground truth: they're fed to the model as spelling
+hints, and where the two disagree about how a name is written, the producers
+win. Names are normalised on the way in, so "Dr. Jeffrey Johnson" and "Jeffrey
+Johnson" are one person with one episode count.
+
 ## API
 
 The UI is just a client — swap it for anything without touching the backend.
@@ -181,6 +245,8 @@ The UI is just a client — swap it for anything without touching the backend.
 |---|---|
 | `GET /api/search?q=&show=&year=&encore=&limit=` | ranked results with highlighted snippets |
 | `GET /api/facets` | shows, years, and totals for the filter chips |
+| `GET /api/topics` | the subject vocabulary, commonest first |
+| `GET /api/people?role=guest\|interviewer\|host` | guests and interviewers with episode counts |
 | `GET /api/export?format=csv\|tsv\|json&…` | the current result set as a file; same filter params as search |
 | `GET /api/episode/<id>` | one episode, for shared moment links |
 | `GET /episode/<id>/transcript` | plain-text transcript for one episode |
@@ -217,7 +283,13 @@ tags and 14 detected re-airs.
   that second in an inline player
 - **Re-air detection** — flags encores and programmes that ran on both shows
 - **Tags** — 232 people/orgs/books from the producers' own hyperlinks
-- **Filters** — show, year, encores-only, by tag, with All / Reset
+- **Topics** *(built, no data until the extraction pass is run)* — what each
+  episode is *about*, from a seeded labor-history vocabulary; click one to see
+  everything on that subject
+- **Guests and interviewers** *(same)* — including the guests nobody
+  hyperlinked, and who was asking the questions that week
+- **Filters** — show, year, encores-only, by tag, by topic, by person, with
+  All / Reset
 - **Export** — CSV / TSV / JSON of the current result set, built for clean
   spreadsheet import (UTF-8 BOM, ISO dates, numeric durations, TRUE/FALSE)
 - **Clip extraction** — the scissors at the right of the player opens a
@@ -297,9 +369,12 @@ episodes is plenty to design against.
 - **`segments`** — transcript chunks with optional timestamps and speaker tags.
   Deliberately source-agnostic: Descript SRT and Google `BatchRecognize` output
   both land here identically.
-- **`people` / `topics`** — empty until the Tier 2 extraction pass. The
-  `normalized_name` unique key is the dedup hook so "Dr. Jeffrey Johnson" and
-  "Jeffrey Johnson" collapse into one person instead of two.
+- **`people` / `topics`** — filled by `extract.py`. The `normalized_name`
+  unique key is the dedup hook so "Dr. Jeffrey Johnson" and "Jeffrey Johnson"
+  collapse into one person instead of two. `episode_people.role` carries
+  host / interviewer / guest / mentioned.
+- **`extractions`** — raw model output, one row per episode, kept so the
+  parsing can be changed and re-run for free.
 - **`episode_notes`** — internal staff notes and `replayed_at`, for the
   "have we already run this" workflow.
 - **`episodes_fts`** — FTS5 over title + description + transcript, kept in sync
@@ -335,7 +410,11 @@ FTS5 syntax worth knowing: `"exact phrase"`, `labor NOT history`,
 - **Deploy it.** The container files are written and the pipeline is proven,
   but this has never been built or run as an image — there is no Docker on the
   dev machine. Coolify will be the first thing to build it.
-- AI extraction pass over `description_text` + transcripts → `topics`,
-  un-hyperlinked guests, interviewer roles (~$7 batched). The last gap in the
-  original brief.
+- **An admin interface.** The blocker for the AI layer and for three features
+  the schema already supports with no way to reach them: staff notes, tag
+  corrections, and marking an episode re-aired. Needs auth in front of it.
+- **Run the extraction pass**, once there's a screen to run it from.
+  `ingest/extract.py` is written and its output path is tested end to end, but
+  it has never touched the live API — there is no key on the dev machine.
+  `--dry-run` prices it at $4.35. See [docs/ai-layer.md](docs/ai-layer.md).
 - The 55 episodes with no feed transcript (~$9.52)

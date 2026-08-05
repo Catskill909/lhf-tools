@@ -100,11 +100,66 @@ the oldest drop out of the feed and get harder to reach.
 
 ## Where it could go
 
-1. **Topics** — the one part of the original list still missing. Show notes
-   don't state them outright, so it needs a pass over the descriptions and
-   transcripts to work them out. The one genuinely useful job for AI here, and a
-   small one. The same pass picks up guests who weren't hyperlinked, and who was
-   interviewing.
+Everything above was built by reading what's already published — the feed, the
+show notes, the transcripts, the links you write yourself. **That approach has
+now gone about as far as it can.** Nothing in the archive uses AI, and nothing
+in it needs to.
+
+The remaining items split into two kinds: things that are just more work, and
+one that's a decision.
+
+### The decision: topics, and the rest of the reading
+
+**Topics are the one part of the original list still missing**, and they're
+missing for a specific reason — show notes describe an episode but never
+classify it. Neither do the hashtags: `#LaborHistory` is on 176 of the 200.
+Nothing to scrape. The only way to get topics is to have something read the
+episodes.
+
+The same reading picks up **guests who weren't hyperlinked** and **who was
+interviewing** — the last two gaps in Harold's list.
+
+I've built and tested that pass, so the groundwork is done and the plumbing is
+in place. **I haven't run it**, because that's your call and your money, and
+because it should be run from a proper admin screen rather than a developer's
+laptop (more on that below).
+
+What it would cost, measured against your actual archive rather than guessed:
+
+| | |
+|---|---|
+| Reading all 200 episodes, once | **about $4** |
+| Each new episode from then on | **about 2 cents** |
+| Which, at two shows a week, is | **about $2 a year** |
+
+Those numbers are small enough that cost isn't really the question. The
+question is whether you want the archive to make judgements at all, and how
+much you want it to make.
+
+Once something is reading the episodes, the same pass could also give you:
+
+- **Consistent summaries** — one or two lines per episode in a house voice,
+  which is what a search box on laborheritage.org would show
+- **Names fixed in the transcripts** — the machine transcripts mangle names,
+  which is why they're searchable but not quotable; this would change that
+- **Segment boundaries** — both shows run several items per episode, so this
+  turns "find the episode" into "find the eight-minute piece"
+- **"More like this"** — useful when something falls through and you need to
+  fill the hour
+- **Suggested re-airs** — topic plus duration plus how long since it last ran,
+  ranked. This is the scheduling question the whole archive was built to answer
+
+None of it is decided, none of it is running, and it's all worth a conversation
+rather than an email — the six things above differ a lot in usefulness and
+hardly at all in price.
+
+### The rest
+
+1. **An admin screen.** Needed before any of the above, and honestly needed
+   anyway. Something behind a login where you can start a job and see what it
+   did — and, separately from AI, add a staff note, fix a wrong tag, or mark an
+   episode as already re-aired. The archive can already store all three; there's
+   just no way for a person to enter them.
 2. **The rest of the archive** — everything older than the feed reaches.
 3. **The search box** on laborheritage.org.
 4. **Producer tools**, if they'd help: a "not aired since" list for scheduling,

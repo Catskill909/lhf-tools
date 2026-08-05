@@ -267,7 +267,7 @@
   <div class="callout warn">
     <span class="label">Read this first — the plan below was overtaken by events</span>
     <p>This document was written before we discovered that <strong>the feeds already publish transcripts</strong> in the Podcast&nbsp;2.0 <code>&lt;podcast:transcript&gt;</code> namespace. 144 of 200 episodes carry one, free. That removed most of the transcription problem this plan spends its first half solving, and cut the projected cost from ~$102 to ~$9.52 for the remaining gap.</p>
-    <p>What actually got built: <strong>ingest, transcripts, deterministic enrichment, full-text search, the interface, spreadsheet export and a lossless browser-side clip editor</strong> — with no AI and no Google Cloud account. The one phase still outstanding is the AI extraction pass for topics and un-hyperlinked guests (~$7 batched).</p>
+    <p>What actually got built: <strong>ingest, transcripts, deterministic enrichment, full-text search, the interface, spreadsheet export and a lossless browser-side clip editor</strong> — with no AI and no Google Cloud account. The AI extraction pass for topics and un-hyperlinked guests is now <strong>written and wired end to end but never run</strong> — measured at $4.35 for the whole archive and about 2¢ per new episode. It needs a client decision, a key, and an admin screen to run it from; see <code>docs/ai-layer.md</code>.</p>
     <p>The costing sections are kept because they remain the right analysis <em>if</em> the 55 untranscribed episodes or the pre-feed backlog ever need doing. Treat the phase list as history, not as a to-do list — <code>HANDOFF.md</code> is the current state.</p>
   </div>
 

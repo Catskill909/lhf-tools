@@ -40,6 +40,12 @@ Everything achievable without AI is built: metadata, transcripts, spoken-word
 search, jump-to-moment, re-air detection and tags. See the tier ladder in
 `docs/lhf-podcast-spec.html`; only the AI tier remains.
 
+**Scraping has gone as far as it goes.** The AI tier is now written and wired
+end to end (`ingest/extract.py`, plus topics/guests/interviewers through the
+API, filters, export and UI) but **has never been run — there is no AI in
+production and no extracted data in the database.** It needs a key, a client
+decision, and an admin screen to run it from. See `docs/ai-layer.md`.
+
 ### Working now
 
 **Search**
@@ -138,8 +144,13 @@ search, jump-to-moment, re-air detection and tags. See the tier ladder in
 
 ### Not built yet
 
-- **Topics, un-hyperlinked guests, interviewer roles** → needs the AI pass
-  (~$7 batched). This is the one remaining gap in Harold's original ask.
+- **Topics, un-hyperlinked guests, interviewer roles** → the code is written
+  and tested (`ingest/extract.py` + full API/UI path) but **has never been
+  run**: no key, no data, nothing live. $4.35 for the archive, ~2¢ per new
+  episode. The one remaining gap in Harold's original ask, now a decision
+  rather than a build. See `docs/ai-layer.md`.
+- **An admin interface** → the blocker for the above, and for staff notes, tag
+  corrections and `replayed_at`, all of which have schema and no UI. Needs auth.
 - The 55 episodes with no feed transcript (~$9.52 via Google STT)
 - One broken transcript link on Podbean's side ("MLK in Memphis" 404s);
   `python3 ingest/transcripts.py --retry` will pick it up if they fix it
@@ -165,8 +176,8 @@ search, jump-to-moment, re-air detection and tags. See the tier ladder in
 | Find older shows to replay | ✅ **Done** | Search, filter, sort by duration for a slot of a given length. |
 | Check if a segment is "in the can" | ✅ **Done** | Re-air detection incl. cross-show. Better than asked. |
 | Catalogue **guests** | 🟡 **Partial** | 232 names — but only those the producers hyperlinked. |
-| Catalogue **topics** | ❌ **Not built** | Needs AI. Hashtags tested and useless (`#LaborHistory` on 176/200). |
-| Catalogue **interviewers** | ❌ **Not built** | Needs AI, but it's a two-host show — a small job. |
+| Catalogue **topics** | 🟡 **Built, not run** | Needs AI + a client decision. Hashtags tested and useless (`#LaborHistory` on 176/200). $4.35 for the archive. |
+| Catalogue **interviewers** | 🟡 **Built, not run** | Same pass. It's a two-host show — a small job once it runs. |
 | Public search box on laborheritage.org | 🟡 **Works, not deployed** | `?q=` deep links make a plain search box work already; needs hosting. |
 
 **Delivered beyond the ask** — neither was requested, both came free:
@@ -182,10 +193,13 @@ search, jump-to-moment, re-air detection and tags. See the tier ladder in
 **The fair summary:** the internal tool Chris described is finished and then
 some. The one genuine gap is **topics** (and the guests who weren't
 hyperlinked) — everything deterministic has been mined, and that last piece
-needs a model reading prose. It's the cheap pass: ~$7 batched.
+needs a model reading prose. That pass is now written and wired end to end but
+**never run**: $4.35 for the whole archive, ~2¢ per new episode.
 
 Don't tell the client it's finished. Tell them the archive works, the re-air
-problem is solved, search now reaches the audio — and topics are the next step.
+problem is solved, search now reaches the audio — and topics are the next
+decision, not the next build. It needs their yes, a key, and an admin screen to
+run it from.
 
 ## For the client (plain language — liftable into an email)
 
@@ -248,6 +262,7 @@ problem is solved, search now reaches the audio — and topics are the next step
 | `docs/client-guide.md` | **Send this one.** Feature + usage guide for LHF, with screenshot slots. Every figure verified against the database. |
 | `docs/audio-editor-spec.md` | Browser-side clip editor: design, decisions and verification. **Built.** |
 | `ingest/enrich.py` | Deterministic enrichment, **no AI**. Re-airs + linked entities. Safe to re-run. |
+| `ingest/extract.py` | The one AI step: topics, guests, interviewers. Written, tested, **never run**. Not in `refresh.py` — needs a key and costs money. `--dry-run` and `--rebuild` need neither. |
 | `ingest/schema.sql` | Tables, FTS5 index, triggers. Already has `transcript_source` and a source-agnostic `segments` table. |
 | `serve.py` | JSON API + serves the UI and its JS. Stdlib `http.server`; swap for FastAPI at deploy. |
 | `static/index.html` | The whole UI — markup, styles and app code. No build step. |
@@ -336,9 +351,12 @@ The natural next moves, in order of value:
 
 1. **Deploy it.** The client can't see any of this until it has a URL.
    Coolify + a Dockerfile; ~an hour. Nothing else matters until this happens.
-2. **The AI pass** (~$7) — topics, un-hyperlinked guests, interviewers. The one
-   remaining gap in the original ask.
-3. **The 55-episode transcript gap** (~$9.52).
+2. **An admin interface.** Blocks the AI pass and unlocks staff notes, tag
+   corrections and re-air marking. Needs auth in front of it.
+3. **The AI pass** ($4.35 for the archive, ~2¢/episode after) — topics,
+   un-hyperlinked guests, interviewers. Written and tested, never run; now a
+   client decision rather than a build. See `docs/ai-layer.md`.
+4. **The 55-episode transcript gap** (~$9.52).
 
 ---
 
@@ -487,10 +505,12 @@ Five phases, ~2 days. Risk is in the waveform decode, not the cutting.
 works; packaging it as an iframe-able page for laborheritage.org is mostly
 CSS and a read-only flag, and it's the deliverable Harold can show people.
 
-**If you want to unblock the real feature set:** Tier 2 extraction. Run a
-batched AI pass over `description_text` → guests, topics, interviewers into the
-`people` / `topics` tables (already in the schema, currently empty). Roughly
-$7 for the whole archive via the Batch API. The deterministic entities from
+**If you want to unblock the real feature set:** Tier 2 extraction — now
+written as `ingest/extract.py`, tested end to end, and never run. It sends a
+batched pass over `description_text` + transcript → guests, topics,
+interviewers into the `people` / `topics` tables (in the schema, still empty).
+$4.35 for the whole archive via the Batch API, ~2¢ per new episode; verify with
+`--dry-run`, which needs no key. The deterministic entities from
 `enrich.py` are ground truth — let them win on conflict, and use them to check
 the model's output.
 
