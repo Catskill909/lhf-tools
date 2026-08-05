@@ -43,6 +43,8 @@ timestamp and the episode plays from that second.
 
 ![Searching the phrase "picket line" — matches found in the spoken audio, with timestamps](screenshots/02-heard.png)
 
+![A player opened at the spoken moment, cued to 10:21, with the scissors alongside it](screenshots/audio-position-play.png)
+
 **It spots repeats.** The archive works out when a programme has aired more than
 once and says so under the episode: **8 repeated on the same show, 5 that ran on
 both** — including *Striking At Kings* and *MLK in Memphis*.
@@ -55,8 +57,7 @@ the gap between words, listen back, download the MP3. It's copied out of the
 original file rather than re-recorded, so it's identical to what went out, and
 the filename carries the show, date and timecode.
 
-> **[screenshot: the clip editor — grab one from your browser; headless
-> screenshots can't finish loading the waveform]**
+![The clip editor — the passage selected on the waveform, in and out points, audition and snap controls, and the MP3 download](screenshots/audio-edit-modal.png)
 
 **Tags** — 232 people, bands, museums and books, taken from the links in your
 own show notes rather than guessed. Click one to see every episode featuring it.
