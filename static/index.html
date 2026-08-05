@@ -623,6 +623,22 @@
   .tx-t:hover { color: var(--spot-ink); }
   .tx-t:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
   .tx-body.no-stamps .tx-t { display: none; }
+
+  /* Cut this line as audio. Always showing on 149 lines would be noise, so it
+     appears on hover and keyboard focus — and stays permanently visible on a
+     search hit, because a hit is the passage you came here to use. */
+  .tx-edit {
+    flex: none; margin-left: auto; align-self: center;
+    background: none; border: 1px solid var(--spot); border-radius: 2px;
+    color: var(--spot-ink); font: inherit; font-size: 0.68rem; font-weight: 600;
+    letter-spacing: 0.02em; padding: 0.08rem 0.42rem; cursor: pointer;
+    opacity: 0; pointer-events: none;
+  }
+  .tx-line:hover .tx-edit,
+  .tx-line:focus-within .tx-edit,
+  .tx-line.hit .tx-edit { opacity: 1; pointer-events: auto; }
+  .tx-edit:hover { background: var(--spot); color: #fff; }
+  .tx-edit:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
   .tx-line mark {
     background: var(--spot-soft); color: var(--spot-ink);
     padding: 0 0.15em; border-radius: 1px; font-weight: 600;
@@ -1372,7 +1388,7 @@
       <span class="tx-sel-dur"><b id="txSelDur">0:00</b> selected</span>
       <span class="tx-sel-range" id="txSelRange"></span>
       <span class="tx-sel-cue" id="txSelCue"></span>
-      <button class="try" id="txSelClip">Open in clip editor</button>
+      <button class="try" id="txSelClip">Edit audio</button>
       <button class="try" id="txSelCopy">Copy passage</button>
     </div>
 
@@ -1558,8 +1574,12 @@
             lines that mention the thing</li>
           <li><b>Click any timestamp</b> to hear it, and let the transcript
             follow along as it plays</li>
+          <li><b>Edit</b> on any line opens that passage in the clip editor —
+            always visible on lines that matched your search, so a hit is one
+            click from a waveform</li>
           <li><b>Select a passage</b> to get its exact duration, its in and out
-            times, and its out-cue — then send it straight to the clip editor</li>
+            times, and its out-cue — then <b>Edit audio</b> sends that
+            selection to the clip editor</li>
           <li><b>Print it</b>, or download it as text, SRT or VTT</li>
         </ul>
         <p class="lede">144 of the 200 episodes have one. The rest say so
@@ -2762,6 +2782,9 @@ function renderTranscript(data) {
       <button class="tx-t" data-t="${s.start_sec}"
               aria-label="Play from ${hms(s.start_sec)}">${hms(s.start_sec)}</button>
       <span>${hit ? s.marked : esc(s.text)}</span>
+      <button class="tx-edit" data-from="${s.start_sec}"
+              data-to="${s.end_sec ?? (s.start_sec + 20)}"
+              aria-label="Edit this passage as audio">Edit</button>
     </p>`;
   }).join("");
 
@@ -2776,6 +2799,15 @@ function renderTranscript(data) {
 
   $("#txBody").querySelectorAll(".tx-t").forEach(b =>
     b.addEventListener("click", () => playFrom(+b.dataset.t)));
+
+  // Straight from a line to the waveform. Same capture-before-close rule as
+  // the selection button: closeTranscript() nulls `tx`.
+  $("#txBody").querySelectorAll(".tx-edit").forEach(b =>
+    b.addEventListener("click", () => {
+      const ep = tx.ep, from = +b.dataset.from, to = +b.dataset.to;
+      closeTranscript();
+      openClip(ep, from, to);
+    }));
 }
 
 function playFrom(sec) {

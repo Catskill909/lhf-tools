@@ -13,7 +13,7 @@ What shipped:
 | **Read** | Every line with its timing, click any to play, follow-along highlight as the audio moves, timestamps toggle |
 | **Find** | Search inside the episode using the archive's own syntax — `"phrases"`, `AND`/`OR`/`NOT`, `organiz*`, `NEAR()` — with a hit count, next/previous, and a **matches only** view that collapses a 55-minute show to just the lines that mention the thing |
 | **Carried through** | Opens pre-loaded with the search that produced the result, so the words that brought you here are already marked |
-| **Use** | Select a passage → exact duration, in/out times, an **out-cue**, and a one-click handoff into the clip editor already positioned on it. Copy the passage as text. |
+| **Use** | **Edit** on any line opens the clip editor on that passage — permanently visible on lines that matched the search, so a hit is one click from a waveform. Or select a longer stretch for its exact duration, in/out times and **out-cue**, then hand that to the editor. Copy the passage as text. |
 | **Take away** | Print (a stylesheet that drops everything but the words), and download as **Text**, **SRT** or **VTT** |
 | **Honest** | A provenance line saying the transcript is machine-made, and a real empty state for the 56 episodes without one |
 
@@ -122,7 +122,7 @@ someone who came here on purpose.
 
 | Idea | Effort | Value | Notes |
 |---|---|---|---|
-| **Select text → clip** | Medium | **Highest** | Highlight a passage, get its exact in/out, open the clip editor already positioned there. The whole clip editor exists; this gives it a *text* interface instead of a waveform one. Finding the moment is the hard part, and words are how people find it. |
+| ~~**Select text → clip**~~ ✅ **built** | Medium | **Highest** | Two routes shipped: **Edit** per line (one click from a search hit to a waveform), and drag-select for a longer passage. The clip editor already existed; this gave it a *text* interface instead of a waveform one. Finding the moment is the hard part, and words are how people find it. |
 | **Live duration of selection** | Low | High | "This passage is 3:42." Answers the fill-a-slot question directly, before any cutting. |
 | **Snap selection to sentence + silence** | Low–Med | High | Clip editor already snaps to silence; snapping the *text* selection to sentence boundaries first gives clean starts and ends without hand-nudging. |
 | **Out-cue readout** | Low | High | The last few words before the out point, plus the duration — standard radio paperwork so the operator knows when to come back. Trivial from the text, and nothing else does it. |

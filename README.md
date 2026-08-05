@@ -285,9 +285,11 @@ tags and 14 detected re-airs.
 - **Transcript view** — the words with the tools around them: find inside an
   episode with the same query syntax as the archive, a matches-only view,
   click-to-play with follow-along, print, and Text / SRT / VTT download.
-  Select a passage and it reports the exact duration, the in/out times and the
-  out-cue, then hands it to the clip editor already positioned. Opens
-  pre-highlighted with whatever search produced the result.
+  Opens pre-highlighted with whatever search produced the result.
+  **Every line has an Edit** that opens the clip editor on that passage —
+  permanently visible on lines that matched the search, so a hit is one click
+  from a waveform. Selecting a longer stretch reports its exact duration,
+  in/out times and out-cue before anything is cut.
 - **Re-air detection** — flags encores and programmes that ran on both shows
 - **Tags** — 232 people/orgs/books from the producers' own hyperlinks
 - **Topics** *(built, no data until the extraction pass is run)* — what each

@@ -65,14 +65,22 @@ Inside it you can:
   mention the thing you're after
 - **Click any timestamp** to hear it, and let the transcript scroll along with
   the audio as it plays
+- **Edit** — every line has one, and it's always showing on the lines that
+  matched your search. It opens that passage straight in the clip editor,
+  waveform and all, ready to trim and download
 - **Select a passage** and it tells you exactly how long it runs, where it
-  starts and ends, and its out-cue — then sends it straight to the clip editor
+  starts and ends, and its out-cue — then **Edit audio** sends that selection
+  to the clip editor
 - **Print it**, or download it as plain text, or as subtitles (SRT / VTT)
 
-That last one is the bit worth dwelling on. Finding the moment is the hard part
-of making radio, and you find it by reading, not by staring at a waveform. So
-you read until you spot the passage, drag across it, and the archive tells you
-it runs 1 minute 6 seconds — before you cut anything.
+Those middle two are the bit worth dwelling on. Finding the moment is the hard
+part of making radio, and you find it by reading, not by staring at a waveform.
+So: search for the thing, tick **Matches only** to strip the episode down to
+the lines that mention it, and press **Edit** on the one you want. You're in
+the waveform, on that passage, without having scrubbed through anything.
+
+Or drag across a longer stretch, and the archive tells you it runs 1 minute
+6 seconds before you cut anything.
 
 **It cuts clips.** Press the scissors on the player and you get the waveform
 with that passage already selected. Drag the handles, zoom in, snap the cut to
