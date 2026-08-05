@@ -688,9 +688,13 @@
   .tx-sel.has-sel .tx-sel-live {
     display: flex; flex-wrap: wrap; gap: 0.4rem 0.9rem; align-items: center;
   }
-  /* Was --ink-3, which put the one instruction that teaches the feature at the
-     dimmest value on the page. */
-  .tx-sel-hint { color: var(--ink-2); }
+  /* This one line is the only thing that teaches the feature, and it was
+     inheriting the bar's small size at a dim value — the least readable text
+     doing the most important job. Full ink, and sized up out of the caption
+     range so it reads as an instruction rather than as fine print. */
+  .tx-sel-hint {
+    color: var(--ink); font-size: 0.875rem; line-height: 1.5;
+  }
   .tx-sel {
     display: flex; flex-wrap: wrap; gap: 0.4rem 0.9rem; align-items: center;
     padding: 0.6rem 1.6rem; border-top: 1px solid var(--rule);
@@ -720,8 +724,14 @@
     font-variant-numeric: tabular-nums;
   }
   .tx-sel-cue { font-style: italic; }
+  /* .modal-actions right-aligns, which suited a row that ended in a primary
+     button. This row is a set of equal exits, and with the provenance note
+     gone there is nothing on the left to balance them against — so they start
+     at the margin like everything else in the modal. */
+  /* Alignment is left to .modal-actions (flex-end), which every dialogue in
+     here shares. Only the wrapping and spacing are specialised, because this
+     row carries five exits rather than one or two. */
   .tx-actions { display: flex; flex-wrap: wrap; gap: 0.5rem 0.8rem; align-items: center; }
-  .tx-prov { flex: 1 1 auto; font-size: 0.7rem; color: var(--ink-3); }
   .tx-links { display: flex; flex-wrap: wrap; gap: 0.35rem; }
   .tx-links a.try { text-decoration: none; display: inline-block; }
   .tx-empty { padding: 1.5rem 0; color: var(--ink-3); font-size: 0.88rem; }
@@ -1457,7 +1467,6 @@
     </div>
 
     <div class="modal-actions tx-actions">
-      <span class="tx-prov" id="txProv"></span>
       <span class="tx-links">
         <button class="try" id="txPrint">Print</button>
         <a class="try" id="txTxt" href="#" download>Text</a>
@@ -2840,8 +2849,6 @@ async function openTranscript(ep) {
   $("#txSrt").href = base + "?format=srt";
   $("#txVtt").href = base + "?format=vtt";
   $("#txPage").href = ep.episode_url || "#";
-  $("#txProv").textContent =
-    "Machine-made transcript — good for finding things, not for quoting. Names take damage.";
 }
 
 async function loadTranscript() {
