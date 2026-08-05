@@ -624,6 +624,11 @@
     display: flex; gap: 0.7rem; align-items: baseline;
     margin: 0 0 0.5rem; font-size: 0.88rem; line-height: 1.62;
     color: var(--ink-2); scroll-margin: 5rem;
+    /* The line is clickable — say so. Without this the only clue that clicking
+       plays from here is the timestamp, and the words themselves read as inert
+       page furniture. Selection still works: dragging overrides the cursor,
+       and a click that leaves a selection behind doesn't play. */
+    cursor: pointer;
   }
   .tx-line.hidden { display: none; }
   .tx-t {
