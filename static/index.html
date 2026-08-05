@@ -766,6 +766,28 @@
      they wrap — an adjacent-sibling rule breaks the moment they reflow. */
   .help-sec { padding-top: 1.3rem; border-top: 1px solid var(--rule); }
   #help .help-sec.wide { column-span: all; }
+
+  /* Six named groups instead of nineteen same-weight sections in a row — the
+     modal used to read as one long list under a single title. column-span:
+     all is what makes this work inside a flowing multi-column layout: a
+     spanning element forces a clean break in the column flow on both sides,
+     so a group header can never end up stranded alone at the bottom of one
+     column while its sections start the next — the usual failure mode for
+     headings in CSS multicol. Serif and a rule under it, echoing the modal's
+     own title rather than competing with the orange .help-sec > h3 labels,
+     which stay the finer-grained "what is this control" layer underneath. */
+  .help-group-head {
+    column-span: all;
+    font-family: "Superclarendon", "Bookman Old Style", "Bitstream Vera Serif",
+                 "Georgia", serif;
+    font-weight: 700; font-size: 1.05rem; color: var(--ink);
+    margin: 2rem 0 1rem; padding-bottom: 0.55rem;
+    border-bottom: 2px solid var(--spot);
+  }
+  .help-group-head:first-child { margin-top: 0; }
+  /* First section under a header shouldn't repeat the group's own rule
+     immediately underneath it. */
+  .help-group-head + .help-sec { border-top: none; padding-top: 0; }
   .help-list {
     margin: 0.4rem 0 0; padding-left: 1.05rem;
     font-size: 0.86rem; line-height: 1.55; color: var(--ink-2);
@@ -1491,6 +1513,8 @@
 
     <div class="modal-body">
 
+      <h2 class="help-group-head">Search</h2>
+
       <section class="help-sec">
         <h3>Just type</h3>
         <p class="lede">Words are matched together, and the word you're still
@@ -1548,12 +1572,95 @@
         </div>
       </section>
 
+      <h2 class="help-group-head">Results &amp; cataloguing</h2>
+
       <section class="help-sec">
         <h3>Jumping to a moment</h3>
         <p class="lede">When your words were spoken aloud, the timestamps under
           a result show exactly where. Click one and the episode starts playing
           from that second — no scrubbing.</p>
       </section>
+
+      <section class="help-sec">
+        <h3>Show notes</h3>
+        <p class="lede">Descriptions are shortened to three lines. <b>More</b>
+          at the end of the last line opens the rest — the notes as published,
+          including anything the feed carries that doesn't fit. When you've
+          searched, the blurb shows the matching passage instead, and
+          <b>Show full notes</b> opens the whole thing underneath it.</p>
+      </section>
+
+      <section class="help-sec">
+        <h3>Tags</h3>
+        <p class="lede">The names under each episode are people, bands, museums
+          and books the producers linked in the show notes — a hand-curated index,
+          not guesswork. Click one to see every episode tagged with it.</p>
+      </section>
+
+      <!-- Hidden until the archive has actually been read. Help that describes
+           gold topic chips to someone who has none is worse than silence — they
+           go looking for a feature that isn't there and conclude it's broken.
+           Revealed automatically the moment the extraction pass has run. -->
+      <section class="help-sec" data-needs="extraction" hidden>
+        <h3><span class="swatch" style="background:var(--gold)"></span>Topics</h3>
+        <p class="lede">Show notes say what happened, not what an episode is
+          <em>about</em>. The gold-edged topics are read from the notes and the
+          transcript, so they exist even where nobody wrote them down. Click one
+          to see everything on that subject. Unlike Tags, these are inferred —
+          right nearly always, but worth a glance before you cite them.</p>
+      </section>
+
+      <section class="help-sec" data-needs="extraction" hidden>
+        <h3>Guests and interviewers</h3>
+        <p class="lede">Who was on, and who was asking. Read from the same pass,
+          which catches the guests who were never hyperlinked. Click any name to
+          see every episode they appear in — the producers' links and the ones
+          found in the audio both count.</p>
+      </section>
+
+      <section class="help-sec">
+        <h3><span class="swatch" style="background:var(--gold)"></span>Also ran</h3>
+        <p class="lede">A gold line under an episode means the same programme
+          aired more than once — as an encore, or on both shows. That's the
+          quick answer to "have we run this already?"</p>
+      </section>
+
+      <h2 class="help-group-head">Transcript</h2>
+
+      <section class="help-sec wide">
+        <p class="lede"><b>Transcript</b> beside the episode title opens the
+          words with the tools around them, already marked up with whatever you
+          searched for. <b>Two gestures do most of the work:</b> <b>click</b> a
+          line to hear it, and <b>drag</b> across the text to select a passage.</p>
+        <ul class="help-list">
+          <li><b>Click a line — or its timestamp — to play from there.</b> Tick
+            <b>Follow audio</b> and the transcript scrolls along as it goes,
+            keeping the spoken line in view.</li>
+          <li><b>Drag across the text to select a passage.</b> The bar along the
+            bottom reports exactly how long it runs, where it starts and ends,
+            and its <b>out-cue</b> — the last few words, so the studio knows
+            when to come back. From there, <b>Edit audio</b> opens it in the
+            clip editor and <b>Copy passage</b> takes the words.</li>
+          <li><b>Edit</b> on a single line does the same for just that line —
+            always showing on lines that matched your search, so a hit is one
+            click from a waveform.</li>
+          <li><b>Find within the episode</b> using the same shortcuts as the
+            main search (<code>"phrases"</code>,
+            <code>AND</code>/<code>OR</code>/<code>NOT</code>,
+            <code>organiz*</code>), with a hit count and
+            <kbd>Enter</kbd> / <kbd>Shift</kbd>+<kbd>Enter</kbd> to step
+            through them.</li>
+          <li><b>Matches only</b> collapses a 55-minute show down to just the
+            lines that mention the thing you're after — the fastest way from a
+            word to the moment it was said.</li>
+          <li><b>Print it</b>, or download it as text, or as subtitles
+            (SRT / VTT) for a video editor.</li>
+        </ul>
+        <p class="lede">144 of the 200 episodes have one. The rest say so
+          plainly rather than pretending to be broken.</p>
+      </section>
+
+      <h2 class="help-group-head">Clips &amp; audio editing</h2>
 
       <section class="help-sec">
         <h3>Making a clip</h3>
@@ -1619,28 +1726,14 @@
           the podcast host.</p>
       </section>
 
+      <h2 class="help-group-head">Sharing &amp; export</h2>
+
       <section class="help-sec">
         <h3>Sharing what you found</h3>
         <p class="lede">The address bar always reflects what you're looking at,
           so any search can be copied and sent to someone — filters, sort order
           and all. A link can also point at a single moment, opening the editor
           on it.</p>
-      </section>
-
-      <section class="help-sec">
-        <h3>Show notes</h3>
-        <p class="lede">Descriptions are shortened to three lines. <b>More</b>
-          at the end of the last line opens the rest — the notes as published,
-          including anything the feed carries that doesn't fit. When you've
-          searched, the blurb shows the matching passage instead, and
-          <b>Show full notes</b> opens the whole thing underneath it.</p>
-      </section>
-
-      <section class="help-sec">
-        <h3>Tags</h3>
-        <p class="lede">The names under each episode are people, bands, museums
-          and books the producers linked in the show notes — a hand-curated index,
-          not guesswork. Click one to see every episode tagged with it.</p>
       </section>
 
       <section class="help-sec">
@@ -1652,70 +1745,9 @@
           and its audio. CSV, tab-separated, or JSON.</p>
       </section>
 
-      <section class="help-sec wide">
-        <h3>Transcript</h3>
-        <p class="lede"><b>Transcript</b> beside the episode title opens the
-          words with the tools around them, already marked up with whatever you
-          searched for. <b>Two gestures do most of the work:</b> <b>click</b> a
-          line to hear it, and <b>drag</b> across the text to select a passage.</p>
-        <ul class="help-list">
-          <li><b>Click a line — or its timestamp — to play from there.</b> Tick
-            <b>Follow audio</b> and the transcript scrolls along as it goes,
-            keeping the spoken line in view.</li>
-          <li><b>Drag across the text to select a passage.</b> The bar along the
-            bottom reports exactly how long it runs, where it starts and ends,
-            and its <b>out-cue</b> — the last few words, so the studio knows
-            when to come back. From there, <b>Edit audio</b> opens it in the
-            clip editor and <b>Copy passage</b> takes the words.</li>
-          <li><b>Edit</b> on a single line does the same for just that line —
-            always showing on lines that matched your search, so a hit is one
-            click from a waveform.</li>
-          <li><b>Find within the episode</b> using the same shortcuts as the
-            main search (<code>"phrases"</code>,
-            <code>AND</code>/<code>OR</code>/<code>NOT</code>,
-            <code>organiz*</code>), with a hit count and
-            <kbd>Enter</kbd> / <kbd>Shift</kbd>+<kbd>Enter</kbd> to step
-            through them.</li>
-          <li><b>Matches only</b> collapses a 55-minute show down to just the
-            lines that mention the thing you're after — the fastest way from a
-            word to the moment it was said.</li>
-          <li><b>Print it</b>, or download it as text, or as subtitles
-            (SRT / VTT) for a video editor.</li>
-        </ul>
-        <p class="lede">144 of the 200 episodes have one. The rest say so
-          plainly rather than pretending to be broken.</p>
-      </section>
-
-      <!-- Hidden until the archive has actually been read. Help that describes
-           gold topic chips to someone who has none is worse than silence — they
-           go looking for a feature that isn't there and conclude it's broken.
-           Revealed automatically the moment the extraction pass has run. -->
-      <section class="help-sec" data-needs="extraction" hidden>
-        <h3><span class="swatch" style="background:var(--gold)"></span>Topics</h3>
-        <p class="lede">Show notes say what happened, not what an episode is
-          <em>about</em>. The gold-edged topics are read from the notes and the
-          transcript, so they exist even where nobody wrote them down. Click one
-          to see everything on that subject. Unlike Tags, these are inferred —
-          right nearly always, but worth a glance before you cite them.</p>
-      </section>
-
-      <section class="help-sec" data-needs="extraction" hidden>
-        <h3>Guests and interviewers</h3>
-        <p class="lede">Who was on, and who was asking. Read from the same pass,
-          which catches the guests who were never hyperlinked. Click any name to
-          see every episode they appear in — the producers' links and the ones
-          found in the audio both count.</p>
-      </section>
-
-      <section class="help-sec">
-        <h3><span class="swatch" style="background:var(--gold)"></span>Also ran</h3>
-        <p class="lede">A gold line under an episode means the same programme
-          aired more than once — as an encore, or on both shows. That's the
-          quick answer to "have we run this already?"</p>
-      </section>
+      <h2 class="help-group-head">Keyboard</h2>
 
       <section class="help-sec wide">
-        <h3>Keyboard</h3>
         <div class="keys">
           <div><kbd>/</kbd> search</div>
           <div><kbd>?</kbd> this help</div>
