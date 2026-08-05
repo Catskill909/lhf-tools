@@ -57,23 +57,28 @@ whatever you just searched for.
 
 ![The transcript modal — timestamped lines, find-in-transcript, the player, and print and download controls](screenshots/transcript.png)
 
-Inside it you can:
+**Two gestures do most of the work.** Everything else is a refinement of them:
 
+- **Click a line to hear it.** Anywhere on the line, or its timestamp. Tick
+  **Follow audio** and the transcript scrolls along as it plays, so the words
+  keep pace with the sound.
+- **Drag across the text to select a passage.** The bar along the bottom tells
+  you exactly how long it runs, where it starts and ends, and its **out-cue** —
+  the last few words before it ends, so whoever's on the desk knows when to
+  come back. **Edit audio** opens that selection in the clip editor; **Copy
+  passage** takes the words.
+
+Beyond those:
+
+- **Edit** on a single line does the same for just that line, and is always
+  showing on lines that matched your search
 - **Search within the episode**, using the same shortcuts as the main search
   box, with a running count and arrows to step between hits
 - **Matches only** — collapse a 55-minute show down to just the lines that
   mention the thing you're after
-- **Click any timestamp** to hear it, and let the transcript scroll along with
-  the audio as it plays
-- **Edit** — every line has one, and it's always showing on the lines that
-  matched your search. It opens that passage straight in the clip editor,
-  waveform and all, ready to trim and download
-- **Select a passage** and it tells you exactly how long it runs, where it
-  starts and ends, and its out-cue — then **Edit audio** sends that selection
-  to the clip editor
 - **Print it**, or download it as plain text, or as subtitles (SRT / VTT)
 
-Those middle two are the bit worth dwelling on. Finding the moment is the hard
+The two together are the bit worth dwelling on. Finding the moment is the hard
 part of making radio, and you find it by reading, not by staring at a waveform.
 So: search for the thing, tick **Matches only** to strip the episode down to
 the lines that mention it, and press **Edit** on the one you want. You're in

@@ -660,10 +660,15 @@
   .tx-line.playing { color: var(--ink); }
   .tx-line.playing .tx-t { color: var(--spot-ink); font-weight: 600; }
 
-  /* A class with `display` beats the UA stylesheet's [hidden] rule, so the
-     selection bar has to opt back out explicitly or it sits there reading
-     "0:00 selected" with nothing selected. */
-  .tx-sel[hidden] { display: none; }
+  /* Two states in one bar, swapped by a class rather than the [hidden]
+     attribute — a class with `display` beats the UA [hidden] rule, and that
+     trap already cost one bug here. */
+  .tx-sel .tx-sel-live,
+  .tx-sel.has-sel .tx-sel-hint { display: none; }
+  .tx-sel.has-sel .tx-sel-live {
+    display: flex; flex-wrap: wrap; gap: 0.4rem 0.9rem; align-items: center;
+  }
+  .tx-sel-hint { color: var(--ink-3); }
   .tx-sel {
     display: flex; flex-wrap: wrap; gap: 0.4rem 0.9rem; align-items: center;
     padding: 0.6rem 1.6rem; border-top: 1px solid var(--rule);
@@ -1395,12 +1400,20 @@
          transcript is how you find the passage, the duration is the question
          being asked ("will it fill the hole?"), and the clip editor is already
          built to take it from here. -->
-    <div class="tx-sel" id="txSel" hidden>
-      <span class="tx-sel-dur"><b id="txSelDur">0:00</b> selected</span>
-      <span class="tx-sel-range" id="txSelRange"></span>
-      <span class="tx-sel-cue" id="txSelCue"></span>
-      <button class="try" id="txSelClip">Edit audio</button>
-      <button class="try" id="txSelCopy">Copy passage</button>
+    <!-- Always present. It used to appear only once you had already selected
+         something, which meant the only thing that could teach you the feature
+         was hidden behind knowing the feature. At rest it says what to do; on
+         a selection it becomes the readout. -->
+    <div class="tx-sel" id="txSel">
+      <span class="tx-sel-hint">Drag across the text to select a passage — you'll
+        get its exact duration and can send it straight to the clip editor.</span>
+      <span class="tx-sel-live">
+        <span class="tx-sel-dur"><b id="txSelDur">0:00</b> selected</span>
+        <span class="tx-sel-range" id="txSelRange"></span>
+        <span class="tx-sel-cue" id="txSelCue"></span>
+        <button class="try" id="txSelClip">Edit audio</button>
+        <button class="try" id="txSelCopy">Copy passage</button>
+      </span>
     </div>
 
     <div class="modal-actions tx-actions">
@@ -1592,24 +1605,33 @@
 
       <section class="help-sec wide">
         <h3>Transcript</h3>
-        <p class="lede"><b>Transcript</b> under an episode opens the words with
-          the tools around them. It arrives already marked up with whatever you
-          searched for. Inside you can:</p>
+        <p class="lede"><b>Transcript</b> beside the episode title opens the
+          words with the tools around them, already marked up with whatever you
+          searched for. <b>Two gestures do most of the work:</b> <b>click</b> a
+          line to hear it, and <b>drag</b> across the text to select a passage.</p>
         <ul class="help-list">
-          <li><b>Find within the episode</b> — same syntax as the main search
-            (<code>"phrases"</code>, <code>AND</code>/<code>OR</code>/<code>NOT</code>,
-            <code>organiz*</code>), with next/previous and a hit count</li>
-          <li><b>Matches only</b> — collapse a 55-minute show down to just the
-            lines that mention the thing</li>
-          <li><b>Click any timestamp</b> to hear it, and let the transcript
-            follow along as it plays</li>
-          <li><b>Edit</b> on any line opens that passage in the clip editor —
-            always visible on lines that matched your search, so a hit is one
-            click from a waveform</li>
-          <li><b>Select a passage</b> to get its exact duration, its in and out
-            times, and its out-cue — then <b>Edit audio</b> sends that
-            selection to the clip editor</li>
-          <li><b>Print it</b>, or download it as text, SRT or VTT</li>
+          <li><b>Click a line — or its timestamp — to play from there.</b> Tick
+            <b>Follow audio</b> and the transcript scrolls along as it goes,
+            keeping the spoken line in view.</li>
+          <li><b>Drag across the text to select a passage.</b> The bar along the
+            bottom reports exactly how long it runs, where it starts and ends,
+            and its <b>out-cue</b> — the last few words, so the studio knows
+            when to come back. From there, <b>Edit audio</b> opens it in the
+            clip editor and <b>Copy passage</b> takes the words.</li>
+          <li><b>Edit</b> on a single line does the same for just that line —
+            always showing on lines that matched your search, so a hit is one
+            click from a waveform.</li>
+          <li><b>Find within the episode</b> using the same shortcuts as the
+            main search (<code>"phrases"</code>,
+            <code>AND</code>/<code>OR</code>/<code>NOT</code>,
+            <code>organiz*</code>), with a hit count and
+            <kbd>Enter</kbd> / <kbd>Shift</kbd>+<kbd>Enter</kbd> to step
+            through them.</li>
+          <li><b>Matches only</b> collapses a 55-minute show down to just the
+            lines that mention the thing you're after — the fastest way from a
+            word to the moment it was said.</li>
+          <li><b>Print it</b>, or download it as text, or as subtitles
+            (SRT / VTT) for a video editor.</li>
         </ul>
         <p class="lede">144 of the 200 episodes have one. The rest say so
           plainly rather than pretending to be broken.</p>
@@ -2761,7 +2783,7 @@ async function openTranscript(ep) {
     `${ep.show_name} · ${dateParts(ep.published_at).md} ${dateParts(ep.published_at).yr}`;
   $("#txTitle").textContent = ep.title;
   $("#txBody").innerHTML = `<div class="tx-empty">Loading transcript…</div>`;
-  $("#txSel").hidden = true;
+  $("#txSel").classList.remove("has-sel");
   $("#txPlayer").innerHTML = "";
   txModal.hidden = false;
   $("#txClose").focus();
@@ -2838,6 +2860,21 @@ function renderTranscript(data) {
   $("#txBody").querySelectorAll(".tx-t").forEach(b =>
     b.addEventListener("click", () => playFrom(+b.dataset.t)));
 
+  // Click anywhere on a line to hear it. The whole line is the target, not
+  // just the timestamp — reading and listening are the same act here.
+  //
+  // The catch: dragging across text is how a passage gets chosen for the clip
+  // editor, and a drag ends in a click. So a click only plays when it left no
+  // selection behind. Double-click selects a word, which also leaves a
+  // selection, so that keeps working too.
+  $("#txBody").querySelectorAll(".tx-line").forEach(line =>
+    line.addEventListener("click", e => {
+      if (e.target.closest(".tx-t, .tx-edit")) return;   // have their own jobs
+      const sel = window.getSelection();
+      if (sel && !sel.isCollapsed) return;               // that was a selection
+      playFrom(+line.dataset.start);
+    }));
+
   // Straight from a line to the waveform. Same capture-before-close rule as
   // the selection button: closeTranscript() nulls `tx`.
   $("#txBody").querySelectorAll(".tx-edit").forEach(b =>
@@ -2893,9 +2930,11 @@ function syncSelection() {
   if (!txOpen() || !tx) return;
   const s = readSelection();
   const box = $("#txSel");
-  if (!s || s.to <= s.from) { box.hidden = true; tx.sel = null; return; }
+  // The bar is always present; it swaps between explaining itself and
+  // reporting a selection.
+  if (!s || s.to <= s.from) { box.classList.remove("has-sel"); tx.sel = null; return; }
   tx.sel = s;
-  box.hidden = false;
+  box.classList.add("has-sel");
   $("#txSelDur").textContent = hms(s.to - s.from);
   $("#txSelRange").textContent = `${hms(s.from)} – ${hms(s.to)}`;
   // Out-cue: the last few words before the passage ends. Standard radio
