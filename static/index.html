@@ -310,6 +310,16 @@
   }
   .row .when .yr { display: block; color: var(--ink-2); font-weight: 600; }
 
+  /* Title on the left, per-episode actions on the right. Anything else that
+     acts on the whole episode belongs here too — it's the row's action gutter,
+     and it costs no vertical space. */
+  .title-row {
+    display: flex; align-items: baseline; gap: 0.6rem 1rem;
+    flex-wrap: wrap; margin: 0 0 0.3rem;
+  }
+  .title-row h2 { flex: 1 1 22ch; margin: 0; }
+  .title-row > :not(h2) { flex: none; margin-left: auto; }
+
   .row h2 { margin: 0 0 0.3rem; font-size: 1.06rem; line-height: 1.32; }
   .row h2 a { color: var(--ink); text-decoration: none; }
   .row h2 a:hover { color: var(--spot-ink); text-decoration: underline;
@@ -354,18 +364,19 @@
 
   .notes-wrap { position: relative; max-width: 68ch; }
 
-  /* Was --ink-3 with a faint rule-coloured underline, which on this dark paper
-     is close enough to the body text to disappear — it got missed entirely in
-     use. It's the accent colour now, and it earns it: this is the only way to
-     see the rest of a note. */
+  /* Two failed extremes: --ink-3 (the original) sat below the body text and
+     got missed entirely; the accent colour shouted louder than the title.
+     This separates by brightness rather than hue — brighter than the note it
+     ends, neutral against everything else, with the accent held back for
+     hover. */
   .more {
     margin-top: 0.3rem; padding: 0; background: none; border: none;
     font: inherit; font-size: 0.76rem; font-weight: 600; letter-spacing: 0.02em;
-    color: var(--spot-ink); cursor: pointer;
-    text-decoration: underline; text-decoration-color: var(--spot);
+    color: var(--ink); cursor: pointer;
+    text-decoration: underline; text-decoration-color: var(--rule-hard);
     text-underline-offset: 3px;
   }
-  .more:hover { color: var(--ink); text-decoration-color: var(--ink); }
+  .more:hover { color: var(--spot-ink); text-decoration-color: var(--spot); }
   .more:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
   .more[hidden] { display: none; }
 
@@ -383,20 +394,20 @@
      button overlaps the "…" and the line reads "…Columbia w  More". */
   .notes-wrap.is-clamped .notes.clamp { padding-right: 3.6rem; }
 
-  /* The transcript is a destination, not a footnote — it gets a real button. */
+  /* Deliberately quiet, and matched to the Tags chips rather than to the
+     accent. Opening a transcript is a way in, not an action with a
+     consequence — in the accent colour it read as the most urgent thing on
+     a card whose actual subject is the episode. Hover does the persuading. */
   .tx-open {
-    margin-top: 0.5rem; display: inline-flex; align-items: center; gap: 0.34rem;
-    background: var(--spot-soft); border: 1px solid var(--spot);
-    border-radius: 2px; color: var(--spot-ink);
-    font: inherit; font-size: 0.75rem; font-weight: 600; letter-spacing: 0.02em;
-    padding: 0.22rem 0.62rem; cursor: pointer;
+    display: inline-flex; align-items: center; gap: 0.32rem;
+    background: none; border: 1px solid var(--rule); border-radius: 2px;
+    color: var(--ink-2);
+    font: inherit; font-size: 0.72rem; letter-spacing: 0.02em;
+    padding: 0.16rem 0.52rem; cursor: pointer; white-space: nowrap;
   }
-  .tx-open::before { content: "¶"; opacity: 0.75; font-weight: 400; }
-  .tx-open:hover { background: var(--spot); color: #fff; border-color: var(--spot); }
+  .tx-open::before { content: "¶"; opacity: 0.55; }
+  .tx-open:hover { color: var(--spot-ink); border-color: var(--spot); }
   .tx-open:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
-  /* When both are present the transcript button starts a new line of its own,
-     because the More is pinned to the end of the note above it. */
-  .notes-wrap + .tx-open { margin-top: 0.6rem; }
 
   /* Re-air notice — the "have we run this already" answer, stated inline. */
   .reair {
@@ -1932,8 +1943,11 @@ async function run() {
           ${r.duration_sec ? `<span class="dot">·</span><span>${Math.round(r.duration_sec/60)} min</span>` : ""}
           ${r.is_encore ? `<span class="badge encore">Encore</span>` : ""}
         </div>
-        <h2><a href="${esc(r.episode_url)}" target="_blank" rel="noopener">${esc(r.title)}</a></h2>
-        ${blurb}${notes}${txBtn}
+        <div class="title-row">
+          <h2><a href="${esc(r.episode_url)}" target="_blank" rel="noopener">${esc(r.title)}</a></h2>
+          ${txBtn}
+        </div>
+        ${blurb}${notes}
         ${people}
         ${moments}
         ${reair}
