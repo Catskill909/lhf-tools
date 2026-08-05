@@ -249,7 +249,8 @@ The UI is just a client — swap it for anything without touching the backend.
 | `GET /api/people?role=guest\|interviewer\|host` | guests and interviewers with episode counts |
 | `GET /api/export?format=csv\|tsv\|json&…` | the current result set as a file; same filter params as search |
 | `GET /api/episode/<id>` | one episode, for shared moment links |
-| `GET /episode/<id>/transcript` | plain-text transcript for one episode |
+| `GET /api/episode/<id>/segments?q=` | every transcript line with its timings, server-highlighted for `q` — what the transcript modal reads |
+| `GET /episode/<id>/transcript?format=txt\|srt\|vtt` | one transcript to read, print or caption with |
 
 Clip extraction calls no endpoint here at all — the browser range-requests the
 audio from Podbean's CDN directly.
@@ -281,6 +282,12 @@ tags and 14 detected re-airs.
   are labelled and show the spoken line
 - **Jump to the moment** — timestamps under each result; click to play from
   that second in an inline player
+- **Transcript view** — the words with the tools around them: find inside an
+  episode with the same query syntax as the archive, a matches-only view,
+  click-to-play with follow-along, print, and Text / SRT / VTT download.
+  Select a passage and it reports the exact duration, the in/out times and the
+  out-cue, then hands it to the clip editor already positioned. Opens
+  pre-highlighted with whatever search produced the result.
 - **Re-air detection** — flags encores and programmes that ran on both shows
 - **Tags** — 232 people/orgs/books from the producers' own hyperlinks
 - **Topics** *(built, no data until the extraction pass is run)* — what each
@@ -310,19 +317,28 @@ Responses are gzipped (level 6) when the client asks, and everything sends
 
 | | raw | sent |
 |---|---|---|
-| `/` (whole UI, no build step) | 93 KB | **25 KB** |
-| `/api/search` — all 200 episodes | 216 KB | **52 KB** |
-| `/api/search?q=labor` — worst case | 292 KB | **63 KB** |
+| `/` (whole UI, no build step) | 100 KB | **28 KB** |
+| `/api/search` — all 200 episodes | 386 KB | **90 KB** |
+| `/api/search?q=labor` — worst case | 510 KB | **121 KB** |
 
-A first visit is roughly **90 KB**, and a full 200-row render is about 3,500
+A first visit is roughly **118 KB**, and a full 200-row render is about 3,500
 DOM elements — comfortable on a phone.
+
+**The search response grew by ~40 KB gzipped when full show notes replaced a
+240-character substring.** That substring truncated 100% of episodes — the
+median note is 1,064 characters — mid-word and without an ellipsis, so cards
+read as corrupted rather than shortened. The notes are now sent whole and
+clamped in the browser, which is the same trade this project already makes
+against pagination: shipping the data is cheaper than the machinery to avoid
+shipping it, and it keeps find-in-page working across every note on screen.
 
 **There is no pagination or infinite scroll, deliberately.** At this size the
 whole result set is cheaper to send than the machinery to avoid sending it, and
 having every result present means find-in-page and Export match what's on
-screen. Revisit if the Podbean backlog triples the archive: ~600 episodes would
-be ~150 KB gzipped and ~10,000 elements, which is the point where it starts to
-be worth measuring again.
+screen. Revisit if the Podbean backlog triples the archive: at the current
+per-episode weight ~600 episodes would be ~270 KB gzipped and ~10,000 elements,
+which is the point where it starts to be worth measuring again — and where
+sending notes on demand rather than up front becomes the obvious first saving.
 
 ## Tests
 

@@ -85,7 +85,23 @@ It would also make the clip editor land on the right passage automatically.
 Once topics exist, "find me something like this one" is nearly free — useful
 when a scheduled programme falls through and something has to fill the hour.
 
-### 6. Suggested re-airs
+### 6. Formatted citations
+
+Copy a reference to a moment — show, episode, broadcast date, timestamp and the
+spoken line — in a chosen citation style.
+
+Parked here rather than built into the transcript view for one reason: **it
+needs a format decision nobody has made yet.** Chicago, MLA, APA and the
+broadcast-archive conventions the Library of Congress people would expect all
+disagree about how to cite a radio segment, and picking one blind means
+building the wrong thing confidently. Worth asking them.
+
+It also gets substantially better *after* the extraction pass: a citation is
+much more useful when it can name the speaker and the interviewer, and when
+the quoted names have been repaired. Copying the raw passage — which the
+transcript view does today — covers the immediate need without guessing.
+
+### 7. Suggested re-airs
 
 Combining topic, duration, and last-aired date into a ranked "worth running
 again" list. This is the scheduling question the archive was built to answer,

@@ -476,6 +476,11 @@ Not planned, just captured. Roughly cheapest first:
 The thread: they don't just need to *find* things, they need to *use* them on
 air. Search was the prerequisite; the tools above are the actual job.
 
+**`docs/transcript-modal.md`** picks this thread up: a transcript view with the
+tools around it — select text to get a broadcast-ready clip, live duration
+readouts, out-cues, citations. Several of the seeds above (run sheet, citation
+copy) are really features *of* that view.
+
 ## Clip extraction — built
 
 Spec and verification in `docs/audio-editor-spec.md`. The headline decisions:

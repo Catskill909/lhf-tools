@@ -333,6 +333,37 @@
     max-width: 68ch;
   }
 
+  /* The show notes in full. Browsing used to render a hard 240-character
+     substring — which cut every episode in the archive mid-word, with no
+     ellipsis, so it read as broken data rather than as an abbreviation.
+     The whole note is sent now and clamped here, where a clamp can end on a
+     line and put a real ellipsis on it. */
+  .row .notes {
+    margin: 0; font-size: 0.895rem; color: var(--ink-2);
+    max-width: 68ch; white-space: pre-line;
+  }
+  .row .notes.clamp {
+    display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+  .row .notes.hidden { display: none; }
+  /* Only when the notes sit under a match snippet — browsing has no snippet,
+     and the heading's own spacing is already right there. */
+  .row .excerpt + .notes { margin-top: 0.55rem; }
+  .row .excerpt + .more  { margin-top: 0.45rem; }
+
+  .more {
+    margin-top: 0.3rem; padding: 0; background: none; border: none;
+    font: inherit; font-size: 0.72rem; letter-spacing: 0.04em;
+    color: var(--ink-3); cursor: pointer;
+    text-decoration: underline; text-decoration-color: var(--rule-hard);
+    text-underline-offset: 3px;
+  }
+  .more + .more { margin-left: 0.9rem; }   /* "Show full notes" and "Transcript" */
+  .more:hover { color: var(--spot-ink); text-decoration-color: var(--spot); }
+  .more:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+  .more[hidden] { display: none; }
+
   /* Re-air notice — the "have we run this already" answer, stated inline. */
   .reair {
     margin: 0.5rem 0 0;
@@ -505,6 +536,109 @@
   .modal-body { padding: 0.4rem 1.6rem 1.6rem; }
 
   #help .modal { width: min(1180px, 96vw); }
+
+  /* ---------- transcript ---------- */
+  #txModal .modal {
+    width: min(900px, 96vw);
+    max-height: 92vh; display: flex; flex-direction: column;
+  }
+  .tx-tools {
+    display: flex; flex-wrap: wrap; gap: 0.5rem 1rem; align-items: center;
+    padding: 0.7rem 1.6rem; border-bottom: 1px solid var(--rule);
+  }
+  .tx-find { display: flex; align-items: center; gap: 0.35rem; flex: 1 1 260px; }
+  .tx-find input {
+    flex: 1; min-width: 0; background: var(--paper-2); color: var(--ink);
+    border: 1px solid var(--rule-hard); border-radius: 2px;
+    font: inherit; font-size: 0.82rem; padding: 0.3rem 0.5rem;
+  }
+  .tx-find input:focus-visible { outline: 2px solid var(--focus); outline-offset: 1px; }
+  .tx-count {
+    font-size: 0.72rem; color: var(--ink-3); white-space: nowrap;
+    font-variant-numeric: tabular-nums; min-width: 5.5ch;
+  }
+  .tx-nav {
+    background: none; border: 1px solid var(--rule); border-radius: 2px;
+    color: var(--ink-2); font: inherit; font-size: 0.75rem; line-height: 1;
+    padding: 0.24rem 0.4rem; cursor: pointer;
+  }
+  .tx-nav:hover:not(:disabled) { color: var(--spot-ink); border-color: var(--spot); }
+  .tx-nav:disabled { opacity: 0.35; cursor: default; }
+  .tx-opt {
+    display: inline-flex; align-items: center; gap: 0.3rem;
+    font-size: 0.72rem; color: var(--ink-3); cursor: pointer; white-space: nowrap;
+  }
+  .tx-player { padding: 0 1.6rem; }
+  .tx-player:empty { display: none; }
+
+  .tx-body {
+    overflow-y: auto; flex: 1;
+    padding: 0.9rem 1.6rem 1.1rem; max-width: none;
+  }
+  .tx-line {
+    display: flex; gap: 0.7rem; align-items: baseline;
+    margin: 0 0 0.5rem; font-size: 0.88rem; line-height: 1.62;
+    color: var(--ink-2); scroll-margin: 5rem;
+  }
+  .tx-line.hidden { display: none; }
+  .tx-t {
+    flex: none; background: none; border: none; padding: 0; cursor: pointer;
+    font: inherit; font-size: 0.72rem; font-variant-numeric: tabular-nums;
+    color: var(--ink-3); letter-spacing: 0.02em; width: 5ch; text-align: right;
+  }
+  .tx-t:hover { color: var(--spot-ink); }
+  .tx-t:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+  .tx-body.no-stamps .tx-t { display: none; }
+  .tx-line mark {
+    background: var(--spot-soft); color: var(--spot-ink);
+    padding: 0 0.15em; border-radius: 1px; font-weight: 600;
+  }
+  /* The match you're standing on, versus the others. */
+  .tx-line.cursor mark { outline: 1px solid var(--spot); }
+  /* Where the audio is now. */
+  .tx-line.playing { color: var(--ink); }
+  .tx-line.playing .tx-t { color: var(--spot-ink); font-weight: 600; }
+
+  /* A class with `display` beats the UA stylesheet's [hidden] rule, so the
+     selection bar has to opt back out explicitly or it sits there reading
+     "0:00 selected" with nothing selected. */
+  .tx-sel[hidden] { display: none; }
+  .tx-sel {
+    display: flex; flex-wrap: wrap; gap: 0.4rem 0.9rem; align-items: center;
+    padding: 0.6rem 1.6rem; border-top: 1px solid var(--rule);
+    background: var(--paper-2); font-size: 0.78rem; color: var(--ink-2);
+  }
+  .tx-sel-dur b { font-variant-numeric: tabular-nums; color: var(--ink); }
+  .tx-sel-range, .tx-sel-cue {
+    font-size: 0.72rem; color: var(--ink-3);
+    font-variant-numeric: tabular-nums;
+  }
+  .tx-sel-cue { font-style: italic; }
+  .tx-actions { display: flex; flex-wrap: wrap; gap: 0.5rem 0.8rem; align-items: center; }
+  .tx-prov { flex: 1 1 auto; font-size: 0.7rem; color: var(--ink-3); }
+  .tx-links { display: flex; flex-wrap: wrap; gap: 0.35rem; }
+  .tx-links a.try { text-decoration: none; display: inline-block; }
+  .tx-empty { padding: 1.5rem 0; color: var(--ink-3); font-size: 0.88rem; }
+  .tx-empty b { color: var(--ink-2); display: block; margin-bottom: 0.3rem; }
+
+  /* Printing a transcript is a real workflow — a reading copy for the studio,
+     or something to mark up. Everything except the words goes away, and the
+     modal stops being a scrolling box so the browser can paginate it. */
+  @media print {
+    body > *:not(#txModal), .tx-tools, .tx-player, .tx-sel,
+    .modal-actions, .modal-head > button { display: none !important; }
+    #txModal { position: static; display: block; background: none; padding: 0; }
+    #txModal .modal {
+      width: auto; max-height: none; border: none; box-shadow: none;
+      background: #fff; color: #000;
+    }
+    .tx-body { overflow: visible; max-height: none; padding: 0; }
+    .tx-line { color: #000; page-break-inside: avoid; }
+    .tx-line.hidden { display: flex; }        /* print everything, not just hits */
+    .tx-t { color: #555; }
+    .tx-line mark { background: none; font-weight: 700; text-decoration: underline; }
+    .modal-head h2, .modal-head p { color: #000; }
+  }
   /* Columns rather than a grid: grid rows align to the tallest cell and leave
      ragged gaps under the short sections. Columns pack them tight, and a guide
      read top-to-bottom in a column is the natural way to set this. */
@@ -1166,6 +1300,61 @@
 <button id="toTop" aria-label="Back to top"><span class="arw">&uarr;</span> Top</button>
 
 <!-- Every example below is runnable: click it and the search executes. -->
+<!-- Transcript. The words with the tools around them: find inside the episode
+     using the same syntax as the archive search, click any line to hear it,
+     select a passage to get its exact duration and send it to the clip editor. -->
+<div class="backdrop" id="txModal" hidden>
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="txTitle">
+    <div class="modal-head">
+      <div>
+        <h2 id="txTitle">Transcript</h2>
+        <p id="txEp"></p>
+      </div>
+      <button id="txClose" aria-label="Close">&times;</button>
+    </div>
+
+    <div class="tx-tools" id="txTools">
+      <div class="tx-find">
+        <input id="txFind" type="search" placeholder="Find in this transcript…"
+               aria-label="Find in this transcript" autocomplete="off">
+        <span class="tx-count" id="txCount"></span>
+        <button class="tx-nav" id="txPrev" aria-label="Previous match" disabled>&#8593;</button>
+        <button class="tx-nav" id="txNext" aria-label="Next match" disabled>&#8595;</button>
+      </div>
+      <label class="tx-opt"><input type="checkbox" id="txOnly"> Matches only</label>
+      <label class="tx-opt"><input type="checkbox" id="txStamps" checked> Timestamps</label>
+      <label class="tx-opt"><input type="checkbox" id="txFollow" checked> Follow audio</label>
+    </div>
+
+    <div class="tx-player" id="txPlayer"></div>
+
+    <div class="modal-body tx-body" id="txBody"></div>
+
+    <!-- Appears only when text is selected. This is the broadcast tool: the
+         transcript is how you find the passage, the duration is the question
+         being asked ("will it fill the hole?"), and the clip editor is already
+         built to take it from here. -->
+    <div class="tx-sel" id="txSel" hidden>
+      <span class="tx-sel-dur"><b id="txSelDur">0:00</b> selected</span>
+      <span class="tx-sel-range" id="txSelRange"></span>
+      <span class="tx-sel-cue" id="txSelCue"></span>
+      <button class="try" id="txSelClip">Open in clip editor</button>
+      <button class="try" id="txSelCopy">Copy passage</button>
+    </div>
+
+    <div class="modal-actions tx-actions">
+      <span class="tx-prov" id="txProv"></span>
+      <span class="tx-links">
+        <button class="try" id="txPrint">Print</button>
+        <a class="try" id="txTxt" href="#" download>Text</a>
+        <a class="try" id="txSrt" href="#" download>SRT</a>
+        <a class="try" id="txVtt" href="#" download>VTT</a>
+        <a class="try" id="txPage" href="#" target="_blank" rel="noopener">Episode&nbsp;page</a>
+      </span>
+    </div>
+  </div>
+</div>
+
 <div class="backdrop" id="help" hidden>
   <div class="modal" role="dialog" aria-modal="true" aria-labelledby="helpTitle">
 
@@ -1320,6 +1509,27 @@
         <p class="lede">The names under each episode are people, bands, museums
           and books the producers linked in the show notes — a hand-curated index,
           not guesswork. Click one to see every episode tagged with it.</p>
+      </section>
+
+      <section class="help-sec wide">
+        <h3>Transcript</h3>
+        <p class="lede"><b>Transcript</b> under an episode opens the words with
+          the tools around them. It arrives already marked up with whatever you
+          searched for. Inside you can:</p>
+        <ul class="help-list">
+          <li><b>Find within the episode</b> — same syntax as the main search
+            (<code>"phrases"</code>, <code>AND</code>/<code>OR</code>/<code>NOT</code>,
+            <code>organiz*</code>), with next/previous and a hit count</li>
+          <li><b>Matches only</b> — collapse a 55-minute show down to just the
+            lines that mention the thing</li>
+          <li><b>Click any timestamp</b> to hear it, and let the transcript
+            follow along as it plays</li>
+          <li><b>Select a passage</b> to get its exact duration, its in and out
+            times, and its out-cue — then send it straight to the clip editor</li>
+          <li><b>Print it</b>, or download it as text, SRT or VTT</li>
+        </ul>
+        <p class="lede">144 of the 200 episodes have one. The rest say so
+          plainly rather than pretending to be broken.</p>
       </section>
 
       <section class="help-sec">
@@ -1575,6 +1785,28 @@ async function run() {
        <div class="player" id="player-${r.id}"></div>
       </div>` : "";
 
+    // Two different things, deliberately not merged. When searching, the
+    // snippet answers "why did this match" and carries the highlight, so it
+    // stays; the full notes sit behind a toggle. When browsing there is no
+    // match to explain, so the notes are the blurb and open clamped.
+    const browsing = r.excerpt_from === "full";
+    const noteText = (r.description || "").trim();
+
+    const blurb = browsing ? "" : `
+      ${r.excerpt_from === "transcript" ? `<div class="from-tx">Heard in this episode</div>` : ""}
+      <p class="excerpt${r.excerpt_from === "transcript" ? " spoken" : ""}">${r.excerpt || ""}</p>`;
+
+    const notes = noteText ? `
+      <p class="notes ${browsing ? "clamp" : "hidden"}" id="notes-${r.id}">${esc(noteText)}</p>
+      <button class="more" data-notes="${r.id}" data-mode="${browsing ? "clamp" : "hidden"}"
+              aria-expanded="false"
+              aria-controls="notes-${r.id}">${browsing ? "More" : "Show full notes"}</button>` : "";
+
+    // Only offered where there is one — 56 of 200 episodes have no transcript,
+    // and a button that opens an apology is worse than no button.
+    const txBtn = r.has_transcript
+      ? `<button class="more tx-open" data-tx="${r.id}">Transcript</button>` : "";
+
     const ents = (r.mentions && r.mentions.length) ? `
       <div class="ents"><span class="lbl">Tags</span>${r.mentions.slice(0, 8).map(m =>
         `<button class="ent" data-person="${esc(m.norm_text)}"
@@ -1618,8 +1850,7 @@ async function run() {
           ${r.is_encore ? `<span class="badge encore">Encore</span>` : ""}
         </div>
         <h2><a href="${esc(r.episode_url)}" target="_blank" rel="noopener">${esc(r.title)}</a></h2>
-        ${r.excerpt_from === "transcript" ? `<div class="from-tx">Heard in this episode</div>` : ""}
-        <p class="excerpt${r.excerpt_from === "transcript" ? " spoken" : ""}">${r.excerpt || ""}</p>
+        ${blurb}${notes}${txBtn}
         ${people}
         ${moments}
         ${reair}
@@ -1662,6 +1893,30 @@ async function run() {
     });
   });
 
+  document.querySelectorAll(".tx-open").forEach(b =>
+    b.addEventListener("click", () => {
+      const ep = data.results.find(r => String(r.id) === b.dataset.tx);
+      if (ep) openTranscript(ep);
+    }));
+
+  // Expand the show notes. Two modes, set at render time: clamped-and-visible
+  // when browsing, hidden-behind-a-button when searching.
+  const LABELS = { clamp: ["More", "Less"], hidden: ["Show full notes", "Hide notes"] };
+  document.querySelectorAll(".more").forEach(b => {
+    const p = $("#notes-" + b.dataset.notes), mode = b.dataset.mode;
+    if (!p) return;
+    // A note that already fits inside the clamp has nothing to reveal, so the
+    // button would be a lie. Measured after paint, not guessed from length —
+    // wrapping depends on the viewport.
+    if (mode === "clamp" && p.scrollHeight <= p.clientHeight + 2) { b.hidden = true; return; }
+    b.addEventListener("click", () => {
+      const open = b.getAttribute("aria-expanded") === "true";
+      p.classList.toggle(mode, open);          // re-clamp / re-hide when closing
+      b.setAttribute("aria-expanded", String(!open));
+      b.textContent = LABELS[mode][open ? 0 : 1];
+    });
+  });
+
   document.querySelectorAll(".ent.topic").forEach(b => {
     b.addEventListener("click", () => {
       state.topic = state.topic === b.dataset.topic ? null : b.dataset.topic;
@@ -1688,6 +1943,7 @@ addEventListener("keydown", e => {
   if (sortOpen()) return;                      // so does the sort menu
   if (exportOpen()) return;                    // and the export dialog
   if (clipOpen()) return;                      // and the clip editor
+  if (txOpen()) return;                        // and the transcript
   if (e.key === "/" && document.activeElement !== $("#q")) { e.preventDefault(); $("#q").focus(); }
   if (e.key === "Escape") {
     if (document.activeElement === $("#q") && state.q) $("#clear").click();
@@ -1737,7 +1993,7 @@ help.addEventListener("keydown", e => {
 
 addEventListener("keydown", e => {
   const typing = /^(INPUT|TEXTAREA)$/.test(document.activeElement.tagName);
-  if (e.key === "?" && !typing && !helpOpen() && !exportOpen()) { e.preventDefault(); openHelp(); }
+  if (e.key === "?" && !typing && !helpOpen() && !exportOpen() && !txOpen()) { e.preventDefault(); openHelp(); }
   if (e.key === "Escape" && helpOpen()) { e.preventDefault(); closeHelp(); }
 });
 
@@ -2376,6 +2632,230 @@ addEventListener("keydown", e => {
   if (e.key === "Escape" && clipOpen()) { e.preventDefault(); closeClip(); }
 });
 addEventListener("resize", () => { if (clipOpen() && clip && clip.peaks) paintClip(); });
+
+/* ---------- transcript ----------
+   The words with the tools around them. Three jobs, one view:
+     read    — the whole transcript, printable, downloadable
+     find    — inside the episode, using the archive's own query syntax
+     use     — select a passage, see its duration, send it to the clip editor
+   Finding a moment is a text problem; cutting it is an audio problem. This is
+   the text half handing off to the audio half that already exists. */
+const txModal = $("#txModal");
+const txOpen = () => !txModal.hidden;
+let tx = null;              // { ep, segments, matches[], cursor, audio }
+let txFocus = null;
+
+async function openTranscript(ep) {
+  txFocus = document.activeElement;
+  // Same reasoning as the clip editor: a player left running behind a modal
+  // is audio you can hear and can't reach.
+  document.querySelectorAll(".player audio").forEach(a => a.pause());
+
+  tx = { ep, segments: [], matches: [], cursor: -1, audio: null };
+  $("#txEp").textContent =
+    `${ep.show_name} · ${dateParts(ep.published_at).md} ${dateParts(ep.published_at).yr}`;
+  $("#txTitle").textContent = ep.title;
+  $("#txBody").innerHTML = `<div class="tx-empty">Loading transcript…</div>`;
+  $("#txSel").hidden = true;
+  $("#txPlayer").innerHTML = "";
+  txModal.hidden = false;
+  $("#txClose").focus();
+
+  // Open pre-loaded with whatever search produced this result, so the words
+  // that brought you here are already marked when the transcript appears.
+  $("#txFind").value = state.q || "";
+  await loadTranscript();
+
+  if (tx.ep.audio_url) tx.audio = buildPlayer($("#txPlayer"), tx.ep.audio_url, tx.ep);
+
+  const base = `/episode/${ep.id}/transcript`;
+  $("#txTxt").href = base;
+  $("#txSrt").href = base + "?format=srt";
+  $("#txVtt").href = base + "?format=vtt";
+  $("#txPage").href = ep.episode_url || "#";
+  $("#txProv").textContent =
+    "Machine-made transcript — good for finding things, not for quoting. Names take damage.";
+}
+
+async function loadTranscript() {
+  const q = $("#txFind").value.trim();
+  const url = `/api/episode/${tx.ep.id}/segments` + (q ? `?q=${encodeURIComponent(q)}` : "");
+  let data;
+  try {
+    data = await (await fetch(url)).json();
+  } catch {
+    $("#txBody").innerHTML = `<div class="tx-empty"><b>Couldn't load the transcript.</b>
+      The archive is still there — try again, or open the episode page.</div>`;
+    return;
+  }
+  if (!txOpen()) return;                       // closed while we were fetching
+
+  tx.segments = data.segments || [];
+  if (!tx.segments.length) {
+    $("#txBody").innerHTML = `<div class="tx-empty">
+      <b>No transcript published for this episode.</b>
+      The feed carries one for 144 of the 200 episodes; this is one of the rest.
+      Nothing is broken — there is simply nothing to show.</div>`;
+    $("#txCount").textContent = "";
+    return;
+  }
+  renderTranscript(data);
+}
+
+function renderTranscript(data) {
+  const stamps = $("#txStamps").checked;
+  const only = $("#txOnly").checked;
+
+  $("#txBody").className = "modal-body tx-body" + (stamps ? "" : " no-stamps");
+  $("#txBody").innerHTML = tx.segments.map(s => {
+    const hit = !!s.marked;
+    return `<p class="tx-line${hit ? " hit" : ""}${only && !hit ? " hidden" : ""}"
+               data-id="${s.id}" data-start="${s.start_sec}"
+               data-end="${s.end_sec ?? s.start_sec}">
+      <button class="tx-t" data-t="${s.start_sec}"
+              aria-label="Play from ${hms(s.start_sec)}">${hms(s.start_sec)}</button>
+      <span>${hit ? s.marked : esc(s.text)}</span>
+    </p>`;
+  }).join("");
+
+  tx.matches = [...$("#txBody").querySelectorAll(".tx-line.hit")];
+  tx.cursor = -1;
+
+  const q = $("#txFind").value.trim();
+  $("#txCount").textContent = data.error ? "syntax" :
+    !q ? "" : `${data.matches || 0} hit${data.matches === 1 ? "" : "s"}`;
+  $("#txPrev").disabled = $("#txNext").disabled = tx.matches.length === 0;
+  if (tx.matches.length) stepMatch(1);
+
+  $("#txBody").querySelectorAll(".tx-t").forEach(b =>
+    b.addEventListener("click", () => playFrom(+b.dataset.t)));
+}
+
+function playFrom(sec) {
+  if (!tx.audio) return;
+  const go = () => { tx.audio.currentTime = sec; tx.audio.play().catch(() => {}); };
+  if (tx.audio.readyState >= 1) go();
+  else tx.audio.addEventListener("loadedmetadata", go, { once: true });
+}
+
+// Walk the hits. Wraps at both ends — with one match, "next" should land on it
+// again rather than doing nothing and looking broken.
+function stepMatch(dir) {
+  if (!tx.matches.length) return;
+  tx.cursor = (tx.cursor + dir + tx.matches.length) % tx.matches.length;
+  tx.matches.forEach(el => el.classList.remove("cursor"));
+  const el = tx.matches[tx.cursor];
+  el.classList.add("cursor");
+  el.scrollIntoView({ block: "center", behavior: "smooth" });
+  $("#txCount").textContent = `${tx.cursor + 1} of ${tx.matches.length}`;
+}
+
+/* Selection → a passage. The transcript is how a broadcaster finds the words;
+   this turns the found words back into an audio range the clip editor can cut. */
+function readSelection() {
+  const sel = window.getSelection();
+  if (!sel || sel.isCollapsed) return null;
+  const body = $("#txBody");
+  const lineOf = n => (n.nodeType === 1 ? n : n.parentElement)?.closest(".tx-line");
+  const a = lineOf(sel.anchorNode), b = lineOf(sel.focusNode);
+  if (!a || !b || !body.contains(a) || !body.contains(b)) return null;
+
+  // Every line the selection touches, not just its two ends — dragging across
+  // five lines should give the whole five, in document order either way.
+  const all = [...body.querySelectorAll(".tx-line")];
+  const [i, j] = [all.indexOf(a), all.indexOf(b)].sort((x, y) => x - y);
+  const span = all.slice(i, j + 1);
+  return {
+    from: Math.min(...span.map(el => +el.dataset.start)),
+    to: Math.max(...span.map(el => +el.dataset.end)),
+    text: sel.toString().trim(),
+  };
+}
+
+function syncSelection() {
+  if (!txOpen() || !tx) return;
+  const s = readSelection();
+  const box = $("#txSel");
+  if (!s || s.to <= s.from) { box.hidden = true; tx.sel = null; return; }
+  tx.sel = s;
+  box.hidden = false;
+  $("#txSelDur").textContent = hms(s.to - s.from);
+  $("#txSelRange").textContent = `${hms(s.from)} – ${hms(s.to)}`;
+  // Out-cue: the last few words before the passage ends. Standard radio
+  // paperwork — it's how the studio knows when to come back.
+  const words = s.text.split(/\s+/).filter(Boolean);
+  $("#txSelCue").textContent = words.length
+    ? `out-cue: “…${words.slice(-5).join(" ")}”` : "";
+}
+
+document.addEventListener("selectionchange", syncSelection);
+
+$("#txSelClip").addEventListener("click", () => {
+  if (!tx?.sel) return;
+  // Read everything needed BEFORE closing — closeTranscript() nulls `tx`, so
+  // reaching for tx.ep afterwards throws and the clip editor silently never
+  // opens. The passage looks like it vanished.
+  const { from, to } = tx.sel;
+  const ep = tx.ep;
+  closeTranscript();
+  openClip(ep, from, to);
+});
+
+$("#txSelCopy").addEventListener("click", async () => {
+  if (!tx?.sel) return;
+  const s = tx.sel;
+  const line = `“${s.text}”\n— ${tx.ep.title}, ${tx.ep.show_name}, ` +
+               `${(tx.ep.published_at || "").slice(0, 10)} (${hms(s.from)})`;
+  try {
+    await navigator.clipboard.writeText(line);
+    $("#txSelCopy").textContent = "Copied";
+    setTimeout(() => { $("#txSelCopy").textContent = "Copy passage"; }, 1400);
+  } catch { /* clipboard blocked — selection is still there to copy by hand */ }
+});
+
+/* Follow the audio. Cheap because every line already knows its own timing. */
+function followAudio() {
+  if (!txOpen() || !tx?.audio || !$("#txFollow").checked) return;
+  const t = tx.audio.currentTime || 0;
+  const lines = $("#txBody").querySelectorAll(".tx-line");
+  let current = null;
+  for (const el of lines) {
+    if (+el.dataset.start <= t && t < +el.dataset.end) { current = el; break; }
+  }
+  lines.forEach(el => el.classList.toggle("playing", el === current));
+  if (current && !current.classList.contains("seen")) {
+    current.classList.add("seen");
+    current.scrollIntoView({ block: "center", behavior: "smooth" });
+  }
+}
+setInterval(followAudio, 500);
+
+let txFindTimer = 0;
+$("#txFind").addEventListener("input", () => {
+  clearTimeout(txFindTimer);
+  txFindTimer = setTimeout(loadTranscript, 180);
+});
+$("#txFind").addEventListener("keydown", e => {
+  if (e.key === "Enter") { e.preventDefault(); stepMatch(e.shiftKey ? -1 : 1); }
+});
+$("#txNext").addEventListener("click", () => stepMatch(1));
+$("#txPrev").addEventListener("click", () => stepMatch(-1));
+$("#txOnly").addEventListener("change", loadTranscript);
+$("#txStamps").addEventListener("change", loadTranscript);
+$("#txPrint").addEventListener("click", () => print());
+
+function closeTranscript() {
+  if (tx?.audio) tx.audio.pause();
+  txModal.hidden = true;
+  $("#txPlayer").innerHTML = "";
+  tx = null;
+  if (txFocus) txFocus.focus();
+}
+$("#txClose").addEventListener("click", closeTranscript);
+txModal.addEventListener("mousedown", e => { if (e.target === txModal) closeTranscript(); });
+addEventListener("keydown", e => {
+  if (e.key === "Escape" && txOpen()) { e.preventDefault(); closeTranscript(); }
+});
 
 /* ---------- deep links ---------- */
 function readURL() {

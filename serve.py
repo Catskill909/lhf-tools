@@ -105,8 +105,13 @@ def decorate(conn, rows, match=None):
         desc = r.pop("snip_desc", None)
         if tx and "<mark>" in tx:
             r["excerpt"], r["excerpt_from"] = tx, "transcript"
-        else:
+        elif desc:
             r["excerpt"], r["excerpt_from"] = desc, "description"
+        else:
+            # Browsing: no query, so no snippet. The card renders the full
+            # notes instead and clamps them, which is the only mode where
+            # the reader can see everything the feed actually published.
+            r["excerpt"], r["excerpt_from"] = None, "full"
     ids = [r["id"] for r in out]
     marks = ",".join("?" * len(ids))
     by_id = {r["id"]: r for r in out}
@@ -212,6 +217,8 @@ def search(conn, q="", show=None, year=None, encore=None, person=None,
                    e.audio_url, e.is_encore, s.name AS show_name, s.slug AS show_slug,
                    snippet(episodes_fts, 1, '<mark>', '</mark>', '…', 28) AS snip_desc,
                    snippet(episodes_fts, 2, '<mark>', '</mark>', '…', 28) AS snip_tx,
+                   e.description_text AS description,
+                   (e.transcript_text IS NOT NULL) AS has_transcript,
                    rank AS score
             FROM episodes_fts f
             JOIN episodes e ON e.id = f.rowid
@@ -223,8 +230,15 @@ def search(conn, q="", show=None, year=None, encore=None, person=None,
         sql = """
             SELECT e.id, e.title, e.published_at, e.duration_sec, e.episode_url,
                    e.audio_url, e.is_encore, s.name AS show_name, s.slug AS show_slug,
-                   substr(e.description_text, 1, 240) AS snip_desc,
+                   -- Browsing has no match to snippet around, so the card shows
+                   -- the notes themselves and the UI clamps them. This used to
+                   -- be substr(...,1,240), which cut every single episode --
+                   -- the median note is 1,064 characters -- mid-word and with
+                   -- no ellipsis, so it read as corrupted rather than shortened.
+                   NULL AS snip_desc,
                    NULL AS snip_tx,
+                   e.description_text AS description,
+                   (e.transcript_text IS NOT NULL) AS has_transcript,
                    0 AS score
             FROM episodes e
             JOIN shows s ON s.id = e.show_id
@@ -310,6 +324,83 @@ def entities(conn, limit=400):
            ORDER BY n DESC, text COLLATE NOCASE
            LIMIT ?""", (limit,)).fetchall()
     return {"count": len(rows), "entities": [dict(r) for r in rows]}
+
+
+def segments(conn, ep_id, q=""):
+    """
+    One episode's transcript, line by line, for the transcript modal.
+
+    Highlighting is done here rather than in the browser so that finding a
+    phrase inside an episode behaves exactly like finding it across the
+    archive — `"exact phrase"`, AND/OR/NOT, organiz*, NEAR() all work, because
+    it's the same FTS index answering. Reimplementing that client-side would
+    drift from the real search the first time anyone typed an operator.
+
+    highlight() rather than snippet(): snippet truncates to a window, and this
+    view wants the whole line with the matched words marked inside it.
+    """
+    ep = conn.execute(
+        """SELECT e.id, e.title, e.published_at, e.duration_sec, e.audio_url,
+                  e.episode_url, e.transcript_url, e.transcript_source,
+                  s.name AS show_name
+           FROM episodes e JOIN shows s ON s.id = e.show_id
+           WHERE e.id = ?""", (ep_id,)).fetchone()
+    if not ep:
+        return None
+
+    rows = conn.execute(
+        """SELECT id, start_sec, end_sec, text FROM segments
+           WHERE episode_id = ? ORDER BY start_sec, id""", (ep_id,)).fetchall()
+
+    out = {"episode": dict(ep), "segments": [dict(r) for r in rows],
+           "matches": 0, "query": q or ""}
+
+    match = fts_query(q)
+    if match and rows:
+        try:
+            marked = {
+                m["id"]: m["marked"] for m in conn.execute(
+                    """SELECT s.id,
+                              highlight(segments_fts, 0, '<mark>', '</mark>') AS marked
+                       FROM segments_fts f JOIN segments s ON s.id = f.rowid
+                       WHERE segments_fts MATCH ? AND s.episode_id = ?""",
+                    (match, ep_id))
+            }
+            for seg in out["segments"]:
+                if seg["id"] in marked:
+                    seg["marked"] = marked[seg["id"]]
+            out["matches"] = len(marked)
+        except sqlite3.OperationalError as exc:
+            # A malformed query should grey out the match count, not blank the
+            # transcript — the words are still worth reading.
+            out["error"] = f"search error: {exc}"
+    return out
+
+
+def to_timecode(sec, comma=False):
+    """SRT wants 00:00:12,340; WebVTT wants 00:00:12.340."""
+    sec = max(0.0, float(sec or 0))
+    h, rem = divmod(int(sec), 3600)
+    m, s = divmod(rem, 60)
+    ms = int(round((sec - int(sec)) * 1000))
+    return f"{h:02d}:{m:02d}:{s:02d}{',' if comma else '.'}{ms:03d}"
+
+
+def transcript_as(rows, fmt):
+    """Rebuild subtitle files from the segment rows we already store."""
+    if fmt == "srt":
+        return "\n".join(
+            f"{i}\n{to_timecode(r['start_sec'], True)} --> "
+            f"{to_timecode(r['end_sec'] if r['end_sec'] is not None else (r['start_sec'] or 0) + 4, True)}\n"
+            f"{r['text']}\n"
+            for i, r in enumerate(rows, 1))
+    # WebVTT — what a browser <track> and most captioning tools want.
+    body = "\n".join(
+        f"{to_timecode(r['start_sec'])} --> "
+        f"{to_timecode(r['end_sec'] if r['end_sec'] is not None else (r['start_sec'] or 0) + 4)}\n"
+        f"{r['text']}\n"
+        for r in rows)
+    return "WEBVTT\n\n" + body
 
 
 def topics(conn, limit=400):
@@ -613,14 +704,60 @@ class Handler(BaseHTTPRequestHandler):
                 return self._send(404, json.dumps({"error": "no such episode"}))
             return self._send(200, json.dumps(dict(row)))
 
+        # The transcript modal's data: every line with its timing, plus
+        # server-side highlighting for whatever query opened it.
+        m = re.fullmatch(r"/api/episode/(\d+)/segments", path)
+        if m:
+            conn = connect()
+            try:
+                data = segments(conn, int(m.group(1)), one("q") or "")
+            finally:
+                conn.close()
+            if data is None:
+                return self._send(404, json.dumps({"error": "no such episode"}))
+            return self._send(200, json.dumps(data))
+
         m = re.fullmatch(r"/episode/(\d+)/transcript", path)
         if m:
+            ep_id = int(m.group(1))
+            fmt = (one("format") or "txt").lower()
+
+            # Subtitle formats are rebuilt from the segment rows rather than
+            # stored: same data, and it means a re-ingest can't leave a stale
+            # .srt lying around disagreeing with the timings in the database.
+            if fmt in ("srt", "vtt"):
+                conn = connect()
+                try:
+                    rows = conn.execute(
+                        """SELECT start_sec, end_sec, text FROM segments
+                           WHERE episode_id = ? ORDER BY start_sec, id""",
+                        (ep_id,)).fetchall()
+                    title = conn.execute(
+                        "SELECT title FROM episodes WHERE id = ?", (ep_id,)).fetchone()
+                finally:
+                    conn.close()
+                if not rows:
+                    return self._send(404, "No timed transcript for that episode.",
+                                      "text/plain; charset=utf-8")
+                body = transcript_as(rows, fmt).encode("utf-8")
+                slug = re.sub(r"[^a-z0-9]+", "-",
+                              (title["title"] if title else "episode").lower()).strip("-")
+                self.send_response(200)
+                self.send_header("Content-Type",
+                                 f"text/{'vtt' if fmt == 'vtt' else 'plain'}; charset=utf-8")
+                self.send_header("Content-Disposition",
+                                 f'attachment; filename="{slug[:80]}.{fmt}"')
+                self.send_header("Cache-Control", "no-cache")
+                self.send_header("Content-Length", str(len(body)))
+                self.end_headers()
+                return self.wfile.write(body)
+
             conn = connect()
             try:
                 row = conn.execute(
                     """SELECT e.title, e.published_at, e.transcript_text, s.name AS show
                        FROM episodes e JOIN shows s ON s.id = e.show_id
-                       WHERE e.id = ?""", (int(m.group(1)),)).fetchone()
+                       WHERE e.id = ?""", (ep_id,)).fetchone()
             finally:
                 conn.close()
             if not row or not row["transcript_text"]:
