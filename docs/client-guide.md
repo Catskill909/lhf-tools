@@ -51,6 +51,29 @@ both** — including *Striking At Kings* and *MLK in Memphis*.
 
 ![An episode flagged as having run three times, with the dates](screenshots/03-also-ran.png)
 
+**It opens the transcript.** Every episode that has one — 144 of the 200 — has
+a **Transcript** button. It opens the whole thing, already marked up with
+whatever you just searched for.
+
+![The transcript modal — timestamped lines, find-in-transcript, the player, and print and download controls](screenshots/transcript.png)
+
+Inside it you can:
+
+- **Search within the episode**, using the same shortcuts as the main search
+  box, with a running count and arrows to step between hits
+- **Matches only** — collapse a 55-minute show down to just the lines that
+  mention the thing you're after
+- **Click any timestamp** to hear it, and let the transcript scroll along with
+  the audio as it plays
+- **Select a passage** and it tells you exactly how long it runs, where it
+  starts and ends, and its out-cue — then sends it straight to the clip editor
+- **Print it**, or download it as plain text, or as subtitles (SRT / VTT)
+
+That last one is the bit worth dwelling on. Finding the moment is the hard part
+of making radio, and you find it by reading, not by staring at a waveform. So
+you read until you spot the passage, drag across it, and the archive tells you
+it runs 1 minute 6 seconds — before you cut anything.
+
 **It cuts clips.** Press the scissors on the player and you get the waveform
 with that passage already selected. Drag the handles, zoom in, snap the cut to
 the gap between words, listen back, download the MP3. It's copied out of the
@@ -82,6 +105,8 @@ Just type — results narrow as you go. Beyond that:
 - **organiz\*** catches organize, organized, organizing, organizers
 - Filter by show, year or encores; sort by **longest / shortest** when you're
   filling a slot of a certain length
+- **More** at the end of a description opens the rest of the show notes
+- **Transcript** opens the full transcript, with the same search inside it
 - **Help** explains the rest, with examples you can click to run
 
 ---
