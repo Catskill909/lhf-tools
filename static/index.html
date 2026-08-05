@@ -1555,10 +1555,28 @@
       </section>
 
       <section class="help-sec">
+        <h3>Show notes</h3>
+        <p class="lede">Descriptions are shortened to three lines. <b>More</b>
+          at the end of the last line opens the rest — the notes as published,
+          including anything the feed carries that doesn't fit. When you've
+          searched, the blurb shows the matching passage instead, and
+          <b>Show full notes</b> opens the whole thing underneath it.</p>
+      </section>
+
+      <section class="help-sec">
         <h3>Tags</h3>
         <p class="lede">The names under each episode are people, bands, museums
           and books the producers linked in the show notes — a hand-curated index,
           not guesswork. Click one to see every episode tagged with it.</p>
+      </section>
+
+      <section class="help-sec">
+        <h3>Export</h3>
+        <p class="lede"><b>Export</b> takes whatever is on screen — the current
+          search, filters and sort — and gives you a spreadsheet of it. One row
+          per episode, with dates a spreadsheet understands, durations as
+          numbers you can total, and links back to the episode, its transcript
+          and its audio. CSV, tab-separated, or JSON.</p>
       </section>
 
       <section class="help-sec wide">
@@ -1586,7 +1604,11 @@
           plainly rather than pretending to be broken.</p>
       </section>
 
-      <section class="help-sec">
+      <!-- Hidden until the archive has actually been read. Help that describes
+           gold topic chips to someone who has none is worse than silence — they
+           go looking for a feature that isn't there and conclude it's broken.
+           Revealed automatically the moment the extraction pass has run. -->
+      <section class="help-sec" data-needs="extraction" hidden>
         <h3><span class="swatch" style="background:var(--gold)"></span>Topics</h3>
         <p class="lede">Show notes say what happened, not what an episode is
           <em>about</em>. The gold-edged topics are read from the notes and the
@@ -1595,7 +1617,7 @@
           right nearly always, but worth a glance before you cite them.</p>
       </section>
 
-      <section class="help-sec">
+      <section class="help-sec" data-needs="extraction" hidden>
         <h3>Guests and interviewers</h3>
         <p class="lede">Who was on, and who was asking. Read from the same pass,
           which catches the guests who were never hyperlinked. Click any name to
@@ -1616,6 +1638,8 @@
           <div><kbd>/</kbd> search</div>
           <div><kbd>?</kbd> this help</div>
           <div><kbd>Esc</kbd> clear, then reset, then close</div>
+          <div><kbd>Enter</kbd> next match in a transcript</div>
+          <div><kbd>Shift</kbd> + <kbd>Enter</kbd> previous match</div>
           <div><kbd>←</kbd> <kbd>→</kbd> nudge a clip handle 0.1s</div>
           <div><kbd>Shift</kbd> + <kbd>←</kbd> <kbd>→</kbd> nudge a full second</div>
         </div>
@@ -2967,8 +2991,22 @@ async function openFromURL(p) {
   } catch { /* a bad link shouldn't break the page */ }
 }
 
+// Help sections for topics and guests stay hidden until the archive has
+// actually been read, so the guide never describes a feature that has no data
+// behind it yet. One cheap call; it corrects itself the moment the pass runs.
+async function revealExtractionHelp() {
+  try {
+    const { extracted } = await (await fetch("/api/topics")).json();
+    if (extracted) {
+      document.querySelectorAll('[data-needs="extraction"]')
+        .forEach(el => { el.hidden = false; });
+    }
+  } catch { /* help is still complete without these two sections */ }
+}
+
 const _p = readURL();
 loadFacets().then(run).then(() => openFromURL(_p));
+revealExtractionHelp();
 </script>
 </body>
 </html>
