@@ -620,10 +620,20 @@
     overflow-y: auto; flex: 1;
     padding: 0.9rem 1.6rem 1.1rem; max-width: none;
   }
+  /* Selecting a passage is a feature here, not an accident of the browser.
+     Left at the default it draws in system blue inside a warm-toned app,
+     which is the whole reason dragging read as "nothing happened" — it looked
+     like stray text selection rather than a tool doing its job. */
+  .tx-body ::selection { background: var(--spot); color: #fff; }
+  .tx-body ::-moz-selection { background: var(--spot); color: #fff; }
+
   .tx-line {
     display: flex; gap: 0.7rem; align-items: baseline;
     margin: 0 0 0.5rem; font-size: 0.88rem; line-height: 1.62;
     color: var(--ink-2); scroll-margin: 5rem;
+    /* Transparent by default so marking the passage costs no layout shift. */
+    border-left: 2px solid transparent;
+    padding-left: 0.62rem; margin-left: -0.62rem;
     /* The line is clickable — say so. Without this the only clue that clicking
        plays from here is the timestamp, and the words themselves read as inert
        page furniture. Selection still works: dragging overrides the cursor,
@@ -631,6 +641,11 @@
     cursor: pointer;
   }
   .tx-line.hidden { display: none; }
+  /* The passage's extent, drawn down the gutter. This is the nearest thing to
+     handles without reimplementing text selection from scratch — it shows
+     where the clip starts and stops as a single block, which is the thing
+     dragging was failing to communicate. */
+  .tx-line.in-sel { border-left-color: var(--spot); }
   .tx-t {
     flex: none; background: none; border: none; padding: 0; cursor: pointer;
     font: inherit; font-size: 0.72rem; font-variant-numeric: tabular-nums;
@@ -673,12 +688,32 @@
   .tx-sel.has-sel .tx-sel-live {
     display: flex; flex-wrap: wrap; gap: 0.4rem 0.9rem; align-items: center;
   }
-  .tx-sel-hint { color: var(--ink-3); }
+  /* Was --ink-3, which put the one instruction that teaches the feature at the
+     dimmest value on the page. */
+  .tx-sel-hint { color: var(--ink-2); }
   .tx-sel {
     display: flex; flex-wrap: wrap; gap: 0.4rem 0.9rem; align-items: center;
     padding: 0.6rem 1.6rem; border-top: 1px solid var(--rule);
     background: var(--paper-2); font-size: 0.78rem; color: var(--ink-2);
+    transition: background 0.12s, border-color 0.12s;
   }
+  /* The bar lights up when there's a passage in hand, so the act of dragging
+     visibly does something even before you read what it says. */
+  .tx-sel.has-sel {
+    background: var(--spot-soft);
+    border-top: 1px solid var(--spot);
+    color: var(--ink);
+  }
+  /* Brighter than the plain .try — these are the two things you'd actually
+     do next, and they sat at the same weight as Print and VTT. */
+  .tx-sel .try {
+    background: var(--paper);
+    border-color: var(--spot);
+    color: var(--ink);
+    font-weight: 600;
+  }
+  .tx-sel .try:hover { background: var(--spot); color: #fff; border-color: var(--spot); }
+  .tx-sel .try:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
   .tx-sel-dur b { font-variant-numeric: tabular-nums; color: var(--ink); }
   .tx-sel-range, .tx-sel-cue {
     font-size: 0.72rem; color: var(--ink-3);
@@ -2928,6 +2963,7 @@ function readSelection() {
     from: Math.min(...span.map(el => +el.dataset.start)),
     to: Math.max(...span.map(el => +el.dataset.end)),
     text: sel.toString().trim(),
+    lines: span,
   };
 }
 
@@ -2935,10 +2971,15 @@ function syncSelection() {
   if (!txOpen() || !tx) return;
   const s = readSelection();
   const box = $("#txSel");
+  // Clear the old passage marking before drawing the new one — a selection
+  // that shrinks must give the gutter back.
+  $("#txBody").querySelectorAll(".tx-line.in-sel")
+    .forEach(el => el.classList.remove("in-sel"));
   // The bar is always present; it swaps between explaining itself and
   // reporting a selection.
   if (!s || s.to <= s.from) { box.classList.remove("has-sel"); tx.sel = null; return; }
   tx.sel = s;
+  s.lines.forEach(el => el.classList.add("in-sel"));
   box.classList.add("has-sel");
   $("#txSelDur").textContent = hms(s.to - s.from);
   $("#txSelRange").textContent = `${hms(s.from)} – ${hms(s.to)}`;
