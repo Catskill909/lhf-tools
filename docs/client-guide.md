@@ -68,6 +68,8 @@ whatever you just searched for.
   come back. **Edit audio** opens that selection in the clip editor; **Copy
   passage** takes the words.
 
+![A passage selected in the transcript, with its timing, duration, out-cue, and editing controls](screenshots/audio-select.png)
+
 Beyond those:
 
 - **Edit** on a single line does the same for just that line, and is always
