@@ -854,6 +854,18 @@
 
   .keys { display: flex; flex-wrap: wrap; gap: 0.45rem 1.4rem; }
   .keys div { font-size: 0.85rem; color: var(--ink-2); }
+  /* Grouped by where the key works, because three different things are bound
+     to the arrows depending on what has focus — an ungrouped list of fifteen
+     shortcuts would read as a contradiction rather than a reference. The label
+     borrows the SHOW / YEAR chip-row treatment so the two read as one idea. */
+  .keys-block + .keys-block { margin-top: 1.05rem; }
+  .keys-lbl {
+    font-size: 0.66rem; letter-spacing: 0.11em; text-transform: uppercase;
+    color: var(--ink-3); margin-bottom: 0.45rem;
+  }
+  /* The qualifier is a sentence, not a label — it drops the caps treatment so
+     it reads as the aside it is. */
+  .keys-lbl span { text-transform: none; letter-spacing: 0; }
   kbd {
     font-family: ui-monospace, Consolas, monospace; font-size: 0.76rem;
     border: 1px solid var(--rule-hard); border-bottom-width: 2px;
@@ -1880,14 +1892,44 @@
       <h2 class="help-group-head">Keyboard</h2>
 
       <section class="help-sec wide">
-        <div class="keys">
-          <div><kbd>/</kbd> search</div>
-          <div><kbd>?</kbd> this help</div>
-          <div><kbd>Esc</kbd> clear, then reset, then close</div>
-          <div><kbd>Enter</kbd> next match in a transcript</div>
-          <div><kbd>Shift</kbd> + <kbd>Enter</kbd> previous match</div>
-          <div><kbd>←</kbd> <kbd>→</kbd> nudge a clip handle 0.1s</div>
-          <div><kbd>Shift</kbd> + <kbd>←</kbd> <kbd>→</kbd> nudge a full second</div>
+        <div class="keys-block">
+          <p class="keys-lbl">Anywhere</p>
+          <div class="keys">
+            <div><kbd>/</kbd> search</div>
+            <div><kbd>?</kbd> this help</div>
+            <div><kbd>Esc</kbd> clear, then reset, then close</div>
+          </div>
+        </div>
+
+        <div class="keys-block">
+          <p class="keys-lbl">Playing an episode <span>— with the progress bar focused</span></p>
+          <div class="keys">
+            <div><kbd>Space</kbd> play / pause</div>
+            <div><kbd>←</kbd> <kbd>→</kbd> skip 5s</div>
+            <div><kbd>Shift</kbd> + <kbd>←</kbd> <kbd>→</kbd> skip 30s</div>
+          </div>
+        </div>
+
+        <div class="keys-block">
+          <p class="keys-lbl">Reading a transcript</p>
+          <div class="keys">
+            <div><kbd>Enter</kbd> next match</div>
+            <div><kbd>Shift</kbd> + <kbd>Enter</kbd> previous match</div>
+          </div>
+        </div>
+
+        <div class="keys-block">
+          <p class="keys-lbl">In the audio editor</p>
+          <div class="keys">
+            <div><kbd>Space</kbd> play / pause</div>
+            <div><kbd>Home</kbd> stop, back to the in-point</div>
+            <div><kbd>I</kbd> mark the in-point at the playhead</div>
+            <div><kbd>O</kbd> mark the out-point</div>
+            <div><kbd>[</kbd> <kbd>]</kbd> jump to the previous / next pause</div>
+            <div><kbd>←</kbd> <kbd>→</kbd> nudge a focused handle 0.1s</div>
+            <div><kbd>Shift</kbd> + <kbd>←</kbd> <kbd>→</kbd> nudge a full second</div>
+            <div><kbd>Esc</kbd> close without downloading</div>
+          </div>
         </div>
       </section>
 
