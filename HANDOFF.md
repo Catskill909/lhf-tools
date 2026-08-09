@@ -571,9 +571,29 @@ the feeds in 143 seconds. Losing the volume costs two and a half minutes.
 **That stops being true as the feed window slides.** Podbean only serves the
 most recent 100 episodes per show, so every week the oldest episode in the feed
 falls out of reach. Anything already ingested stays in the database — but once
-it has left the feed, it cannot be fetched again. In a year the archive will
-hold episodes that exist nowhere else we can reach, and the volume becomes the
-only copy of them.
+it has left the feed, it cannot be fetched again.
+
+**Measured 9 August 2026: that threshold is not a year away, it is now.**
+
+| Show | Episodes held | Oldest | Newest |
+|---|---|---|---|
+| Labor Heritage Power Hour | **100** | 2024-09-12 | 2026-07-30 |
+| Labor History Today | **100** | 2024-09-22 | 2026-08-02 |
+
+Both shows sit at **exactly** the cap, and `episodes` rows are never deleted —
+there is no `DELETE FROM episodes` anywhere in `ingest/`. So the database
+currently holds precisely what the feeds hold, and **the next episode of each
+show pushes the oldest one out of reach while the database keeps it.** From that
+publication onward the volume is the only copy of something, permanently, with
+no event to notice and nothing in the UI that changes.
+
+Both shows are weekly. This may already have happened in production, which
+refreshes daily — the check is whether the live site reports more than 100
+episodes for either show.
+
+Nothing prior to September 2024 was ever reachable by scraping; the shows are
+older than that. The Podbean back-end export remains the only route to the
+pre-feed backlog, and it is a one-time recovery.
 
 So: back up the Coolify volume, and start before it matters rather than after.
 `sqlite3 /data/lhf.sqlite ".backup /somewhere/else.sqlite"` is safe to run

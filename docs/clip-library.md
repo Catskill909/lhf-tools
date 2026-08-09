@@ -307,19 +307,28 @@ same file safe"*, and the refresh container is a writer to that volume today.
 
 **Three decisions that would keep it proportionate:**
 
-- **A separate `clips.sqlite`, not a table inside `lhf.sqlite`.** The archive's
-  recovery story is "re-scrape", which cannot bring back a producer's saved
-  clips. Different recovery stories should not share a file, and a runaway write
-  then cannot bloat or corrupt the archive.
+- **A separate `clips.sqlite`, not a table inside `lhf.sqlite`.** Different
+  recovery stories should not share a file, and a runaway write then cannot
+  bloat or corrupt the archive.
 - **One shared passphrase**, held as a Coolify environment variable — the
   mechanism already exists for `DATABASE_PATH`. Not accounts; just enough that a
   stranger who finds the URL cannot write. For a handful of colleagues that is
   proportionate, and accounts would be over-building.
 - **`POST` and `DELETE` only, with a size cap.**
 
-**Worth confirming before anything irreplaceable goes in that volume:** whether
-the backup `docker-compose.yml` asks for actually exists. The archive can be
-re-scraped; saved clips cannot.
+**The volume needs a backup before anything irreplaceable goes in it — and the
+archive already qualifies.** An earlier draft of this document said "the archive
+can be re-scraped; saved clips cannot". That is no longer true. Measured on
+9 August 2026, both shows hold **exactly 100 episodes**, which is Podbean's feed
+cap, and `episodes` rows are never deleted. The next episode of each show
+therefore pushes the oldest out of the feed while the database keeps it, and from
+that moment the volume is the only copy of something. Both shows are weekly.
+
+`HANDOFF.md` carries the numbers and the WAL-safe backup command
+(`sqlite3 /data/lhf.sqlite ".backup /somewhere/else.sqlite"` — a plain file copy
+of a live SQLite database is not safe). **This is a live task independent of the
+clip library**, and it is the reason a shared library would need a backup story
+rather than inheriting one.
 
 **And note the strategic overlap.** `docs/ai-layer.md` blocks its entire AI layer
 on the same three things — a key held properly, an admin interface, and
