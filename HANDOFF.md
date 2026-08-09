@@ -3,6 +3,8 @@
 **Status:** **deployed and live on Coolify**, real data, updating itself daily.
 Feature-complete for everything achievable without AI.
 **Last worked:** 9 August 2026. Built from nothing on 3 August.
+**Client:** Labor Heritage Foundation — Harold Phillips (producer), Chris Garlock
+and Elise Bryant (hosts), Patrick Dixon.
 
 **Two things a new reader should know before anything else:**
 1. **The archive is no longer disposable.** Both shows sit at Podbean's
@@ -10,8 +12,6 @@ Feature-complete for everything achievable without AI.
    anything that rotates out. `backup.py` exists; see **Backups**.
 2. **The audio editor was rebuilt** — playhead, transport, 10 ms waveform,
    keyboard marking. `docs/audio-editor-dev.md` opens with a status summary.
-**Client:** Labor Heritage Foundation — Harold Phillips (producer), Chris Garlock
-and Elise Bryant (hosts), Patrick Dixon.
 
 ---
 
