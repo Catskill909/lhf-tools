@@ -623,11 +623,31 @@ pre-feed backlog, and it is a one-time recovery.
 
 So: back up the Coolify volume, and start before it matters rather than after.
 
-`backup.py` does this and nothing else:
+`backup.py` does this and nothing else.
+
+**On the server, pull it down — do not store it there.** The VPS should not
+accumulate 53 MB copies of a file it already has, and a snapshot beside the
+database protects against nothing likely to happen to it:
+
+```bash
+# run from your own machine
+ssh HOST 'docker exec CONTAINER python3 /app/backup.py --stdout' \
+    > ~/lhf-$(date +%F).sqlite
+python3 backup.py --verify-only ~/lhf-2026-08-09.sqlite
+```
+
+`--stdout` builds the snapshot in a temporary file, verifies it, streams it and
+deletes it. Peak disk on the server is one copy of the database for the length
+of the transfer; nothing persists. Every message goes to stderr, so logging can
+never contaminate the database bytes on stdout, and **verification happens
+before the first byte is sent** — a failed backup produces no output at all
+rather than a truncated file that looks plausible.
+
+Locally, or anywhere you do want files kept:
 
 ```bash
 python3 backup.py                       # snapshot to data/backups/, keep 7
-python3 backup.py --dest /mnt/nas/lhf   # somewhere off the volume
+python3 backup.py --dest /mnt/nas/lhf   # somewhere else, rotated
 python3 backup.py --verify-only FILE    # check an old snapshot
 ```
 
@@ -644,9 +664,8 @@ Three things it does that a file copy does not:
 
 **A snapshot inside the same volume is not a backup.** It defends against
 corruption and a bad migration, and against nothing at all if the volume is
-lost, which is the failure that matters here. Point `--dest` somewhere off the
-volume, or copy the output off the host after each run. The script says so in
-its own output when it detects this.
+lost, which is the failure that matters here. The script says so in its own
+output when it detects that it has written one.
 
 The other half of the same problem is the Podbean back-end export, which would
 recover the pre-September-2024 backlog once — see Open threads.

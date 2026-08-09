@@ -5,7 +5,24 @@ LHF Digital Asset Manager — take a consistent snapshot of the archive.
     python3 backup.py                       # snapshot to data/backups/
     python3 backup.py --dest /mnt/nas/lhf   # snapshot somewhere else
     python3 backup.py --keep 30             # how many to retain
+    python3 backup.py --stdout > out.sqlite # stream it, keep nothing here
     python3 backup.py --verify-only FILE    # check an existing snapshot
+
+PULLING A BACKUP OFF THE SERVER. The production archive should not accumulate
+snapshots — it is a small VPS, the database is 53 MB, and storing copies of it
+beside itself protects against nothing that is likely to happen. Use --stdout
+and keep the copy on a machine you control:
+
+    ssh HOST 'docker exec CONTAINER python3 /app/backup.py --stdout' \
+        > ~/lhf-$(date +%F).sqlite
+    python3 backup.py --verify-only ~/lhf-$(date +%F).sqlite
+
+--stdout writes the database bytes to standard output and every message to
+standard error, so the stream is never contaminated by logging. The snapshot is
+built in a temporary file, verified, streamed and deleted — peak disk on the
+server is one copy of the database for a few seconds, and nothing persists.
+Verification happens before a single byte is sent, so a failed backup produces
+no output at all rather than a truncated file that looks plausible.
 
 WHY THIS EXISTS, in one paragraph. Podbean serves only the most recent 100
 episodes per show. Both shows are at exactly that number, and `ingest` never
@@ -38,7 +55,14 @@ import argparse
 import os
 import sqlite3
 import sys
+import tempfile
 from datetime import datetime, timezone
+
+# In --stdout mode the database bytes own standard output, so everything the
+# script has to say goes to standard error. `log` exists so no message can be
+# written to the wrong stream by accident.
+def log(*a):
+    print(*a, file=sys.stderr)
 
 ROOT = os.path.dirname(os.path.abspath(__file__))
 DB_PATH = os.environ.get("DATABASE_PATH", os.path.join(ROOT, "data", "lhf.sqlite"))
@@ -83,17 +107,17 @@ def verify(path):
     try:
         result = integrity(path)
         if result != "ok":
-            print(f"FAILED integrity check: {result}", file=sys.stderr)
+            log(f"FAILED integrity check: {result}")
             return False
         eps, segs, shows = describe(path)
     except sqlite3.Error as e:
-        print(f"FAILED to read the snapshot: {e}", file=sys.stderr)
+        log(f"FAILED to read the snapshot: {e}")
         return False
 
-    print(f"  verified: {eps} episodes, {segs} segments, {shows} shows, "
-          f"{human(os.path.getsize(path))}")
+    log(f"  verified: {eps} episodes, {segs} segments, {shows} shows, "
+        f"{human(os.path.getsize(path))}")
     if eps == 0:
-        print("  WARNING: the snapshot has no episodes in it.", file=sys.stderr)
+        log("  WARNING: the snapshot has no episodes in it.")
         return False
     return True
 
@@ -108,19 +132,16 @@ def rotate(dest, keep):
                    if f.startswith("lhf-") and f.endswith(".sqlite"))
     for old in snaps[:-keep] if keep > 0 else []:
         os.remove(os.path.join(dest, old))
-        print(f"  removed old snapshot {old}")
+        log(f"  removed old snapshot {old}")
 
 
-def backup(src, dest, keep):
-    if not os.path.exists(src):
-        print(f"No database at {src}", file=sys.stderr)
-        return 1
+def snapshot(src, out):
+    """Write a consistent, self-contained copy of `src` to `out`.
 
-    os.makedirs(dest, exist_ok=True)
-    stamp = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H-%M-%SZ")
-    out = os.path.join(dest, f"lhf-{stamp}.sqlite")
-
-    print(f"Backing up {src}")
+    Shared by both modes deliberately. A --stdout snapshot that differed in any
+    way from a --dest one would be a second implementation to keep correct, and
+    the differences would only surface in whichever mode gets tested less.
+    """
     src_conn = sqlite3.connect(f"file:{src}?mode=ro", uri=True)
     dst_conn = sqlite3.connect(out)
     try:
@@ -136,13 +157,6 @@ def backup(src, dest, keep):
         # single self-contained file that copies with `cp` and opens read-only
         # anywhere — which is the entire point of a backup.
         dst_conn.execute("PRAGMA journal_mode=DELETE")
-    except sqlite3.Error as e:
-        print(f"FAILED: {e}", file=sys.stderr)
-        dst_conn.close()
-        src_conn.close()
-        if os.path.exists(out):
-            os.remove(out)          # never leave a half-written file that looks like a backup
-        return 1
     finally:
         dst_conn.close()
         src_conn.close()
@@ -156,21 +170,81 @@ def backup(src, dest, keep):
         if os.path.exists(sidecar):
             os.remove(sidecar)
 
+
+def stream(src):
+    """Build a snapshot, verify it, write it to stdout, leave nothing behind.
+
+    This is the mode to use on the production server. Peak disk is one copy of
+    the database for as long as the transfer takes, and the temporary file is
+    removed whether or not anything goes wrong.
+    """
+    if not os.path.exists(src):
+        log(f"No database at {src}")
+        return 1
+
+    # Alongside the database rather than /tmp: a container's /tmp can be small
+    # or memory-backed, and the volume is known to have room for a file this
+    # size because it is already holding one.
+    fd, tmp = tempfile.mkstemp(prefix=".backup-", suffix=".sqlite",
+                               dir=os.path.dirname(src))
+    os.close(fd)
+    try:
+        log(f"Backing up {src}")
+        snapshot(src, tmp)
+        # Verify before a single byte is sent. A failed backup should produce no
+        # output at all, rather than a truncated file the caller has to notice.
+        if not verify(tmp):
+            return 1
+        log(f"  streaming {human(os.path.getsize(tmp))} to stdout")
+        with open(tmp, "rb") as fh:
+            while chunk := fh.read(1 << 20):
+                sys.stdout.buffer.write(chunk)
+        sys.stdout.buffer.flush()
+        log("  done — nothing kept on this machine")
+        return 0
+    except (sqlite3.Error, OSError) as e:
+        log(f"FAILED: {e}")
+        return 1
+    finally:
+        for f in (tmp, tmp + "-shm", tmp + "-wal"):
+            if os.path.exists(f):
+                os.remove(f)
+
+
+def backup(src, dest, keep):
+    if not os.path.exists(src):
+        log(f"No database at {src}")
+        return 1
+
+    os.makedirs(dest, exist_ok=True)
+    stamp = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H-%M-%SZ")
+    out = os.path.join(dest, f"lhf-{stamp}.sqlite")
+
+    log(f"Backing up {src}")
+    try:
+        snapshot(src, out)
+    except sqlite3.Error as e:
+        log(f"FAILED: {e}")
+        if os.path.exists(out):
+            os.remove(out)          # never leave a half-written file that looks like a backup
+        return 1
+
     if not verify(out):
         # A snapshot that fails verification is worse than no snapshot, because
         # it will sit in the directory looking like protection.
         os.rename(out, out + ".FAILED")
-        print(f"Renamed to {out}.FAILED — do not rely on it.", file=sys.stderr)
+        log(f"Renamed to {out}.FAILED — do not rely on it.")
         return 1
 
     rotate(dest, keep)
-    print(f"\nWrote {out}")
+    log(f"\nWrote {out}")
 
     # The one thing a reader of the logs must not miss.
     if os.path.realpath(dest).startswith(os.path.realpath(os.path.dirname(src))):
-        print("\nNOTE: this snapshot is beside the database, so it shares the\n"
-              "      volume's fate. Copy it off the host — or pass --dest — or\n"
-              "      this protects against corruption but not against loss.")
+        log("\nNOTE: this snapshot sits beside the database, so it shares the\n"
+            "      volume's fate. It defends against corruption and not at all\n"
+            "      against losing the volume. On the server use --stdout and\n"
+            "      keep the copy on a machine you control.")
     return 0
 
 
@@ -181,12 +255,21 @@ def main():
                     help="where to write snapshots (default: alongside the database)")
     ap.add_argument("--keep", type=int, default=7, metavar="N",
                     help="how many snapshots to retain, 0 for all (default: 7)")
+    ap.add_argument("--stdout", action="store_true",
+                    help="stream the snapshot to standard output and keep nothing "
+                         "on this machine — the mode to use on the server")
     ap.add_argument("--verify-only", metavar="FILE",
                     help="check an existing snapshot and exit")
     args = ap.parse_args()
 
     if args.verify_only:
         return 0 if verify(args.verify_only) else 1
+
+    if args.stdout:
+        if args.dest:
+            log("--stdout and --dest do nothing together; pick one.")
+            return 2
+        return stream(DB_PATH)
 
     dest = args.dest or os.path.join(os.path.dirname(DB_PATH), "backups")
     return backup(DB_PATH, dest, args.keep)
