@@ -146,7 +146,27 @@ def connect():
 def init_schema(conn):
     with open(SCHEMA_PATH) as fh:
         conn.executescript(fh.read())
+    migrate(conn)
     conn.commit()
+
+
+def migrate(conn):
+    """Bring an existing database up to the current schema.
+
+    schema.sql is all CREATE TABLE IF NOT EXISTS, so it does nothing to a
+    database that already exists — which every deployed one does. New columns
+    have to be added here or they only ever appear on a fresh build. Same
+    PRAGMA-guarded pattern as enrich.py.
+    """
+    cols = {r["name"] for r in conn.execute("PRAGMA table_info(episodes)")}
+    if "last_seen_in_feed" not in cols:
+        conn.execute("ALTER TABLE episodes ADD COLUMN last_seen_in_feed TEXT")
+        # Everything already in the database was in the feed when it was read,
+        # and the run about to happen will re-stamp whatever is still there.
+        # Seeding from updated_at rather than leaving nulls means the first run
+        # after this migration reports honestly instead of declaring the whole
+        # archive expired.
+        conn.execute("UPDATE episodes SET last_seen_in_feed = updated_at")
 
 
 def upsert_show(conn, show, channel):
@@ -227,7 +247,11 @@ def upsert_episode(conn, show_id, item):
                 is_encore = :is_encore,
                 transcript_url = :transcript_url,
                 transcript_type = :transcript_type,
-                updated_at = datetime('now')
+                updated_at = datetime('now'),
+                -- Seeing it here *is* the evidence that the feed still carries
+                -- it. Set on every pass, so the stamp of an episode that has
+                -- rotated out simply stops moving.
+                last_seen_in_feed = datetime('now')
             WHERE guid = :guid
             """,
             row,
@@ -239,11 +263,11 @@ def upsert_episode(conn, show_id, item):
         INSERT INTO episodes (
             show_id, guid, title, published_at, duration_sec, episode_url,
             audio_url, image_url, description_html, description_text, is_encore,
-            transcript_url, transcript_type
+            transcript_url, transcript_type, last_seen_in_feed
         ) VALUES (
             :show_id, :guid, :title, :published_at, :duration_sec, :episode_url,
             :audio_url, :image_url, :description_html, :description_text, :is_encore,
-            :transcript_url, :transcript_type
+            :transcript_url, :transcript_type, datetime('now')
         )
         """,
         row,
@@ -320,6 +344,32 @@ def stats(conn):
         "SELECT ROUND(SUM(duration_sec)/3600.0,1) h FROM episodes"
     ).fetchone()["h"]
     print(f"ALL: {total} episodes, {hours} hours of audio")
+
+    # Anything not stamped by the most recent pass has left the feed. Reported
+    # here because it is the number that decides whether the archive is a
+    # convenience or the only copy — and nothing else in the app surfaces it yet.
+    newest = conn.execute(
+        "SELECT MAX(last_seen_in_feed) m FROM episodes"
+    ).fetchone()["m"]
+    if newest:
+        gone = conn.execute(
+            """SELECT COUNT(*) c FROM episodes
+               WHERE last_seen_in_feed IS NULL OR last_seen_in_feed < ?""",
+            (newest,),
+        ).fetchone()["c"]
+        if gone:
+            print(f"\n{gone} episode(s) no longer in the feed — this database is "
+                  f"the only copy we can reach.")
+            for r in conn.execute(
+                """SELECT title, date(last_seen_in_feed) AS last
+                   FROM episodes
+                   WHERE last_seen_in_feed IS NULL OR last_seen_in_feed < ?
+                   ORDER BY last_seen_in_feed LIMIT 10""",
+                (newest,),
+            ):
+                print(f"  last seen {r['last'] or 'unknown'}  {r['title'][:60]}")
+        else:
+            print("All episodes are still in the feed.")
 
     if total:
         print("\nSearch sanity check — FTS5 query for 'strike':")

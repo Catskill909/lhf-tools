@@ -10,6 +10,8 @@ and Elise Bryant (hosts), Patrick Dixon.
 1. **The archive is no longer disposable.** Both shows sit at Podbean's
    100-episode feed cap, so the database is becoming the only reachable copy of
    anything that rotates out. `backup.py` exists; see **Backups**.
+   `episodes.last_seen_in_feed` records what the feed still carries, and
+   `python3 ingest/ingest.py --stats` names anything it no longer does.
 2. **The audio editor was rebuilt** — playhead, transport, 10 ms waveform,
    keyboard marking. `docs/audio-editor-dev.md` opens with a status summary.
 

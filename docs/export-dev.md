@@ -112,20 +112,20 @@ and nothing at all for the 200 episodes still in the feed. A completely
 different proposition from a one-off 12 GB pull, and one that arrives gradually
 rather than as a project.
 
-### Detecting expiry costs almost nothing
+### Detecting expiry costs almost nothing — ✅ built
 
-`ingest.py` sets `updated_at = datetime('now')` on every episode it finds in the
-feed ([`ingest/ingest.py:230`](../ingest/ingest.py#L230)), and the loop runs
-daily. **An episode whose `updated_at` stops advancing has left the feed.** No
-new request, no new scraping, no comparison against anything.
+`ingest.py` stamps **`last_seen_in_feed`** on every episode it finds in the
+feed, and the loop runs daily. **An episode whose stamp stops advancing has left
+the feed.** No new request, no scraping, no comparison against anything.
 
-Two caveats worth handling rather than ignoring:
+It is a dedicated column rather than the existing `updated_at`, which
+`transcripts.py` also writes to
+([`ingest/transcripts.py:178`](../ingest/transcripts.py#L178)) and which
+therefore means "something changed" rather than "the feed still has this".
+`--stats` reports what has gone, with the date each was last seen.
 
-- `updated_at` is also touched by `transcripts.py`
-  ([`ingest/transcripts.py:178`](../ingest/transcripts.py#L178)), so it is
-  overloaded. A dedicated `last_seen_in_feed` column is the honest version and
-  costs one line in the same `UPDATE`. Worth adding **before** episodes start
-  expiring, because the transition cannot be reconstructed afterwards.
+One thing still unknown, and it is the important one:
+
 - **Nobody knows yet whether Podbean deletes the file when an episode leaves the
   feed, or merely stops listing it.** The `audio_url` is a direct CDN link and
   may well keep resolving. This is empirically testable the first time an
@@ -318,11 +318,13 @@ the same idea one level down.
 
 ## Phases
 
-0. **Record when an episode was last seen in the feed.** One column, one line in
-   an existing `UPDATE`. It is first because it is the only item here with a
-   closing window: both shows are at the cap, so episodes begin rotating out
-   within days, and the moment one leaves cannot be reconstructed after the
-   fact. Everything about expiry depends on it, and it costs almost nothing.
+0. **Record when an episode was last seen in the feed.** ✅ **built**
+   (9 August 2026). `episodes.last_seen_in_feed`, stamped by `ingest.py` on
+   every feed appearance and by nothing else, with a `PRAGMA`-guarded migration
+   that seeds existing rows from `updated_at` so the first run after it reports
+   honestly rather than declaring the whole archive expired.
+   `python3 ingest/ingest.py --stats` now names anything the feed no longer
+   carries. Done first because it was the only item with a closing window.
 1. **The catalogue package.** The ZIP, `episodes.csv`, `passages.csv`,
    transcripts in three formats, README and data dictionary. Audio as URLs.
    This is 80% of the value and it is all client-side. Ship it alone.

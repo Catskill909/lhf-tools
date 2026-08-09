@@ -39,7 +39,17 @@ CREATE TABLE IF NOT EXISTS episodes (
     extracted_at      TEXT,
 
     first_seen_at TEXT DEFAULT (datetime('now')),
-    updated_at    TEXT DEFAULT (datetime('now'))
+    updated_at    TEXT DEFAULT (datetime('now')),
+
+    -- Stamped every time this episode is seen in the feed, and by nothing else.
+    -- Podbean serves only the most recent 100 per show, and both shows are at
+    -- that number, so from here on one episode rotates out of reach each week
+    -- while this row keeps it. An episode whose stamp stops advancing has left
+    -- the feed — which is how the archive knows what only it still holds.
+    --
+    -- updated_at cannot answer that question: transcripts.py writes to it too,
+    -- so it means "something changed" rather than "the feed still has this".
+    last_seen_in_feed TEXT
 );
 
 CREATE INDEX IF NOT EXISTS idx_episodes_show      ON episodes(show_id);

@@ -154,9 +154,24 @@ Just type — results narrow as you go. Beyond that:
 take some damage. Fine for searching, not for quoting.
 
 **The feed only gives out the most recent 100 episodes per show**, so this
-covers roughly the last two years. Older ones need pulling from the Podbean
-back-end — worth doing sooner rather than later, because as new episodes publish
-the oldest drop out of the feed and get harder to reach.
+covers roughly the last two years — back to September 2024. Older episodes need
+pulling from the Podbean back-end.
+
+**And both shows are now sitting at exactly that limit.** Which means that from
+the next episode each of you publishes, the oldest one drops out of the feed.
+The archive keeps it — it doesn't forget anything it has already read — but
+after that point *this* becomes the only place it can be reached from, because
+the feed no longer offers it.
+
+Nothing is lost today, and nothing needs deciding this week. Two things follow
+from it, though, and they're worth knowing now rather than in a year:
+
+- **The archive is worth backing up**, and there's now a tool that does it. It
+  used to be rebuildable from the feeds in two minutes; that stops being true
+  from here on.
+- **The older backlog gets no easier to reach.** Everything before September
+  2024 is already only in the Podbean back-end. If you want it in here, that's
+  a one-time job whenever you're ready.
 
 ---
 

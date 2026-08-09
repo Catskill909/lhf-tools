@@ -20,6 +20,9 @@
     --rule-hard:  rgba(239,236,228,0.22);
     --spot:       #d8503a;
     --spot-soft:  rgba(216,80,58,0.16);
+    /* The same alpha that reads as a highlight on a small chip reads as an
+       alert across a whole panel. Large filled selections use this instead. */
+    --spot-tint:  rgba(216,80,58,0.07);
     --spot-ink:   #ff7a5f;
     --gold:       #d8a94a;
     --focus:      #ff7a5f;
@@ -34,6 +37,7 @@
     --rule-hard:  rgba(27,26,23,0.28);
     --spot:       #b8331d;
     --spot-soft:  rgba(184,51,29,0.10);
+    --spot-tint:  rgba(184,51,29,0.05);
     --spot-ink:   #9c2b17;
     --gold:       #8a6512;
     --focus:      #b8331d;
@@ -49,6 +53,7 @@
       --rule-hard:  rgba(27,26,23,0.28);
       --spot:       #b8331d;
       --spot-soft:  rgba(184,51,29,0.10);
+      --spot-tint:  rgba(184,51,29,0.05);
       --spot-ink:   #9c2b17;
       --gold:       #8a6512;
       --focus:      #b8331d;
@@ -566,7 +571,10 @@
     border-bottom: 1px solid var(--rule);
   }
   .modal-head h2 { margin: 0; font-size: 1.25rem; }
-  .modal-head p { margin: 0.25rem 0 0; font-size: 0.8rem; color: var(--ink-3); }
+  /* Same fix as .cols-note: this is a sentence explaining the dialogue, not a
+     label, so it belongs in readable ink. --ink-3 is reserved for the small-caps
+     labels and placeholders, where its faintness is the point. */
+  .modal-head p { margin: 0.25rem 0 0; font-size: 0.82rem; color: var(--ink-2); }
   /* One close control for all three dialogues — the clip and export ones were
      unstyled native buttons. Rotation was the first instinct and it is wasted
      on this glyph: a multiplication sign maps onto itself at 90 degrees, so it
@@ -763,7 +771,8 @@
   .tx-actions { display: flex; flex-wrap: wrap; gap: 0.5rem 0.8rem; align-items: center; }
   .tx-links { display: flex; flex-wrap: wrap; gap: 0.35rem; }
   .tx-links a.try { text-decoration: none; display: inline-block; }
-  .tx-empty { padding: 1.5rem 0; color: var(--ink-3); font-size: 0.88rem; }
+  /* An empty state is doing explaining, so it has to be readable. */
+  .tx-empty { padding: 1.5rem 0; color: var(--ink-2); font-size: 0.88rem; }
   .tx-empty b { color: var(--ink-2); display: block; margin-bottom: 0.3rem; }
 
   /* Printing a transcript is a real workflow — a reading copy for the studio,
@@ -1003,8 +1012,11 @@
   }
   .fmt:hover { border-color: var(--ink-3); color: var(--ink); }
   .fmt:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+  /* The accent border carries the selection; the fill only has to support it.
+     At --spot-soft this panel read as a warning rather than a choice, because
+     it is several lines tall where the same tint elsewhere covers a chip. */
   .fmt[aria-checked="true"] {
-    border-color: var(--spot); background: var(--spot-soft); color: var(--ink);
+    border-color: var(--spot); background: var(--spot-tint); color: var(--ink);
   }
   .fmt .dot {
     width: 1.1rem; height: 1.1rem; border-radius: 50%;
@@ -1019,11 +1031,16 @@
   .fmt .name { font-weight: 650; font-size: 0.93rem; color: var(--ink); }
   .fmt .desc { font-size: 0.8rem; color: var(--ink-2); margin-top: 0.15rem; }
 
+  /* This explains what is and isn't in the file, which is the one thing worth
+     reading before pressing Export — so it was the wrong text to set in the
+     faintest ink on the palette. --ink-3 on this background is about 3.1:1,
+     under the 4.5:1 that text this size needs to be legible. --ink-2 is 6.3:1
+     and still clearly secondary to the options above it. */
   .cols-note {
     margin-top: 1.1rem; padding-top: 0.9rem; border-top: 1px solid var(--rule);
-    font-size: 0.78rem; color: var(--ink-3); line-height: 1.55;
+    font-size: 0.82rem; color: var(--ink-2); line-height: 1.6;
   }
-  .cols-note b { color: var(--ink-2); font-weight: 600; }
+  .cols-note b { color: var(--ink); font-weight: 600; }
 
   .modal-actions {
     display: flex; justify-content: flex-end; align-items: center;
