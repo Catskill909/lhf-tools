@@ -1,9 +1,66 @@
-aduition # Audio editor — audit and development plan
+# Audio editor — audit and development plan
 
-**Status:** audit complete. **Phases 1–4 built and verified** (9 August 2026).
-Phase 5's test work was done alongside each phase rather than after —
-`tests/test-waveform.mjs` is now 49 pure checks, and the browser suites are
-listed at the end. Written 9 August 2026.
+> **This document is long because it records reasoning, not just decisions.**
+> Everything below this box is the detail. This box is the state of play.
+
+## At a glance
+
+**Last updated 9 August 2026.** The editing surface is built. Phases 1–4 shipped
+and were verified; Phase 5's tests were written alongside them rather than after.
+
+| Phase | What it gave the producer | State |
+|---|---|---|
+| [1 — Playhead and transport](#phase-1--playhead-and-a-real-transport---built) | You can stop, pause and repeat. The playhead everything else hangs off. | ✅ built |
+| [2 — Click to listen, rulers](#phase-2--click-to-listen-and-a-time-ruler---built) | The overview is navigable; both views are legible in time. | ✅ built |
+| [3 — Detail peaks](#phase-3--detail-peaks---built) | 10 ms resolution: you can see the silences, and Snap lands *in* them. Zoom past the selection. | ✅ built |
+| [4 — Marking and navigation](#phase-4--marking-and-navigation---built) | `I`/`O` mark at the playhead, `[`/`]` jump between pauses, Fit. | ✅ built |
+| [5 — Verification](#phase-5--verification) | 49 pure checks in `tests/test-waveform.mjs`, plus browser suites. | ✅ done, alongside |
+| [6 — Momentary-action feedback](#phase-6--show-that-a-momentary-action-is-momentary-not-started) | Audition and Snap would show they are running. | ⬜ **not started** |
+
+**Three defects were found by using the editor, after their phases shipped** —
+[Repeat and three others](#audit-of-phases-12-before-starting-phase-3),
+[the lead handle vs. Play](#found-in-use-trimming-the-lead-handle-didnt-move-where-play-starts),
+and [the redundant lead-in button](#found-in-use-with-2s-lead-in-and-audition-in-were-the-same-button).
+All are fixed. All were the same bug shape — see *The recurring bug class* below.
+
+### Up next, in the order I would do it
+
+1. **Stable clip identity** — specified as Phase A in `docs/clip-library.md`, not
+   here. A **live latent defect**: `?ep=123&from=&to=` share links key on a row
+   id that ingest can reassign, so a link can silently open the wrong episode.
+   Independent of everything else, small, and the thing that ages worst.
+2. **[Phase 6](#phase-6--show-that-a-momentary-action-is-momentary-not-started)** —
+   an afternoon, fully specced, came from live use.
+3. **The clip library** (`docs/clip-library.md`, Phase B) — but two questions for
+   the client come first: is the library one producer's or the newsroom's, and is
+   losing it to a browser storage clear acceptable? The answer decides whether
+   this application ever needs user accounts.
+
+### Facts you will need before touching anything
+
+- **Export is a byte copy of MP3 frames.** Bit-identical, client-facing
+  guarantee. **Fades, normalise and gain are therefore impossible** without
+  forfeiting it — flag, do not implement. See [Constraints](#constraints-that-shape-every-fix-below).
+- **`waveform.js` hardcodes a dark palette** that the light theme never
+  overrides. Anything new drawn on a canvas must pass explicit colours or it
+  will be invisible in one theme. This has already caused one bug.
+- **Peaks are cached in IndexedDB** keyed on the *audio URL*, at `v: 2`, two
+  tiers (4,000 buckets overview, 100/sec detail). Changing the format without
+  bumping `v` silently serves old data as new.
+- **The recurring bug class:** state captured at press time, then invalidated by
+  a later edit. Three shipped from this file. Anything the transport remembers
+  needs a test that **changes the selection underneath it** — the static-case
+  test will pass and prove nothing.
+
+### If you are picking this up cold
+
+1. `docs/audio-editor-spec.md` — what exists and why the export is that way.
+2. [The audit](#audit) here — what was wrong with the editing surface, A1–A8.
+   All of A1–A8 are now addressed; read it for the reasoning, not the backlog.
+3. `docs/clip-library.md` — where this is going next.
+
+---
+
 **Companion to** `docs/audio-editor-spec.md`, which records the editor **as
 built** (frame-copy export, bitrate probing, cut accuracy). That document is
 still correct and nothing here contradicts it — the export path is sound and is
@@ -16,6 +73,10 @@ editing surface is not yet good enough to decide *what* to export.
 ---
 
 ## The one-paragraph version
+
+> *Written before Phase 1, and left in the present tense as it was. All of this
+> is now fixed — it is here because it is the reasoning that set the order of
+> the phases, not a description of the editor today.*
 
 The editor's state model is `{in, out}` and nothing else. **There is no
 playhead.** That single absence accounts for most of the complaints: there is
@@ -30,7 +91,14 @@ Everything else follows from those two.
 
 ## Audit
 
+> *A1–A8 are all fixed. This section is the original audit, kept in the present
+> tense it was written in, because the numbers in it are what justified the
+> phase order and the fixes are only checkable against it. Each item names the
+> phase that closed it.*
+
 ### A1 — There is no stop. The editor locks you out.
+
+**→ Fixed in Phase 1.**
 
 `playRange(from, to)` at [`static/index.html:2790`](../static/index.html#L2790)
 has no stop path. All six transport buttons call it. A second click *restarts*
@@ -50,6 +118,8 @@ matter.
 **Severity: blocking.** Nothing else on this list is worth doing first.
 
 ### A2 — The waveform is stored at half-second resolution
+
+**→ Fixed in Phase 3.**
 
 [`static/waveform.js:15`](../static/waveform.js#L15) sets `BUCKETS = 4000` for
 the **whole episode**, regardless of length.
@@ -72,6 +142,8 @@ stored data.** Redrawing, smoothing or interpolating cannot bring it back.
 
 ### A3 — Snap-to-silence inherits A2, and is quantised to a half-second grid
 
+**→ Fixed in Phase 3.**
+
 This one was not obvious until the numbers were worked through, and it is worse
 than a display problem.
 
@@ -92,6 +164,8 @@ no change to the algorithm.
 
 ### A4 — Linear amplitude scaling hides everything quiet
 
+**→ Fixed in Phase 3.**
+
 [`static/waveform.js:173`](../static/waveform.js#L173) maps amplitude to pixels
 linearly (`hi * mid * 0.95`). For speech that means normal dialogue saturates
 near full height while room tone, breath and low-level hum sit within a pixel or
@@ -102,6 +176,8 @@ resolution, a linear scale will not show a producer that a passage is quiet but
 not empty, which is exactly the judgement they need to make.
 
 ### A5 — You cannot zoom in past the length of your own selection
+
+**→ Fixed in Phase 3.**
 
 `clipWindow()` ([`static/waveform.js:207`](../static/waveform.js#L207)) computes
 `span = min(dur, (outSec - inSec) + pad * 2)` — the window **always contains the
@@ -119,17 +195,23 @@ do the same.
 
 ### A6 — The overview cannot preview, because there is nowhere to preview to
 
+**→ Fixed in Phase 2.**
+
 `mousedown` on `#waveAll` ([`static/index.html:2777`](../static/index.html#L2777))
 is hard-bound to `overviewSeek()`, which moves the whole selection. There is no
 second interaction available and no playhead to carry a preview position.
 
 ### A7 — No time axis on either waveform
 
+**→ Fixed in Phase 2.**
+
 Neither canvas draws a ruler. Nothing on screen tells you where 12:30 is in the
 episode, or how wide the zoomed window actually is. The `In` / `Out` / `Length`
 readout gives absolute values but no spatial reference.
 
 ### A8 — The tool row does not distinguish listening from trimming
+
+**→ Fixed in Phase 1.**
 
 Six buttons sit in one undifferentiated row
 ([`static/index.html:1383`](../static/index.html#L1383)): four play actions and
@@ -675,6 +757,13 @@ behaviour in one press: this button plays a segment and returns. No text needed.
 Not planned, not costed, not committed. Captured so the phase plan above can be
 judged against where this is going.
 
+**Four of these bullets have since been worked out properly** — clip bin, run
+sheet, named clips as citations and the shared library are mostly one feature,
+and `docs/clip-library.md` argues why, designs the surface and sequences it. It
+also records a defect this document did not know about: the `?ep=` share link
+keys on a row id that ingest can reassign, which is the same trap as the
+`ep-<id>` peaks cache in the handoff. Read it before picking up any of the four.
+
 Worth holding in mind who these users are (from the handoff): they are **podcast
 producers**, **FM broadcasters** on WPFW 89.3, and **labor history researchers**,
 often the same person in one afternoon. The broadcast hat has the hardest
@@ -742,6 +831,8 @@ configuration rather than architecture.
 
 ## Reading order for whoever picks this up
 
-1. `docs/audio-editor-spec.md` — what exists and why the export is the way it is.
-2. This document's audit section — what is wrong with the editing surface.
-3. Phase 1. Do not start anywhere else; the playhead is underneath everything.
+Moved to [**If you are picking this up cold**](#if-you-are-picking-this-up-cold)
+at the top, where someone arriving cold will actually see it. The original said
+"start at Phase 1, the playhead is underneath everything" — true when it was
+written, and now history: Phase 1 is built, and the place to start is the clip
+identity fix in `docs/clip-library.md`.
