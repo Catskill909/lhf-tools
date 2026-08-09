@@ -2,6 +2,19 @@
 
 **Status:** **built and verified** (Phases 1–5). Supersedes the earlier WAV-based draft.
 
+> **Scope note (9 August 2026).** Everything here about *export* — frame copy,
+> bitrate probing, cut accuracy — is current and unchanged; it is the part that
+> matters most and the part `tests/verify-clips.mjs` still proves on every run.
+>
+> The *editing surface* described below has since been rebuilt across four
+> phases: a real transport, time rulers, click-to-listen, 10 ms detail peaks
+> with RMS and a visible silence floor, zoom decoupled from the selection, and
+> keyboard marking. Where this document and **`docs/audio-editor-dev.md`**
+> disagree about the interface, the dev doc is right. The mock-up and the
+> individual decisions that no longer hold are marked inline below. The build
+> phases at the end are left as the historical record they are — don't
+> implement from them.
+
 Find a moment by search, adjust the in/out points against the episode waveform,
 export an MP3 clip. Entirely in the browser; **our server does nothing** — audio
 streams from Podbean's CDN direct to the user.
@@ -154,7 +167,10 @@ Keep wavesurfer as the fallback if the canvas work overruns.
 │  IN  8:42.31   OUT  9:15.80          LENGTH  33.5s          │
 │  ⟨ ⟩ nudge 0.1s     ⌥⟨ ⟩ snap to silence                    │
 │                                                             │
-│  ▶ Play selection    ▶ Play with 2s lead-in                 │
+│  ▶ Audition in   ▶ Audition out   Snap in   Snap out        │
+│  (superseded: play/pause, stop and Repeat now sit in a      │
+│   transport between the two waveforms, each of which has    │
+│   a time ruler — see docs/audio-editor-dev.md)              │
 │                                                             │
 │                     [ Cancel ]  [ Download MP3 · 2.9 MB ]   │
 └─────────────────────────────────────────────────────────────┘
@@ -172,16 +188,25 @@ difference between "roughly there" and "on the word."
   an edit control. A scissors icon at the right-hand end of the transport is
   where a producer already is once they've found the spot. It seeds from the
   passage that opened the player, or from wherever they scrubbed to.
-- **Zoom keeps the selection centred.** The window is always wide enough to
-  hold the whole selection plus context, so both handles stay grabbable at any
-  zoom level. That invariant is tested (`clipWindow` in `tests/`), because it
-  is the one property the drag UI cannot work without.
+- ~~**Zoom keeps the selection centred.**~~ **Reversed.** The window was always
+  wide enough to hold the whole selection plus context, so both handles stayed
+  grabbable at any zoom level — and that made frame-level work impossible: with
+  a 30-second selection the tightest view was 30.5 seconds. Detail work happens
+  at one edge at a time, which the auditions below already assume. The window
+  now frames the selection while it fits and follows the edge you last touched
+  past that. The test that asserted the old invariant was rewritten, not worked
+  around. See `docs/audio-editor-dev.md`, A5.
 - **Snap to silence.** The single most useful aid. We already have the peak
-  data — find the nearest local minimum and put the cut there. A clean cut
+  data — find the nearest local minimum and put the cut there. (It was later
+  found to be quantised to a half-second grid by the overview's resolution, and
+  so unable to reach the gap it was hunting for; it now reads the 10 ms tier.) A clean cut
   lands in the gap between words; a cut mid-syllable sounds broken. One
   keystroke.
-- **Play with lead-in** — 2 seconds before the in-point. You judge an edit by
-  hearing the approach to it, not the clip in isolation.
+- ~~**Play with lead-in**~~ — **removed.** It started at the same instant as
+  *Audition in* (`in − 2`), so the two were identical for their first four
+  seconds and indistinguishable on the short clips this tool is mostly used
+  for. Play plus the two auditions cover the same ground. See
+  `docs/audio-editor-dev.md`.
 - **Audition in / audition out** — two seconds either side of one cut point.
   Edits are usually wrong at one edge, and checking that edge shouldn't mean
   sitting through the whole clip.

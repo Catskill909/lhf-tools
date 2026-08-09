@@ -95,6 +95,28 @@ the gap between words, listen back, download the MP3. It's copied out of the
 original file rather than re-recorded, so it's identical to what went out, and
 the filename carries the show, date and timecode.
 
+The editor is built around listening, because that's how an edit is actually
+judged:
+
+- **Play, pause and stop**, with a timeline above each waveform so you always
+  know where you are. <kbd>Space</kbd> plays and pauses from anywhere.
+- **Repeat** keeps the selection going round while you move the handles, so you
+  hear each adjustment come back without stopping and starting.
+- **Click anywhere on the top waveform** to listen from that point — for
+  finding a moment when you don't yet know where it is.
+- **Audition in** and **Audition out** play two seconds either side of a single
+  cut, because an edit is judged one edge at a time.
+- **Mark as you listen** — press <kbd>I</kbd> where the clip should start and
+  <kbd>O</kbd> where it should end, and the point lands exactly where you heard
+  it. <kbd>[</kbd> and <kbd>]</kbd> jump the cursor between the pauses in
+  speech, which is usually the fastest way to the edge you want.
+
+**The lower waveform is drawn in detail** — solid through the middle for how
+loud a moment really is, outlined for how far it peaked, with two faint lines
+marking that episode's own silence. The gaps between words are visible, so you
+can see the pause you're cutting into rather than guessing at it, and zoom right
+down to a fraction of a second on one edge.
+
 ![The clip editor — the passage selected on the waveform, in and out points, audition and snap controls, and the MP3 download](screenshots/audio-edit-modal.png)
 
 **Tags** — 232 people, bands, museums and books, taken from the links in your

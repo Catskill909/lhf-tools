@@ -98,18 +98,30 @@ decision, and an admin screen to run it from. See `docs/ai-layer.md`.
   spinning.
 - Opening the editor **pauses the player**; the modal covers the transport, so
   audio left running is audible but unreachable.
-- Two waveforms — whole episode for context, zoomed selection for precision —
-  with draggable in/out handles, arrow-key nudge (±0.1s, ±1s with Shift), and
-  a live in / out / length readout
-- **Zoom** (− / + or scroll wheel) with the **selection always centred**, so
-  what you're adjusting never wanders off screen. The window always contains
-  the whole selection plus context, so both handles stay grabbable at every
-  zoom level — tested as an invariant.
-- **Play selection**, **play with a 2-second lead-in**, and **audition in /
-  audition out** (two seconds either side of a single cut) — an edit is judged
-  by ear, and usually one edge at a time
+- Two waveforms, each with its own **time ruler** — whole episode for context,
+  zoomed selection for precision — with draggable in/out handles, arrow-key
+  nudge (±0.1s, ±1s with Shift), and a live in / out / length readout
+- **A real transport** between the two waveforms: play/pause, stop, playhead
+  timecode, and **Repeat**, which keeps the selection going round *and follows
+  the handles as you move them*. `Space` plays/pauses, `Home` stops.
+- **Click the overview to listen** from that point; drag it to move the
+  selection, as before. The two are told apart by whether the pointer travels,
+  because a short selection is only a pixel or two wide on that waveform.
+- **Zoom** (− / + or scroll wheel) reports the **window**, not the padding.
+  While the selection fits it stays centred; past that the view follows the
+  edge you last touched, so a 30-second selection can be inspected at half a
+  second. **⤢** reframes the selection.
+- **The zoomed waveform is drawn from 10ms peaks** with an RMS body inside a
+  peak outline, on a dB scale, and the episode's own measured silence floor
+  drawn as a line — so pauses between words are visible and quiet audio is
+  distinguishable from nothing.
+- **Audition in / audition out** (two seconds either side of a single cut) — an
+  edit is judged by ear, one edge at a time
+- **Mark by ear**: `I` and `O` set in/out at the playhead; `[` and `]` jump the
+  playhead between the pauses in speech
 - **Snap to silence** puts a cut in the gap between words instead of through
-  the middle of one
+  the middle of one. It reads the same 10ms tier, so it lands *in* the gap
+  rather than on the half-second grid it used to be quantised to.
 - Downloads as MP3 **cut straight from the source with no re-encoding** — the
   clip is bit-identical to the broadcast audio, and lands within one frame
   (26 ms) of the requested point. Verified by exact byte match against the
@@ -260,7 +272,8 @@ run it from.
 | `refresh.py` | Runs all three pipeline steps in order; `--loop 24h` schedules itself. |
 | `docs/export-spec.md` | Export design + the CSV details that decide whether it imports cleanly. **Built.** |
 | `docs/client-guide.md` | **Send this one.** Feature + usage guide for LHF, with screenshot slots. Every figure verified against the database. |
-| `docs/audio-editor-spec.md` | Browser-side clip editor: design, decisions and verification. **Built.** |
+| `docs/audio-editor-spec.md` | Browser-side clip editor: the **export** design (frame copy, bitrate probing) and its verification. **Built.** The editing *surface* it describes has since been rebuilt — see the dev doc below. |
+| `docs/audio-editor-dev.md` | Audit of the editing *surface* + phased plan to fix it. **Not started.** Read before touching the editor UI. |
 | `ingest/enrich.py` | Deterministic enrichment, **no AI**. Re-airs + linked entities. Safe to re-run. |
 | `ingest/extract.py` | The one AI step: topics, guests, interviewers. Written, tested, **never run**. Not in `refresh.py` — needs a key and costs money. `--dry-run` and `--rebuild` need neither. |
 | `ingest/schema.sql` | Tables, FTS5 index, triggers. Already has `transcript_source` and a source-agnostic `segments` table. |

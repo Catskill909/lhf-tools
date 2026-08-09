@@ -394,6 +394,14 @@
      button overlaps the "…" and the line reads "…Columbia w  More". */
   .notes-wrap.is-clamped .notes.clamp { padding-right: 3.6rem; }
 
+  /* Expanded, .is-clamped is gone and the button falls back into normal flow
+     — which left-aligns it, so "More" sat after the ellipsis and "Less"
+     appeared at the bottom left, reading as two unrelated controls. Holding
+     it on the wrapper's right edge means opening a note moves the button
+     down, never sideways. Clamp mode only: "Show full notes" in search
+     results is a standalone control and stays left where it reads better. */
+  .more[data-mode="clamp"] { display: block; margin-left: auto; }
+
   /* Deliberately quiet, and matched to the Tags chips rather than to the
      accent. Opening a transcript is a way in, not an action with a
      consequence — in the accent colour it read as the most urgent thing on
@@ -1099,6 +1107,15 @@
     font-family: ui-monospace, Consolas, monospace; font-variant-numeric: tabular-nums;
     font-size: 0.7rem; color: var(--ink); min-width: 3.2rem; text-align: center;
   }
+  /* A time axis for each waveform. Sits directly above the view it measures,
+     and shares one implementation so the two can't drift apart in the rule
+     that picks their spacing. Without it the zoom control read "6.0s" and
+     nothing on screen said where in the episode that was. */
+  .ruler { display: block; width: 100%; height: 15px; margin-bottom: 1px; }
+  /* The episode ruler seeks like the waveform beneath it; the zoom ruler is a
+     readout only, so only one of them offers a pointer. */
+  #rulerAll { cursor: crosshair; }
+
   .wave-box {
     position: relative; overflow: hidden; background: var(--paper-2);
     border: 1px solid var(--rule); border-radius: 3px;
@@ -1172,6 +1189,47 @@
   .handle.in::after  { top: 0; }
   .handle.out::after { bottom: 0; }
   .handle:focus-visible { outline: 2px solid var(--focus); outline-offset: 1px; }
+
+  /* --------------------------------------------------------- transport
+     Sits *between* the two waveforms because it acts on both of them, and
+     because the modal footer belongs to Download. It carries listening
+     controls only — trimming lives under the zoomed view, next to the thing
+     being trimmed. Previously all six controls sat in one undifferentiated
+     row, which is part of why a missing stop button wasn't obvious: nothing
+     in that row read as a transport in the first place. */
+  .transport {
+    display: flex; align-items: center; gap: 0.5rem;
+    margin: -0.4rem 0 0.9rem;
+  }
+  .tport {
+    width: 30px; height: 30px; border-radius: 50%; padding: 0;
+    display: grid; place-items: center;
+    background: none; border: 1px solid var(--rule-hard);
+    color: var(--ink); font: inherit; font-size: 0.72rem; line-height: 1;
+    cursor: pointer;
+    transition: background 0.14s ease, color 0.14s ease, border-color 0.14s ease;
+  }
+  .tport:hover:not(:disabled) { border-color: var(--ink-3); }
+  .tport:disabled { opacity: 0.35; cursor: default; }
+  .tport:focus-visible { outline: 2px solid var(--focus); outline-offset: 1px; }
+  /* Play/pause is the control you reach for without looking, so it's the one
+     thing here with weight. */
+  .tport.main {
+    width: 34px; height: 34px; font-size: 0.82rem;
+    background: var(--spot); border-color: var(--spot); color: #fff;
+  }
+  .tport.main:hover:not(:disabled) { filter: brightness(1.08); }
+  /* The playhead position, in the same monospace as the in/out readout — it's
+     the same kind of value and gets compared against them constantly. */
+  #tNow {
+    font-family: ui-monospace, Consolas, monospace; font-variant-numeric: tabular-nums;
+    font-size: 0.86rem; color: var(--ink); margin-left: 0.2rem;
+  }
+  .transport .push { margin-left: auto; }
+  /* A pressed toggle, not a pressed button — loop stays on until turned off. */
+  .tool.on {
+    background: var(--spot-soft); border-color: var(--spot); color: var(--spot-ink);
+  }
 
   .clip-times {
     display: flex; gap: 1.4rem; flex-wrap: wrap; align-items: baseline;
@@ -1342,8 +1400,23 @@
     </div>
 
     <div class="modal-body">
-      <p class="wave-label">Whole episode — drag to move the selection</p>
+      <p class="wave-label">Whole episode — click to listen, drag to move the selection</p>
+      <canvas class="ruler" id="rulerAll"></canvas>
       <div class="wave-box"><canvas id="waveAll"></canvas></div>
+
+      <div class="transport">
+        <button class="tport main" id="tPlay" aria-label="Play" title="Play / pause (Space)">▶</button>
+        <button class="tport" id="tStop" aria-label="Stop" title="Stop (back to the in-point)">■</button>
+        <b id="tNow">0:00.00</b>
+        <!-- "Loop" is music-studio vocabulary; this is a talk archive, and the
+             job here is hearing one edge over and over while you nudge it.
+             "Replay" was the other candidate and is barred — the archive
+             already uses replay and re-air to mean putting an old episode back
+             on the air, and two meanings for that word inside one product is
+             worse than a little jargon. -->
+        <button class="tool push" id="tLoop" aria-pressed="false"
+                title="Keep repeating the selection while you adjust it">Repeat</button>
+      </div>
 
       <div class="wave-head">
         <p class="wave-label">Selection — drag the handles to trim</p>
@@ -1351,8 +1424,13 @@
           <button id="zoomOut" aria-label="Zoom out">&minus;</button>
           <span id="zoomLabel">6.0s</span>
           <button id="zoomIn" aria-label="Zoom in">+</button>
+          <!-- The way back. Now that zooming past the selection follows one
+               edge, there has to be one press that frames the whole thing
+               again — otherwise getting back out is a hunt. -->
+          <button id="zoomFit" aria-label="Fit the selection" title="Fit the selection">⤢</button>
         </div>
       </div>
+      <canvas class="ruler" id="rulerZoom"></canvas>
       <div class="wave-box zoom" id="zoomBox">
         <canvas id="waveZoom"></canvas>
         <div class="wave-load" id="waveLoad" hidden>
@@ -1372,9 +1450,11 @@
         <span class="len"><span class="k">Length</span><b id="tLen">0.0s</b></span>
       </div>
 
+      <!-- Trimming tools, under the view they act on. "Play selection" used to
+           live here; the transport's play button is exactly that, so keeping
+           both would have been two controls for one job. What's left is the
+           family that hears or moves a single edge. -->
       <div class="clip-tools">
-        <button class="tool" id="playSel">▶ Play selection</button>
-        <button class="tool" id="playLead">▶ With 2s lead-in</button>
         <button class="tool" id="audIn">▶ Audition in</button>
         <button class="tool" id="audOut">▶ Audition out</button>
         <button class="tool" id="snapIn">Snap in to silence</button>
@@ -1686,31 +1766,62 @@
 
       <section class="help-sec">
         <h3>The audio editor</h3>
-        <p class="lede">Two waveforms. The top one is the whole episode — click
-          anywhere on it to move the selection there. The bottom one is the
-          selection close up, and it's where the work gets done.</p>
+        <p class="lede">Two waveforms, each with its own timeline. The top one
+          is the whole episode; the bottom one is the selection close up, and
+          it's where the work gets done.</p>
         <ul class="help-list">
+          <li><b>Click the top waveform</b> to listen from that point — for
+            finding a moment when you don't yet know where it is. <b>Drag</b> it
+            instead and the selection moves there, keeping its length.</li>
           <li><b>Drag the red handles</b> to set the in and out points.</li>
           <li><b>Zoom</b> with the &minus; and + buttons, or the scroll wheel
-            over the lower waveform. The selection stays centred, so what you're
-            adjusting never wanders off screen.</li>
+            over the lower waveform. The readout shows how much time you're
+            looking at. While the whole selection fits it stays centred; zoom in
+            closer than that and the view follows whichever handle you touched
+            last, so you can work right down to a fraction of a second on one
+            edge. <b>&#10530;</b> puts the whole selection back in view.</li>
+          <li><b>The lower waveform is drawn in detail</b> — solid in the middle
+            for how loud a moment actually is, outlined for how far it peaked.
+            The two faint horizontal lines mark this episode's own silence: gaps
+            that dip inside them are the pauses between words, and they're where
+            <b>Snap</b> will put a cut.</li>
           <li><b>Arrow keys</b> nudge a selected handle by 0.1s — hold
             <kbd>Shift</kbd> for a full second. Dragging can't reliably land on
             a word boundary; nudging can.</li>
+          <li><b>Mark as you listen.</b> Play, and when you hear the place a
+            clip should begin press <kbd>I</kbd>; when you hear where it should
+            end press <kbd>O</kbd>. The mark lands on the playhead, so you set a
+            point by ear rather than by dragging to a spot you've already heard
+            go past.</li>
+          <li><b>Jump between pauses</b> with <kbd>[</kbd> and <kbd>]</kbd> —
+            the playhead moves to the middle of the next gap between words,
+            backwards or forwards. Sentences end in silence, so this is usually
+            the fastest way to reach the edge you want before pressing
+            <kbd>I</kbd> or <kbd>O</kbd>.</li>
         </ul>
       </section>
 
       <section class="help-sec">
         <h3>Hearing the edit before you commit</h3>
-        <p class="lede">An edit is judged by ear, not by eye, so there are four
-          ways to listen:</p>
+        <p class="lede">An edit is judged by ear, not by eye, so there are
+          several ways to listen. The transport sits between the two
+          waveforms:</p>
         <ul class="help-list">
-          <li><b>Play selection</b> — exactly what will be downloaded.</li>
-          <li><b>With 2s lead-in</b> — starts just before the cut. You hear the
-            approach to an edit, which is how you can tell it's in the right
-            place.</li>
+          <li><b>Play</b> — exactly what will be downloaded. Press it again to
+            pause where you are; <kbd>Space</kbd> does the same thing from
+            anywhere in the editor.</li>
+          <li><b>Stop</b> returns to the in-point, where <b>pause</b> holds its
+            place — so you can stop, look, and carry on from the same spot.
+            <kbd>Home</kbd> also stops.</li>
+          <li><b>Repeat</b> plays the selection over and over until you stop it,
+            and it follows the handles as you move them — so you can drag an
+            edge and hear the new version come round, rather than adjusting,
+            pressing play, listening, and adjusting again.</li>
           <li><b>Audition in</b> and <b>Audition out</b> — two seconds either
-            side of a single cut point, for checking one edge at a time.</li>
+            side of a single cut point, so you hear the approach to an edit and
+            what follows it. That's how you tell a cut is in the right place,
+            and it's why they're separate: an edit is judged one edge at a
+            time.</li>
         </ul>
       </section>
 
@@ -1781,7 +1892,7 @@
 
 <script type="module">
 import { cutClip, clipFilename, probeMp3 } from "./mp3cut.js";
-import { getPeaks, drawWave, snapToSilence, clipWindow } from "./waveform.js";
+import { getPeaks, drawWave, drawRuler, snapToSilence, clipWindow, nextSilence } from "./waveform.js";
 
 const $  = s => document.querySelector(s);
 const state = { q: "", show: null, year: null, encore: false, person: null, personLabel: "", topic: null, topicLabel: "", sort: "newest" };
@@ -2261,6 +2372,14 @@ function buildPlayer(host, url, ep) {
     const inside = r && now >= r.from - 1 && now <= r.to + 1;
     const from = inside ? r.from : now;
     const to = inside ? r.to : Math.min(now + 30, audio.duration || now + 30);
+    // Both modals are .backdrop at the same z-index and #clipModal comes first
+    // in the DOM, so an editor opened from the transcript's own player lands
+    // behind the transcript — invisible, with the transcript audio still
+    // running underneath it. Every other route from transcript to editor
+    // closes the transcript first; this one has to as well. Note the range is
+    // read above: closeTranscript() empties #txPlayer, taking this button and
+    // its audio element with it.
+    if (wrap.closest("#txModal")) closeTranscript();
     openClip(ep, from, to);
   });
 
@@ -2500,7 +2619,7 @@ const fmt = t => {
    screen at every zoom level, and the thing you're adjusting stays put. */
 const computeWindow = () => clipWindow({
   inSec: clip.in, outSec: clip.out, pad: clip.pad,
-  duration: clip.duration, centre: clip.view,
+  duration: clip.duration, centre: clip.view, anchor: clip.anchor,
 });
 
 // While dragging, the window must not move: it is what the cursor position is
@@ -2511,7 +2630,13 @@ const zoomWindow = () => clip.frozen || computeWindow();
 /* Ease the view back to centre after a drag or a zoom, rather than snapping. */
 function recentre(now = false) {
   cancelAnimationFrame(clip.viewRaf);
-  const target = (clip.in + clip.out) / 2;
+  // Follow whatever the window is anchored to. Easing back to the selection
+  // midpoint while zoomed into one edge would drag the edge off screen.
+  const w = clipWindow({
+    inSec: clip.in, outSec: clip.out, pad: clip.pad,
+    duration: clip.duration, anchor: clip.anchor,
+  });
+  const target = (w.from + w.to) / 2;
   if (now || clip.view == null) { clip.view = target; paintClip(); return; }
   const step = () => {
     if (!clip) return;
@@ -2527,8 +2652,11 @@ function recentre(now = false) {
 function setZoom(pad, animate = false) {
   const dur = clip.duration || clip.out + PAD_MIN;
   clip.pad = Math.max(PAD_MIN, Math.min(PAD_MAX, Math.min(pad, dur)));
-  $("#zoomLabel").textContent = clip.pad >= 10
-    ? `${Math.round(clip.pad)}s` : `${clip.pad.toFixed(1)}s`;
+  // The label used to report the padding — so it read "6.0s" while showing a
+  // 42-second window. It reports the window itself now.
+  const span = Math.min(dur, clip.pad * 2);
+  $("#zoomLabel").textContent = span >= 10
+    ? `${Math.round(span)}s` : `${span.toFixed(1)}s`;
   $("#zoomIn").disabled = clip.pad <= PAD_MIN + 1e-6;
   $("#zoomOut").disabled = clip.pad >= Math.min(PAD_MAX, dur) - 1e-6;
   recentre(!animate);
@@ -2538,20 +2666,50 @@ function paintClip() {
   const sel = { from: clip.in, to: clip.out };
   const z = zoomWindow();
 
+  // One style read per paint, not one per thing drawn: paintClip runs every
+  // frame while audio plays, and each getComputedStyle forces a recalc.
+  const css = getComputedStyle(document.documentElement);
+  const ink = css.getPropertyValue("--ink").trim() || "#efece4";
+  const ink3 = css.getPropertyValue("--ink-3").trim() || "#6d6961";
+
+  // The rulers only need a duration, which arrives with the search result, so
+  // they draw immediately rather than waiting on the audio like the waveforms.
+  if (clip.duration) {
+    drawRuler($("#rulerAll"), { from: 0, to: clip.duration, colors: { tick: ink3, text: ink3 } });
+    drawRuler($("#rulerZoom"), { from: z.from, to: z.to, colors: { tick: ink3, text: ink3 } });
+  }
+
   // The waveform is a 30-100 MB download; everything else works without it,
   // so the modal stays usable while it arrives rather than blocking on it.
   if (!clip.peaks) baseline($("#waveAll"), $("#waveZoom"));
   if (clip.peaks) {
+    // The playhead now comes from our own state rather than being read off the
+    // audio element, so it survives a pause and shows as a cursor before
+    // anything has been played at all.
+    //
+    // drawWave's defaults are the dark palette, and its playhead is near-white
+    // — invisible on the light theme's paper. That went unnoticed while the
+    // playhead only existed during playback; as a permanent cursor it has to
+    // be legible in both themes, so it takes the body text colour. The wave
+    // and selection greys read acceptably either way and are left alone.
+    const colors = { playhead: ink };
+    // The overview stays coarse and linear: at one pixel per 1.5 seconds a dB
+    // curve just fills the box, and its job is orientation, not judgement.
     drawWave($("#waveAll"), clip.peaks, {
       duration: clip.duration, from: 0, to: clip.duration,
-      selection: sel, playhead: clip.audio ? clip.audio.currentTime : null,
+      selection: sel, playhead: clip.playhead, colors,
     });
-    drawWave($("#waveZoom"), clip.peaks, {
+    // The zoomed view is where the work happens, so it gets everything: 10 ms
+    // buckets, the RMS body, a dB scale that makes quiet audio visible, and
+    // the episode's own silence floor drawn where snap-to-silence looks.
+    drawWave($("#waveZoom"), clip.detail || clip.peaks, {
       duration: clip.duration, from: z.from, to: z.to,
-      selection: sel, playhead: clip.audio ? clip.audio.currentTime : null,
+      selection: sel, playhead: clip.playhead, colors,
+      rms: clip.detailRms, scale: "db", floor: clip.floor,
     });
   }
-  $("#snapIn").disabled = $("#snapOut").disabled = !clip.peaks;
+  $("#tNow").textContent = fmt(clip.playhead ?? clip.in);
+  $("#snapIn").disabled = $("#snapOut").disabled = !clip.detail;
   $("#audIn").disabled = $("#audOut").disabled = false;
 
   const w = $("#zoomBox").clientWidth, span = Math.max(1e-6, z.to - z.from);
@@ -2566,9 +2724,14 @@ function paintClip() {
   const len = clip.out - clip.in;
   $("#tLen").textContent = `${len.toFixed(1)}s`;
   // The rate is measured per file, not assumed — bitrate varies by episode.
+  // Short clips are the normal case for a promo, and megabytes to one decimal
+  // renders a perfectly good 48 KB clip as "0.0 MB", which reads as broken.
   const bps = clip.probe ? clip.probe.bytesPerSec : 0;
+  const bytes = len * bps;
   $("#clipGo").textContent = bps
-    ? `Download MP3 · ${(len * bps / 1048576).toFixed(1)} MB`
+    ? `Download MP3 · ${bytes >= 1048576
+        ? (bytes / 1048576).toFixed(1) + " MB"
+        : Math.round(bytes / 1024) + " KB"}`
     : "Download MP3";
 }
 
@@ -2626,9 +2789,18 @@ async function openClip(ep, fromSec, toSec) {
     url: ep.audio_url, title: ep.title, show: ep.show_name,
     date: ep.published_at, id: ep.id,
     in: fromSec, out: toSec, duration: ep.duration_sec || 0,
-    peaks: null, audio: null, probe: null, raf: 0, viewRaf: 0,
-    pad: 6, view: null, frozen: null, abort: new AbortController(),
+    peaks: null, detail: null, detailRms: null, floor: null,
+    audio: null, probe: null, raf: 0, viewRaf: 0,
+    pad: 6, view: null, frozen: null, anchor: null, abort: new AbortController(),
+    // The playhead is state in its own right, not a reading taken off the
+    // audio element. Without it there is nothing to stop *to*, nowhere for a
+    // click-to-listen position to live, and no cursor to mark in/out from —
+    // which is why the editor had six play buttons and no way to stop.
+    playhead: fromSec, playing: false, loop: false,
+    playFrom: null, playTo: null, follow: false,
   };
+  setPlaying(false);
+  setLoop(false);
 
   // The modal covers the transport, so a player left running is audio you can
   // hear but can't reach.
@@ -2638,7 +2810,9 @@ async function openClip(ep, fromSec, toSec) {
   clipModal.hidden = false;
   $("#clipClose").focus();
   // Open framed on the passage, with a little context either side.
-  setZoom(Math.max(2, Math.min(6, (toSec - fromSec) / 2)));
+  // pad is now half the window, so frame the selection plus a fifth of its
+  // length either side rather than the old fixed 2-6 seconds of padding.
+  setZoom(Math.max(1.5, ((toSec - fromSec) * 1.4) / 2));
   clipSay("");
   showLoad("Loading audio");          // no byte count yet — spin
 
@@ -2655,7 +2829,7 @@ async function openClip(ep, fromSec, toSec) {
     // number to a different episode — and a returning visitor would then get
     // another show's waveform and cut a clip from the wrong audio believing it
     // was right. The URL identifies the recording itself.
-    const { peaks, duration, cached } = await getPeaks(clip.url, `audio:${clip.url}`, {
+    const { peaks, detail, detailRms, floor, duration, cached } = await getPeaks(clip.url, `audio:${clip.url}`, {
       signal: me.abort.signal,
       onProgress: (l, t) => {
         if (clip !== me) return;      // a superseded download talks to nobody
@@ -2668,6 +2842,9 @@ async function openClip(ep, fromSec, toSec) {
     });
     if (clip !== me) return;
     clip.peaks = peaks;
+    clip.detail = detail;
+    clip.detailRms = detailRms;
+    clip.floor = floor;
     clip.duration = duration || clip.duration;
     setZoom(clip.pad);
     hideLoad();
@@ -2703,6 +2880,7 @@ function dragHandle(el, which) {
   el.addEventListener("mousedown", e => {
     if (!clip) return;
     e.preventDefault();
+    clip.anchor = which;              // zoom follows the edge you're working on
     const box = $("#zoomBox");
     const z = clip.frozen = computeWindow();
     const move = ev => {
@@ -2712,6 +2890,7 @@ function dragHandle(el, which) {
       t = Math.max(0, Math.min(clip.duration, t));
       if (which === "in") clip.in = Math.min(t, clip.out - 0.2);
       else clip.out = Math.max(t, clip.in + 0.2);
+      selectionEdited(which);
       paintClip();
     };
     const up = () => {
@@ -2725,6 +2904,7 @@ function dragHandle(el, which) {
   // Arrow keys nudge — dragging can't land on a word boundary.
   el.addEventListener("keydown", e => {
     if (!clip) return;
+    clip.anchor = which;
     const step = e.shiftKey ? 1 : 0.1;
     let d = 0;
     if (e.key === "ArrowLeft") d = -step;
@@ -2733,6 +2913,7 @@ function dragHandle(el, which) {
     e.preventDefault();
     if (which === "in") clip.in = Math.max(0, Math.min(clip.in + d, clip.out - 0.2));
     else clip.out = Math.min(clip.duration || Infinity, Math.max(clip.out + d, clip.in + 0.2));
+    selectionEdited(which);
     recentre();
   });
 }
@@ -2744,77 +2925,268 @@ dragHandle($("#hOut"), "out");
    recentre() is the part that was missing: without it the selection moved but
    the zoomed view below stayed where it was, so the handles ended up outside
    the visible window and the lower waveform looked frozen. */
-function overviewSeek(clientX) {
+/* Where on the episode a pointer position falls. */
+function overviewTime(clientX) {
   const r = $("#waveAll").getBoundingClientRect();
   const dur = clip.duration || 0;
+  return Math.max(0, Math.min(dur, ((clientX - r.left) / r.width) * dur));
+}
+
+function overviewSeek(clientX) {
+  clip.anchor = null;                 // moving the whole thing: frame it again
+  const dur = clip.duration || 0;
   const len = clip.out - clip.in;
-  const t = ((clientX - r.left) / r.width) * dur;
+  const t = overviewTime(clientX);
   clip.in = Math.max(0, Math.min(t - len / 2, Math.max(0, dur - len)));
   clip.out = Math.min(dur || clip.in + len, clip.in + len);
+  selectionEdited("in");             // the start moved, so the resume point is stale
   recentre(true);                     // instant: the view must track the pointer
 }
 
-// The label says "drag to move the selection", so let it drag, not just click.
-$("#waveAll").addEventListener("mousedown", e => {
-  // Only duration is needed to move a selection, and that arrives with the
-  // search result. Requiring peaks meant every drag before the waveform landed
-  // did nothing at all, which reads as a broken control rather than a wait.
+/* The overview does two jobs, told apart by whether the pointer travels.
+   A press that stays put is a click — listen from here. A press that moves is
+   a drag — take the selection there, as before.
+   Hit-testing the selection band instead was the obvious design and is wrong:
+   a 3-second selection inside a half-hour episode is about two pixels wide, so
+   the "drag the band" target would be unhittable exactly when the selection is
+   tightest. Distance travelled has no such failure mode, and it also stops the
+   old behaviour of the selection leaping on a stray click. */
+const DRAG_SLOP = 4;                  // px before a press counts as a drag
+
+/* The ruler is part of the same surface as the waveform under it. Clicking a
+   timeline and having nothing happen reads as a dead control, and the ruler is
+   the obvious thing to click when you know the time you want. */
+$("#rulerAll").addEventListener("mousedown", e => {
   if (!clip || !clip.duration) return;
   e.preventDefault();
-  overviewSeek(e.clientX);
-  const move = ev => { if (clip && clip.duration) overviewSeek(ev.clientX); };
-  const up = () => {
+  playRange(overviewTime(e.clientX), null);
+});
+
+$("#waveAll").addEventListener("mousedown", e => {
+  // Only duration is needed here, and that arrives with the search result.
+  // Requiring peaks meant every interaction before the waveform landed did
+  // nothing at all, which reads as a broken control rather than a wait.
+  if (!clip || !clip.duration) return;
+  e.preventDefault();
+  const x0 = e.clientX;
+  let dragging = false;
+
+  const move = ev => {
+    if (!clip || !clip.duration) return;
+    if (!dragging && Math.abs(ev.clientX - x0) < DRAG_SLOP) return;
+    dragging = true;
+    overviewSeek(ev.clientX);
+  };
+  const up = ev => {
     removeEventListener("mousemove", move);
     removeEventListener("mouseup", up);
+    if (dragging || !clip || !clip.duration) return;
+    // A click: play from here to the end of the episode. There's no edit in
+    // mind yet — this is hunting for the moment, not auditioning a cut.
+    playRange(overviewTime(ev.clientX), null);
   };
   addEventListener("mousemove", move);
   addEventListener("mouseup", up);
 });
 
-function playRange(from, to) {
-  if (!clip) return;
+/* ---------- transport ----------
+   Judging an edit means hearing the same three seconds ten times over, so the
+   transport is the tool itself rather than a convenience laid on top of it.
+   What was here before could only start playback: every button called
+   playRange(), a second press restarted rather than stopped, and the only
+   pause() a user could reach was inside closeClip(). Playing a 30-second
+   selection meant waiting it out or discarding the edit. */
+
+/* One element per open episode, made on first use — a clip can be trimmed and
+   downloaded without ever being played. */
+function clipAudio() {
   if (!clip.audio) {
     clip.audio = new Audio();
     clip.audio.preload = "metadata";      // seeking needs the duration first
     clip.audio.src = clip.url;
   }
-  const a = clip.audio;
-  cancelAnimationFrame(clip.raf);         // a second click replaces the loop
+  return clip.audio;
+}
+
+function setPlaying(on) {
+  if (clip) clip.playing = on;
+  const b = $("#tPlay");
+  b.textContent = on ? "❚❚" : "▶";
+  b.setAttribute("aria-label", on ? "Pause" : "Play");
+}
+
+function setLoop(on) {
+  if (clip) clip.loop = on;
+  $("#tLoop").classList.toggle("on", on);
+  $("#tLoop").setAttribute("aria-pressed", String(on));
+}
+
+/* Play `from` → `to`. A null `to` means "to the end of the episode", which is
+   what listening from a point rather than to an edit wants.
+
+   `follow` says whether the range *is* the selection rather than merely equal
+   to it right now. A following range tracks the handles as they move; without
+   that, repeating the selection and then trimming an edge keeps playing the
+   range you started with — precisely the moment you are trying to judge.
+
+     "sel"  both ends follow — plain Play, the common case
+     false  neither — the auditions, which are deliberately fixed two-second
+            windows onto one edge and should not move under you
+
+   There was briefly an "end" state, for a "with 2s lead-in" button that started
+   at a fixed run-up but ended at the selection. That button was removed: it
+   began at the same instant as Audition in, so the two were identical for their
+   first four seconds and indistinguishable on the short clips this tool is
+   mostly used for. Play plus the two auditions cover the same ground.
+
+   Three bugs of this exact shape shipped from this file (Repeat, Play after
+   moving the lead handle, and that lead-in). Anything the transport remembers
+   across a press has to say whether a later edit invalidates it. */
+function playRange(from, to, { follow = false } = {}) {
+  if (!clip) return;
+  const a = clipAudio();
+  cancelAnimationFrame(clip.raf);         // a second call replaces the loop
+  clip.playFrom = from;
+  clip.playTo = to;
+  clip.follow = follow;
+  clip.playhead = from;
 
   const begin = () => {
     if (!clip || clip.audio !== a) return;
     a.currentTime = from;                 // ignored before metadata arrives
-    a.play().catch(() => clipSay("Playback blocked by the browser."));
-    const tick = () => {
-      if (!clip || clip.audio !== a) return;
-      paintClip();
-      if (a.currentTime >= to) { a.pause(); return; }
-      clip.raf = requestAnimationFrame(tick);
-    };
-    clip.raf = requestAnimationFrame(tick);
+    a.play().catch(() => { clipSay("Playback blocked by the browser."); setPlaying(false); });
+    setPlaying(true);
+    clip.raf = requestAnimationFrame(tickPlay);
   };
 
   if (a.readyState >= 1) begin();
   else a.addEventListener("loadedmetadata", begin, { once: true });
 }
+
+function tickPlay() {
+  if (!clip || !clip.audio) return;
+  const a = clip.audio;
+  clip.playhead = a.currentTime;
+  // An unbounded play (listening from a point rather than to an edit) ends by
+  // running out of episode, and nothing above would catch that.
+  if (a.ended) { setPlaying(false); paintClip(); return; }
+  // Read the bounds every frame when the range is the selection, so trimming
+  // an edge mid-loop takes effect on the next pass instead of the next press.
+  const back = clip.follow === "sel" ? clip.in : clip.playFrom;
+  const end = clip.follow === "sel" ? clip.out : clip.playTo;
+  // Dragging the in-point past the playhead while it runs leaves the playhead
+  // outside the range it is meant to be auditioning. Pull it in rather than
+  // keep playing audio that is no longer part of the clip.
+  if (clip.follow === "sel" && back != null && clip.playhead < back - 0.05) {
+    a.currentTime = back;
+    clip.playhead = back;
+  }
+  if (end != null && clip.playhead >= end) {
+    if (clip.loop) {
+      a.currentTime = back;
+      clip.playhead = back;
+    } else {
+      a.pause();
+      // Park exactly on the out-point rather than wherever the frame landed,
+      // so the readout agrees with the edit you just heard.
+      clip.playhead = end;
+      setPlaying(false);
+      paintClip();
+      return;
+    }
+  }
+  paintClip();
+  clip.raf = requestAnimationFrame(tickPlay);
+}
+
+/* Pause holds the playhead; stop returns it to the in-point. Two different
+   intentions — "let me look at this" and "start again" — and collapsing them
+   into one control is what makes an editor feel like a media player. */
+function pausePlay() {
+  if (!clip || !clip.audio) return;
+  clip.audio.pause();
+  cancelAnimationFrame(clip.raf);
+  clip.playhead = clip.audio.currentTime;
+  setPlaying(false);
+  paintClip();
+}
+
+function stopPlay() {
+  if (!clip) return;
+  if (clip.audio) clip.audio.pause();
+  cancelAnimationFrame(clip.raf);
+  clip.playhead = clip.in;
+  clip.playFrom = clip.playTo = null;
+  clip.follow = false;
+  setPlaying(false);
+  paintClip();
+}
+
+/* Editing the selection can invalidate a paused position.
+ *
+ * Play resumes from the playhead when it still sits inside the range you were
+ * listening to. That is right after a pause, and wrong after a trim: move the
+ * in-point earlier and the old playhead is still technically inside the range,
+ * so Play would resume mid-clip instead of starting at the edge you just set —
+ * which is the one thing you moved it to hear.
+ *
+ * Moving the out-point is different: it doesn't change where playback starts,
+ * so a paused position inside the range survives it. Resetting on every edit
+ * would mean pausing to look at something, nudging the out handle, and being
+ * thrown back to the top.
+ */
+function selectionEdited(which) {
+  if (!clip || clip.playing) return;   // a live range already follows the handles
+  if (which === "in" || clip.playhead < clip.in || clip.playhead > clip.out) {
+    clip.playhead = clip.in;
+    clip.playFrom = clip.playTo = null;
+    clip.follow = false;
+  }
+}
+
+function togglePlay() {
+  if (!clip) return;
+  if (clip.playing) return pausePlay();
+  // Resume from the playhead while it still sits inside the range you were
+  // listening to; otherwise play the selection, which is what the button means
+  // the rest of the time.
+  const h = clip.playhead;
+  const from = clip.follow === "sel" ? clip.in : clip.playFrom;
+  const to = clip.follow === "sel" ? clip.out : clip.playTo;
+  const end = to ?? clip.duration;
+  if (h != null && from != null && h >= from && h < end - 0.05)
+    playRange(h, to, { follow: clip.follow });
+  else
+    playRange(clip.in, clip.out, { follow: "sel" });
+}
 $("#zoomIn").addEventListener("click", () => setZoom(clip.pad / PAD_STEP, true));
 $("#zoomOut").addEventListener("click", () => setZoom(clip.pad * PAD_STEP, true));
+$("#zoomFit").addEventListener("click", () => {
+  if (!clip) return;
+  clip.anchor = null;                 // frame the selection, not an edge
+  setZoom(Math.max(1.5, ((clip.out - clip.in) * 1.4) / 2), true);
+});
 $("#waveZoom").addEventListener("wheel", e => {
   if (!clip) return;
   e.preventDefault();
   setZoom(clip.pad * (e.deltaY > 0 ? PAD_STEP : 1 / PAD_STEP));
 }, { passive: false });
 
-$("#playSel").addEventListener("click", () => playRange(clip.in, clip.out));
-$("#playLead").addEventListener("click", () => playRange(Math.max(0, clip.in - 2), clip.out));
+$("#tPlay").addEventListener("click", togglePlay);
+$("#tStop").addEventListener("click", stopPlay);
+$("#tLoop").addEventListener("click", () => clip && setLoop(!clip.loop));
 $("#audIn").addEventListener("click", () => playRange(Math.max(0, clip.in - 2), clip.in + 2));
 $("#audOut").addEventListener("click", () => playRange(Math.max(0, clip.out - 2), clip.out + 2));
 $("#snapIn").addEventListener("click", () => {
-  clip.in = Math.min(snapToSilence(clip.peaks, clip.duration, clip.in), clip.out - 0.2);
+  clip.anchor = "in";
+  clip.in = Math.min(snapToSilence(clip.detail, clip.duration, clip.in), clip.out - 0.2);
+  selectionEdited("in");
   recentre();
 });
 $("#snapOut").addEventListener("click", () => {
-  clip.out = Math.max(snapToSilence(clip.peaks, clip.duration, clip.out), clip.in + 0.2);
+  clip.anchor = "out";
+  clip.out = Math.max(snapToSilence(clip.detail, clip.duration, clip.out), clip.in + 0.2);
+  selectionEdited("out");
   recentre();
 });
 
@@ -2847,9 +3219,64 @@ $("#clipGo").addEventListener("click", async () => {
 });
 
 addEventListener("keydown", e => {
-  if (e.key === "Escape" && clipOpen()) { e.preventDefault(); closeClip(); }
+  if (!clipOpen()) return;
+  if (e.key === "Escape") { e.preventDefault(); closeClip(); return; }
+  if (e.target.matches("input, textarea")) return;
+
+  // Space toggles playback rather than activating whichever tool button
+  // happens to hold focus. That is the trade every audio editor makes, and
+  // the right one here: you press Space constantly and press a given tool
+  // button once.
+  //
+  // The controls that commit or discard are exempt. Swallowing Space there
+  // would mean a keyboard user tabbing to Download and pressing Space gets
+  // audio instead of a file, with nothing to explain why — too high a price
+  // for consistency on the one button the whole modal exists to reach.
+  if (e.key === " " && !e.target.closest(".modal-actions, #clipClose")) {
+    e.preventDefault();
+    togglePlay();
+    return;
+  }
+  if (e.key === "Home") { e.preventDefault(); stopPlay(); return; }
+
+  /* Marking at the playhead. This is how every editor works and it is what the
+     playhead was introduced for: listen until you hear the edge, press the key,
+     the mark is placed. Dragging a handle to a spot you have already heard is
+     the slow way round. */
+  if (e.key === "i" || e.key === "I") {
+    e.preventDefault();
+    clip.in = Math.max(0, Math.min(clip.playhead, clip.out - 0.2));
+    clip.anchor = "in";
+    selectionEdited("in");
+    recentre();
+    return;
+  }
+  if (e.key === "o" || e.key === "O") {
+    e.preventDefault();
+    clip.out = Math.min(clip.duration || Infinity, Math.max(clip.playhead, clip.in + 0.2));
+    clip.anchor = "out";
+    selectionEdited("out");
+    recentre();
+    return;
+  }
+
+  /* Jump between the pauses. Needs the detail tier, so it waits for the audio
+     like Snap does. */
+  if ((e.key === "[" || e.key === "]") && clip.detailRms) {
+    e.preventDefault();
+    const t = nextSilence(clip.detailRms, clip.duration, clip.playhead,
+                          e.key === "]" ? 1 : -1, clip.floor);
+    if (t == null) return;             // no further gap — leave the mark alone
+    clip.playhead = t;
+    // Bring the view with it, or the playhead lands somewhere off screen and
+    // the keypress looks like it did nothing.
+    clip.view = t;
+    paintClip();
+  }
 });
-addEventListener("resize", () => { if (clipOpen() && clip && clip.peaks) paintClip(); });
+// Not gated on peaks: the rulers and the handles are laid out in pixels too,
+// and they exist long before the audio does.
+addEventListener("resize", () => { if (clipOpen() && clip) paintClip(); });
 
 /* ---------- transcript ----------
    The words with the tools around them. Three jobs, one view:
@@ -2975,10 +3402,21 @@ function renderTranscript(data) {
 }
 
 function playFrom(sec) {
-  if (!tx.audio) return;
-  const go = () => { tx.audio.currentTime = sec; tx.audio.play().catch(() => {}); };
-  if (tx.audio.readyState >= 1) go();
-  else tx.audio.addEventListener("loadedmetadata", go, { once: true });
+  if (!tx?.audio) return;
+  // On a cold player this has to wait for metadata, and the transcript can be
+  // gone by the time that lands — click a timestamp, then the scissors or
+  // Escape. Hold the element rather than reaching back through `tx`, which is
+  // null by then, and check it is still the live player before making a sound:
+  // closeTranscript() empties #txPlayer, but a detached audio element will
+  // happily play to a modal that isn't there any more.
+  const audio = tx.audio;
+  const go = () => {
+    if (tx?.audio !== audio) return;
+    audio.currentTime = sec;
+    audio.play().catch(() => {});
+  };
+  if (audio.readyState >= 1) go();
+  else audio.addEventListener("loadedmetadata", go, { once: true });
 }
 
 // Walk the hits. Wraps at both ends — with one match, "next" should land on it
