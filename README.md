@@ -251,6 +251,10 @@ The UI is just a client — swap it for anything without touching the backend.
 | `GET /api/episode/<id>` | one episode, for shared moment links |
 | `GET /api/episode/<id>/segments?q=` | every transcript line with its timings, server-highlighted for `q` — what the transcript modal reads |
 | `GET /episode/<id>/transcript?format=txt\|srt\|vtt` | one transcript to read, print or caption with |
+| `GET /api/version` | content hash of `index.html` and the two ES modules. The page re-checks this when its tab regains focus, so a browser left open across a deploy can offer a reload instead of silently running old code. Database-free and cheap on purpose. |
+
+Every response carries an `ETag` and honours `If-None-Match`, so a reload that
+changes nothing costs a 304 with an empty body rather than the whole payload.
 
 Clip extraction calls no endpoint here at all — the browser range-requests the
 audio from Podbean's CDN directly.
@@ -351,8 +355,9 @@ sending notes on demand rather than up front becomes the obvious first saving.
 ## Tests
 
 ```bash
-node tests/test-waveform.mjs     # pure — peak reduction, snap-to-silence
-node tests/verify-clips.mjs      # live — needs the server running + network
+node tests/test-waveform.mjs      # pure — peak reduction, snap-to-silence
+node tests/test-update-prompt.mjs # pure — the new-version reload prompt
+node tests/verify-clips.mjs       # live — needs the server running + network
 ```
 
 Node is a **dev-only** dependency; nothing at runtime uses it.

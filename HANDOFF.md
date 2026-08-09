@@ -567,6 +567,7 @@ the same place.
 
 ```bash
 node tests/test-waveform.mjs        # pure: peak reduction + snap-to-silence
+node tests/test-update-prompt.mjs   # pure: the new-version reload prompt
 node tests/verify-clips.mjs         # live: needs the server running + network
 ```
 
@@ -672,18 +673,49 @@ recover the pre-September-2024 backlog once — see Open threads.
 
 ### Deploys and stale browsers
 
-`serve.py` sends `Cache-Control: no-cache` on everything. There is no build
-step and no fingerprinted filenames, so a file's URL never changes when its
-contents do — without revalidation a browser can keep running a months-old copy
-of the app after a deploy, with nothing to indicate it.
+`serve.py` sends `Cache-Control: no-cache` on everything, which is widely
+misread. It does not mean "do not cache". It means **"never reuse a stored copy
+without asking the server first"** — so a reload can never produce a stale page.
+There is no build step and no fingerprinted filenames, so a file's URL never
+changes when its contents do, and revalidating every time is the only thing
+that works.
 
-This is not theoretical: a bug fixed and deployed appeared **unfixed locally**
-because one tab held a stale `index.html`. Twenty minutes went into debugging
-code that was already correct. The giveaway was a status string in a screenshot
-that had been deleted from the source two commits earlier.
+**Two things were wrong here, and both are now fixed.**
 
-If a fix seems not to have landed, check for a stale page before checking the
-code — and `git log -S'some string from the screen'` will date it exactly.
+**1. There were no 304s.** A comment in `_send` claimed they cost nothing, but
+the server sent no `ETag` and no `Last-Modified`, so the browser had no
+validator to revalidate *with* and had to re-download the whole body every
+time. Every response now carries an `ETag`, and a conditional request gets a
+304 with an empty body — measured on the page itself, 158,651 bytes became 0.
+The hash is taken after compression, so a gzipped body and a plain one are
+different ETags, which is what `Vary: Accept-Encoding` already implied.
+
+**2. None of that reaches a tab that is already open**, which is the case that
+actually cost time here. A bug fixed and deployed appeared **unfixed locally**
+because one tab held a stale `index.html`; twenty minutes went into debugging
+code that was already correct, and the giveaway was a status string in a
+screenshot that had been deleted from the source two commits earlier. No cache
+header can fix that, because a running page never asks the server anything. A
+tab left open for a fortnight runs fortnight-old JavaScript, indefinitely.
+
+So the page now asks. `/api/version` returns a content hash of `index.html` and
+the two ES modules, and the UI re-checks it **when the tab is returned to** —
+`visibilitychange` and `focus`, throttled to one request a minute. On a change
+it shows a dismissible bar offering a reload. Three deliberate choices:
+
+- **Nothing reloads on its own.** An editor holding an unsaved selection is the
+  wrong thing to discard on the app's initiative.
+- **Hashed by content, not mtime**, so a redeploy that changes no files stays
+  silent. Nobody trusts a prompt that cries wolf.
+- **Checked on return, not on a timer**, so an idle tab generates no traffic —
+  and the check fires at exactly the moment a days-old tab comes back into use.
+
+`node tests/test-update-prompt.mjs` covers the quiet cases: dismissal is
+remembered per build, a further deploy may ask again, a failed request neither
+throws nor prompts.
+
+If a fix still seems not to have landed, check for a stale page before checking
+the code — and `git log -S'some string from the screen'` will date it exactly.
 
 ### Small things that were wrong and are now fixed
 

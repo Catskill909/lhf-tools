@@ -14,6 +14,7 @@ Swap to FastAPI later without touching the front end — the JSON contract
 import argparse
 import csv
 import gzip
+import hashlib
 import io
 import json
 import os
@@ -560,6 +561,48 @@ def facets(conn):
     }
 
 
+_VERSION = {"key": None, "value": None}
+
+
+def app_version():
+    """A fingerprint of the files a browser is running.
+
+    Exists because `Cache-Control` cannot help a page that is already open. A
+    tab left running for a fortnight is executing a fortnight-old script, not
+    because anything was cached but because it never asked again. This gives a
+    running page a way to notice, and the UI turns that into a reload prompt.
+
+    Hashed by content rather than by mtime, so a redeploy that changes no files
+    does not announce a new version — nobody trusts a prompt that cries wolf.
+    Stat first and hash only when something moved: an unchanged fingerprint
+    costs three stat calls, which is what this endpoint mostly does.
+    """
+    names = ("index.html", "mp3cut.js", "waveform.js")
+    stamps = []
+    for name in names:
+        try:
+            st = os.stat(os.path.join(STATIC, name))
+            stamps.append(f"{name}:{st.st_mtime_ns}:{st.st_size}")
+        except OSError:
+            stamps.append(f"{name}:missing")
+    key = "|".join(stamps)
+
+    if _VERSION["key"] != key:
+        h = hashlib.blake2b(digest_size=8)
+        for name in names:
+            try:
+                with open(os.path.join(STATIC, name), "rb") as fh:
+                    h.update(fh.read())
+            except OSError:
+                h.update(b"\0missing\0")
+        # Assign the value before the key: another thread reading mid-update
+        # should see a stale-but-consistent pair, never a new key pointing at
+        # an old digest.
+        _VERSION["value"] = h.hexdigest()
+        _VERSION["key"] = key
+    return _VERSION["value"]
+
+
 class Handler(BaseHTTPRequestHandler):
     def log_message(self, fmt, *args):        # quieter console
         pass
@@ -577,6 +620,29 @@ class Handler(BaseHTTPRequestHandler):
         if gz:
             payload = gzip.compress(payload, 6)
 
+        # An ETag is what makes `no-cache` cheap. Without a validator the
+        # browser has nothing to revalidate *with*, so "check before you reuse
+        # it" degrades into "download it all again, every time" — which is what
+        # this server did for its whole life, while a comment here claimed the
+        # 304s were costing nothing. They were not happening.
+        #
+        # The hash is taken after compression on purpose: a gzipped body and a
+        # plain one are different representations of the same resource, and
+        # giving them one ETag would let a cache hand the wrong bytes to a
+        # client whose Accept-Encoding differs. That is the same failure `Vary`
+        # is there to prevent, so the two agree.
+        etag = None
+        if code == 200:
+            etag = '"%s"' % hashlib.blake2b(payload, digest_size=16).hexdigest()
+            if self.headers.get("If-None-Match") == etag:
+                self.send_response(304)
+                self.send_header("ETag", etag)
+                self.send_header("Cache-Control", "no-cache")
+                if gz:
+                    self.send_header("Vary", "Accept-Encoding")
+                self.end_headers()
+                return
+
         self.send_response(code)
         self.send_header("Content-Type", ctype)
         if gz:
@@ -584,6 +650,8 @@ class Handler(BaseHTTPRequestHandler):
             # Any cache between here and the browser must key on this, or it
             # will hand compressed bytes to a client that didn't ask for them.
             self.send_header("Vary", "Accept-Encoding")
+        if etag:
+            self.send_header("ETag", etag)
         self.send_header("Content-Length", str(len(payload)))
         # Without this the server sends no cache headers at all and browsers
         # cache heuristically, so a deploy can leave someone running the old
@@ -592,9 +660,13 @@ class Handler(BaseHTTPRequestHandler):
         # in one tab and current in another. There is no build step and no
         # fingerprinted filenames here, so the URL never changes when the
         # contents do — revalidating every time is the only thing that works.
-        # These files are tens of kilobytes; a 304 costs nothing. Applied to
-        # everything, API responses included: the archive updates daily, and a
-        # heuristically cached search result is the same trap wearing a hat.
+        # Applied to everything, API responses included: the archive updates
+        # daily, and a heuristically cached search result is the same trap
+        # wearing a hat.
+        #
+        # None of this reaches a tab that is already open. `no-cache` governs
+        # what happens when the browser asks; a running page never asks. That
+        # is what /api/version and the reload prompt in the UI are for.
         self.send_header("Cache-Control", "no-cache")
         self.end_headers()
         self.wfile.write(payload)
@@ -776,6 +848,12 @@ class Handler(BaseHTTPRequestHandler):
             finally:
                 conn.close()
             return self._send(200, json.dumps(data))
+
+        # Deliberately tiny and database-free: the page asks for this every time
+        # it regains focus, and it must stay cheap enough that nobody thinks
+        # twice about the frequency.
+        if path == "/api/version":
+            return self._send(200, json.dumps({"version": app_version()}))
 
         if path in ("/", "/index.html"):
             try:

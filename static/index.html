@@ -1356,6 +1356,43 @@
   @media (prefers-reduced-motion: reduce) {
     * { transition: none !important; animation: none !important; }
   }
+  /* ------------------------------------------------- update prompt */
+  /* Above the modals (z-index 50) rather than below them: a deploy is not
+     going to wait for someone to close the clip editor, and a notice trapped
+     behind a backdrop is a notice nobody can dismiss. It sits bottom-centre so
+     it never covers the header or the search field, both of which are things
+     people reach for while it is on screen. */
+  .update-bar {
+    position: fixed; z-index: 60;
+    left: 50%; bottom: 1.1rem; transform: translateX(-50%);
+    display: flex; align-items: center; gap: 0.9rem;
+    max-width: calc(100vw - 2rem);
+    padding: 0.7rem 0.8rem 0.7rem 1.1rem;
+    background: var(--paper-2);
+    border: 1px solid var(--rule-hard);
+    border-left: 3px solid var(--spot);
+    border-radius: 4px;
+    box-shadow: 0 6px 24px rgba(0, 0, 0, 0.28);
+    font-size: 0.9rem; color: var(--ink);
+  }
+  .update-bar[hidden] { display: none; }
+  .update-bar b { font-weight: 600; }
+  .update-bar .reload {
+    background: var(--spot); border: 1px solid var(--spot);
+    color: #fff; font: inherit; font-size: 0.85rem; font-weight: 600;
+    padding: 0.4rem 0.9rem; border-radius: 3px; cursor: pointer;
+    white-space: nowrap;
+  }
+  .update-bar .reload:hover { filter: brightness(1.08); }
+  .update-bar .later {
+    background: none; border: none; cursor: pointer;
+    color: var(--ink-3); font-size: 1.3rem; line-height: 1;
+    padding: 0.2rem 0.45rem; border-radius: 3px;
+  }
+  .update-bar .later:hover { color: var(--ink); }
+  @media (max-width: 30rem) {
+    .update-bar { left: 1rem; right: 1rem; transform: none; }
+  }
 </style>
 </head>
 <body>
@@ -1941,6 +1978,15 @@
     </div>
 
   </div>
+</div>
+
+<!-- Appears only when the server is running code newer than this page. Nothing
+     reloads on its own: an editor with an unsaved selection in it is exactly
+     the wrong thing to throw away on the app's initiative. -->
+<div class="update-bar" id="updateBar" role="status" aria-live="polite" hidden>
+  <span><b>A new version is available.</b> This page is still running the old one.</span>
+  <button class="reload" id="updateReload">Reload</button>
+  <button class="later" id="updateLater" aria-label="Dismiss">&times;</button>
 </div>
 
 <script type="module">
@@ -3643,9 +3689,57 @@ async function revealExtractionHelp() {
   } catch { /* help is still complete without these two sections */ }
 }
 
+/* ---------- new-version prompt ----------
+   `Cache-Control: no-cache` guarantees a *reload* is never stale. It can do
+   nothing about a tab that is never reloaded, and that is the case that has
+   actually cost time here: a fixed bug looked unfixed because one tab had been
+   open for weeks. A running page never asks the server anything, so it has to
+   be told to ask.
+
+   Checked when the tab is returned to rather than on a timer. That is exactly
+   the moment a days-old tab comes back into use, and it means an idle tab
+   generates no traffic at all. */
+let myVersion = null;       // what the server was serving when this page loaded
+let seenVersion = null;     // the newer build we spotted
+let hushedVersion = null;   // dismissed — don't nag again for that same build
+let lastCheck = 0;
+
+async function checkVersion() {
+  // focus and visibilitychange both fire when returning from another app, and
+  // the answer cannot meaningfully change in a second.
+  if (Date.now() - lastCheck < 60_000) return;
+  lastCheck = Date.now();
+  try {
+    const { version } = await (await fetch("/api/version", { cache: "no-store" })).json();
+    if (!version) return;
+    if (myVersion === null) { myVersion = version; return; }
+    if (version !== myVersion && version !== hushedVersion) {
+      seenVersion = version;
+      $("#updateBar").hidden = false;
+    }
+  } catch {
+    // Offline, or the server is mid-deploy. Neither is worth a message: the
+    // next check will find out, and a failed poll is not news.
+  }
+}
+
+$("#updateReload").addEventListener("click", () => location.reload());
+$("#updateLater").addEventListener("click", () => {
+  // Silence this build only. A *further* deploy is new information and is
+  // allowed to ask again.
+  hushedVersion = seenVersion;
+  $("#updateBar").hidden = true;
+});
+
+addEventListener("visibilitychange", () => {
+  if (document.visibilityState === "visible") checkVersion();
+});
+addEventListener("focus", checkVersion);
+
 const _p = readURL();
 loadFacets().then(run).then(() => openFromURL(_p));
 revealExtractionHelp();
+checkVersion();
 </script>
 </body>
 </html>
