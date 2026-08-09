@@ -1,8 +1,15 @@
 # LHF Digital Asset Manager — Handoff
 
-**Status:** working prototype, real data, running locally. Feature-complete for
-everything achievable without AI.
-**Last worked:** 3 August 2026 (one evening, built from nothing).
+**Status:** **deployed and live on Coolify**, real data, updating itself daily.
+Feature-complete for everything achievable without AI.
+**Last worked:** 9 August 2026. Built from nothing on 3 August.
+
+**Two things a new reader should know before anything else:**
+1. **The archive is no longer disposable.** Both shows sit at Podbean's
+   100-episode feed cap, so the database is becoming the only reachable copy of
+   anything that rotates out. `backup.py` exists; see **Backups**.
+2. **The audio editor was rebuilt** — playhead, transport, 10 ms waveform,
+   keyboard marking. `docs/audio-editor-dev.md` opens with a status summary.
 **Client:** Labor Heritage Foundation — Harold Phillips (producer), Chris Garlock
 and Elise Bryant (hosts), Patrick Dixon.
 
@@ -421,55 +428,56 @@ both feeds vanished tomorrow, everything searchable still works.
 Audio deliberately isn't stored — ~12–24 GB, and streaming from their CDN is
 free and fast. Worth revisiting only if clip export gets built.
 
-### 2. Timed updates — ✅ mechanism built, ⚠️ not yet scheduled anywhere
+### 2. Timed updates — ✅ built and running in production
 
-`refresh.py --loop 24h` now runs the pipeline on a schedule and keeps itself
-alive — verified cycling correctly. It works the same on a laptop, in Docker,
-and on Coolify without depending on a host scheduler, and backs off on repeated
-failure instead of hammering the feed.
+`refresh.py --loop 24h` runs the pipeline on a schedule and keeps itself alive.
+It works the same on a laptop, in Docker, and on Coolify without depending on a
+host scheduler, and backs off on repeated failure instead of hammering the feed.
 
-**What's still missing is choosing where it runs.** Nothing is scheduled on any
-machine yet. Once deployed, either run the container with
-`--loop 24h --quiet-if-nothing-new` as its command, or use a host cron:
+**This is now wired up and running.** `docker-entrypoint.sh` starts the loop in
+the background unless `LHF_AUTO_REFRESH=0`, which is what keeps a single-container
+Coolify deploy current — Coolify deploys the Dockerfile, not the compose file, so
+without that the archive would be frozen at whatever the feeds held on deploy
+day. The compose `web` service sets `LHF_AUTO_REFRESH=0` because the dedicated
+`refresh` worker owns updates there; two loops on one SQLite file would race.
+
+For a host scheduler instead of either, the cron form is:
 
 ```cron
 # Sundays 04:00 — after both shows are out
 0 4 * * 0  cd /path/to/digital-asset-manager && /usr/bin/python3 refresh.py >> /var/log/lhf-refresh.log 2>&1
 ```
 
-Still worth adding when wiring it up:
+**Still genuinely missing: failure notification.** The loop logs failures to
+stderr and backs off, but nobody is watching stderr. An email or webhook on
+repeated failure is the piece that isn't there — a silently broken updater is
+how this rots, and the symptom (an archive that quietly stops growing) is
+exactly the kind nobody notices for months.
 
-- **Failure notification.** The loop logs failures to stderr and backs off, but
-  nobody is watching stderr. An email or webhook on repeated failure is the
-  missing piece — a silently broken updater is how this rots.
-- **Back up the SQLite file off-box first.** The feeds are re-scrapeable for
-  free; 882k words of transcript are not worth re-fetching casually.
+An earlier version of this section said to back up first because "the feeds are
+re-scrapeable for free". **That is no longer true** — see Backups above. Both
+shows are at Podbean's 100-episode cap, so the database is now the only reachable
+copy of anything that has rotated out.
 
-### 3. Export — ❌ not built, and worth doing
+### 3. Export — ✅ mostly built
 
-Currently JSON via the API only. Their organisation includes Library of
-Congress people, so export formats will be asked about early.
+Built from scratch on the stdlib, as planned — no package, no venv. See
+`docs/export-spec.md` and the **Export** entry under "Working now".
 
-**Build it from scratch — no package needed.** Python's stdlib (`csv`, `json`,
-`xml.etree`) covers every format below, and staying zero-dependency has been
-genuinely valuable: no venv, no install, `python3 refresh.py` just works. A
-library would buy nothing here.
-
-Formats worth supporting, roughly by demand:
-
-| Format | For | Effort |
+| Format | For | State |
 |---|---|---|
-| CSV | Everyone. Opens in Excel, which is how most of this org works. | trivial |
-| JSON | Machine use, already the API shape | done |
-| SRT / VTT | A single episode's transcript, back out in a standard format | trivial |
-| Plain text / Markdown | Readable transcript for reference or quoting | trivial |
-| Dublin Core XML | The library-standard metadata answer. ~20 lines. | small |
-| BibTeX / citation | Researchers quoting an episode + timestamp | small |
+| CSV | Everyone. Opens in Excel, which is how most of this org works. | ✅ built, with a BOM so Excel doesn't mangle accents |
+| TSV | Paste straight into a sheet | ✅ built (`?format=tsv`) |
+| JSON | Machine use, already the API shape | ✅ built |
+| Clipboard | Paste into an already-open sheet | ✅ built |
+| SRT / VTT / plain text | A single episode's transcript in a standard format | ✅ built, at `/episode/<id>/transcript?format=` |
+| Dublin Core XML | The library-standard metadata answer. ~20 lines. | ❌ not built |
+| BibTeX / citation | Researchers quoting an episode + timestamp | ❌ not built, and **blocked on a question, not on effort** — Chicago, MLA, APA and the broadcast-archive conventions disagree about how to cite a radio segment, and choosing blind means building the wrong thing confidently. Ask them. See `docs/ai-layer.md` §6. |
 
-Scope it as "export whatever the current search returns" rather than a separate
-reporting screen — a button next to Sort that exports the visible result set,
-filters and all. That's one endpoint and one control, and it covers most of what
-anyone actually wants.
+It was scoped as "export whatever the current search returns" rather than a
+separate reporting screen, and that held up: one endpoint, one control, and it
+covers what anyone actually asks for. The endpoint calls `search()` rather than
+reimplementing the query, so the file and the screen cannot drift apart.
 
 ## Who these users actually are
 
