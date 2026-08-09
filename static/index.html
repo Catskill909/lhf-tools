@@ -990,16 +990,74 @@
   #exportBtn:hover { color: var(--spot-ink); border-color: var(--spot); }
   #exportBtn:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
 
+  /* Two choices sharing the radio treatment used for formats below, so "pick
+     one of these" reads the same way twice in one dialogue. */
+  .scope-list { display: grid; gap: 0.5rem; margin-bottom: 1.1rem; }
   .scope {
-    background: var(--paper-2); border: 1px solid var(--rule);
-    border-left: 2px solid var(--spot);
-    border-radius: 3px; padding: 0.7rem 0.9rem; margin-bottom: 1.1rem;
+    display: flex; gap: 0.7rem; align-items: center; width: 100%;
+    text-align: left; cursor: pointer; font: inherit;
+    background: var(--paper-2); border: 1px solid var(--rule-hard);
+    border-radius: 3px; padding: 0.65rem 0.9rem;
   }
+  .scope:hover { border-color: var(--ink-3); }
+  .scope:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+  .scope[aria-checked="true"] {
+    border-color: var(--spot); background: var(--spot-tint);
+  }
+  .scope .dot {
+    width: 1.1rem; height: 1.1rem; border-radius: 50%; flex: none;
+    border: 1px solid var(--rule-hard); display: grid; place-items: center;
+  }
+  .scope[aria-checked="true"] .dot { border-color: var(--spot); }
+  .scope[aria-checked="true"] .dot::after {
+    content: ""; width: 0.55rem; height: 0.55rem; border-radius: 50%;
+    background: var(--spot);
+  }
+  .scope-txt { display: flex; align-items: baseline; gap: 0.6rem; min-width: 0; }
   .scope .n {
     font-family: "Superclarendon", Georgia, serif; font-weight: 700;
-    font-size: 1.35rem; color: var(--ink); line-height: 1;
+    font-size: 1.3rem; color: var(--ink); line-height: 1; flex: none;
   }
-  .scope .what { font-size: 0.82rem; color: var(--ink-2); margin-top: 0.25rem; }
+  .scope .what { font-size: 0.84rem; color: var(--ink-2); }
+  .scope .what b { color: var(--ink); font-weight: 600; }
+
+  /* The detail nobody needs until they need it. Closed, it costs one line. */
+  .whats-in { margin-top: 1rem; }
+  .whats-in > summary {
+    cursor: pointer; font-size: 0.84rem; color: var(--spot-ink);
+    padding: 0.35rem 0; list-style-position: outside;
+  }
+  .whats-in > summary:hover { color: var(--ink); }
+  .whats-in > summary:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+  .wi-note {
+    font-size: 0.82rem; color: var(--ink-2); line-height: 1.6;
+    margin: 0.7rem 0 0.5rem;
+  }
+  .wi-note b { color: var(--ink); font-weight: 600; }
+  .wi-cols {
+    width: 100%; border-collapse: collapse; font-size: 0.78rem;
+    color: var(--ink-2); margin-bottom: 0.4rem;
+  }
+  .wi-cols th {
+    text-align: left; font-size: 0.66rem; letter-spacing: 0.11em;
+    text-transform: uppercase; color: var(--ink-3);
+    padding: 0.3rem 0.5rem 0.3rem 0; border-bottom: 1px solid var(--rule);
+  }
+  .wi-cols td { padding: 0.28rem 0.5rem 0.28rem 0; vertical-align: top; }
+  .wi-cols td:first-child {
+    font-family: ui-monospace, "SF Mono", Menlo, monospace;
+    font-size: 0.74rem; color: var(--ink); white-space: nowrap;
+  }
+  .wi-cols tr + tr td { border-top: 1px solid var(--rule); }
+  /* A sample of the real file. Wide by nature, so it scrolls inside itself
+     rather than making the dialogue scroll sideways. */
+  .wi-preview {
+    background: var(--paper); border: 1px solid var(--rule);
+    border-radius: 3px; padding: 0.6rem 0.7rem; margin: 0;
+    font-family: ui-monospace, "SF Mono", Menlo, monospace;
+    font-size: 0.7rem; line-height: 1.6; color: var(--ink-2);
+    overflow-x: auto; white-space: pre;
+  }
 
   /* Format choices are big hit targets with the trade-off written in —
      nobody should have to guess what CSV means for them. */
@@ -1553,15 +1611,32 @@
     <div class="modal-head">
       <div>
         <h2 class="display" id="exportTitle">Export</h2>
-        <p>Exactly what's on screen — filters and all.</p>
+        <p>What you're looking at, or the whole archive — your choice.</p>
       </div>
       <button id="exportClose" aria-label="Close">&times;</button>
     </div>
 
     <div class="modal-body">
-      <div class="scope">
-        <div class="n" id="scopeCount">—</div>
-        <div class="what" id="scopeWhat">episodes</div>
+      <!-- "Exactly what's on screen" was the whole principle, and it is still
+           the right default. But it made the whole archive unreachable without
+           first clearing every filter, and — worse — a file quietly containing
+           78 of 200 episodes is a mistake found much later. Both counts are
+           always visible, so the choice cannot be made without being seen. -->
+      <div class="scope-list" role="radiogroup" aria-label="What to export">
+        <button class="scope" role="radio" data-scope="view" aria-checked="true">
+          <span class="dot"></span>
+          <span class="scope-txt">
+            <span class="n" id="scopeViewN">—</span>
+            <span class="what"><b>This search</b> — <span id="scopeViewWhat">everything on screen</span></span>
+          </span>
+        </button>
+        <button class="scope" role="radio" data-scope="all" aria-checked="false">
+          <span class="dot"></span>
+          <span class="scope-txt">
+            <span class="n" id="scopeAllN">—</span>
+            <span class="what"><b>Everything</b> — the whole archive, ignoring the filters</span>
+          </span>
+        </button>
       </div>
 
       <div class="fmt-list" role="radiogroup" aria-label="Format">
@@ -1592,6 +1667,47 @@
         ~49,000 characters and a spreadsheet cell tops out at 50,000 — the links
         keep it readable instead of silently cut off.
       </p>
+
+      <!-- Collapsed by default: the common path is open, pick CSV, press
+           Export, and that has to stay two clicks. Everything that answers
+           "what exactly is in this file" lives in here instead of lengthening
+           the dialogue for people who already know. -->
+      <details class="whats-in" id="whatsIn">
+        <summary>What's in the file, exactly</summary>
+
+        <p class="wi-note">
+          <b>Where it comes from.</b> These rows are read from this archive —
+          built from your two feeds and refreshed daily — not fetched from
+          Podbean when you press the button. That is why it is instant, and why
+          the audio and artwork are <em>links</em> rather than files: Podbean is
+          still hosting those, and a spreadsheet cell cannot hold 27 MB of MP3.
+        </p>
+
+        <table class="wi-cols">
+          <thead><tr><th>Column</th><th>What it is</th></tr></thead>
+          <tbody>
+            <tr><td>show</td><td>Which programme it aired on</td></tr>
+            <tr><td>title</td><td>Episode title as published</td></tr>
+            <tr><td>published</td><td>ISO date, so a spreadsheet sorts it as a date</td></tr>
+            <tr><td>duration_min</td><td>Whole minutes, as a number you can total</td></tr>
+            <tr><td>is_encore</td><td>TRUE / FALSE — detected from the title</td></tr>
+            <tr><td>topics</td><td>Subjects, once the reading pass has been run</td></tr>
+            <tr><td>guests</td><td>Who appeared</td></tr>
+            <tr><td>interviewer</td><td>Who was asking</td></tr>
+            <tr><td>tags</td><td>People, bands, books and museums you linked in your own show notes</td></tr>
+            <tr><td>reair_dates</td><td>Every other date this programme has run</td></tr>
+            <tr><td>has_transcript</td><td>TRUE / FALSE</td></tr>
+            <tr><td>transcript_words</td><td>Word count, for judging length at a glance</td></tr>
+            <tr><td>episode_url</td><td>The Podbean page — the stable link</td></tr>
+            <tr><td>source_url</td><td>The original <code>.srt</code> from your feed</td></tr>
+            <tr><td>archive_url</td><td>Our cleaned transcript, readable in a browser</td></tr>
+            <tr><td>audio_url</td><td>The MP3 itself, direct from Podbean</td></tr>
+          </tbody>
+        </table>
+
+        <p class="wi-note"><b>The first rows of your actual file:</b></p>
+        <pre class="wi-preview" id="wiPreview">Loading a sample…</pre>
+      </details>
     </div>
 
     <div class="modal-actions">
@@ -1936,11 +2052,37 @@
 
       <section class="help-sec">
         <h3>Export</h3>
-        <p class="lede"><b>Export</b> takes whatever is on screen — the current
-          search, filters and sort — and gives you a spreadsheet of it. One row
-          per episode, with dates a spreadsheet understands, durations as
+        <p class="lede"><b>Export</b> turns the archive into a spreadsheet. One
+          row per episode, with dates a spreadsheet understands, durations as
           numbers you can total, and links back to the episode, its transcript
-          and its audio. CSV, tab-separated, or JSON.</p>
+          and its audio.</p>
+        <ul class="help-list">
+          <li><b>Choose how much.</b> <b>This search</b> gives you exactly
+            what's on screen — the same query, filters and sort — so a filtered
+            view exports as a filtered file. <b>Everything</b> ignores the
+            filters and gives you the whole archive. Both counts are shown, so
+            you always know which file you're about to get.</li>
+          <li><b>Choose the shape.</b> <b>CSV</b> opens in Sheets, Excel or
+            Numbers. <b>Copy to clipboard</b> skips the file and pastes
+            straight into a sheet you already have open. <b>JSON</b> is for
+            feeding another system.</li>
+          <li><b>See it before you commit.</b> <b>What's in the file, exactly</b>
+            lists every column with a plain description, and shows the first
+            couple of rows of your actual file — in whichever format you've
+            picked.</li>
+        </ul>
+        <p class="lede"><b>Where the rows come from.</b> They're read from this
+          archive, which is built from your two feeds and refreshes daily —
+          nothing is fetched from Podbean when you press the button. That's why
+          it's instant, and why audio and artwork appear as <em>links</em>
+          rather than files: Podbean is still hosting those, and a spreadsheet
+          cell can't hold a 27&nbsp;MB MP3.</p>
+        <p class="lede"><b>Transcript text isn't in the spreadsheet</b>, on
+          purpose. One episode runs to about 49,000 characters and a
+          spreadsheet cell stops at 50,000, so it would be cut off without
+          telling you. The links get you the full text instead — and the
+          <b>Transcript</b> button downloads any single episode as plain text
+          or subtitles.</p>
       </section>
 
       <h2 class="help-group-head">Keyboard</h2>
@@ -2646,11 +2788,53 @@ function describeScope() {
   return bits.filter(Boolean).join(" · ") || "the whole archive";
 }
 
+/* Which rows go in the file: the current result set, or the whole archive.
+   Reset to "view" on every open — a scope silently remembered from last time
+   is exactly the surprise this control exists to prevent. */
+let exportScope = "view";
+
+function exportParams() {
+  // "Everything" keeps only the sort: an unfiltered file still benefits from
+  // arriving in a sensible order.
+  if (exportScope === "all") {
+    const p = new URLSearchParams();
+    p.set("sort", state.sort);
+    return p;
+  }
+  return currentQuery();
+}
+
+function paintScope() {
+  document.querySelectorAll(".scope").forEach(b =>
+    b.setAttribute("aria-checked", String(b.dataset.scope === exportScope)));
+  $("#scopeViewN").textContent = lastTotal.toLocaleString();
+  $("#scopeViewWhat").textContent = lastScope;
+  $("#scopeAllN").textContent = (CORPUS.episodes || 0).toLocaleString();
+}
+
+/* Two real rows, through the same endpoint the download uses. A preview built
+   separately in JS could disagree with the file, which would be worse than
+   showing nothing. */
+async function loadPreview() {
+  const pre = $("#wiPreview");
+  const p = exportParams();
+  p.set("format", exportFmt === "clipboard" ? "tsv" : exportFmt);
+  p.set("limit", "2");
+  pre.textContent = "Loading a sample…";
+  try {
+    const text = await (await fetch("/api/export?" + p)).text();
+    // The BOM is right in a file and noise on screen.
+    pre.textContent = text.replace(/^﻿/, "").trimEnd() || "(no rows)";
+  } catch {
+    pre.textContent = "Couldn't load a sample — the file itself is unaffected.";
+  }
+}
+
 function openExport() {
   exportFocus = document.activeElement;
-  $("#scopeCount").textContent = lastTotal.toLocaleString();
-  $("#scopeWhat").textContent =
-    (lastTotal === 1 ? "episode" : "episodes") + " — " + lastScope;
+  exportScope = "view";
+  paintScope();
+  $("#whatsIn").open = false;
   $("#exportDone").hidden = true;
   exportModal.hidden = false;
   $("#exportGo").focus();
@@ -2673,11 +2857,25 @@ document.querySelectorAll(".fmt").forEach(b =>
     exportFmt = b.dataset.fmt;
     document.querySelectorAll(".fmt").forEach(x =>
       x.setAttribute("aria-checked", String(x === b)));
+    if ($("#whatsIn").open) loadPreview();   // the sample follows the format
   }));
 
+document.querySelectorAll(".scope").forEach(b =>
+  b.addEventListener("click", () => {
+    exportScope = b.dataset.scope;
+    paintScope();
+    if ($("#whatsIn").open) loadPreview();
+  }));
+
+// Fetched on first open rather than on page load: most sessions never open it.
+$("#whatsIn").addEventListener("toggle", () => {
+  if ($("#whatsIn").open) loadPreview();
+});
+
 $("#exportGo").addEventListener("click", async () => {
-  const p = currentQuery();
+  const p = exportParams();
   const done = $("#exportDone");
+  const n = exportScope === "all" ? (CORPUS.episodes || 0) : lastTotal;
 
   if (exportFmt === "clipboard") {
     p.set("format", "tsv");
@@ -2685,7 +2883,7 @@ $("#exportGo").addEventListener("click", async () => {
     const text = await res.text();
     try {
       await navigator.clipboard.writeText(text);
-      done.textContent = `${lastTotal.toLocaleString()} rows copied — paste into a sheet.`;
+      done.textContent = `${n.toLocaleString()} rows copied — paste into a sheet.`;
       done.hidden = false;
     } catch {
       done.textContent = "Couldn't reach the clipboard — try the CSV instead.";

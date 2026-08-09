@@ -89,6 +89,68 @@ silently lose text, which is the worst failure mode a backup can have.
 
 ---
 
+## The dialogue itself — scope, and showing rather than describing
+
+Two changes to the export dialogue, both prompted by using it.
+
+### 1. Scope: this search, or everything
+
+**"Export exactly what's on screen" was the right principle and is now a
+limitation.** It is still the correct *default* — if Chris has filtered to
+"Power Hour, 2025, encores only", that is almost certainly what he wants. But
+somebody who has just searched for something and now wants the whole archive has
+to clear every filter first, and — worse — may not notice the export was scoped
+at all. A file that silently contains 78 of 200 episodes is the kind of mistake
+discovered much later.
+
+So the count panel stops being a readout and becomes the choice:
+
+```
+  ( ) This search          78 episodes · Power Hour · 2025 · encores only
+  (•) Everything          200 episodes · the whole archive
+```
+
+Both counts visible at once, always. The point is not merely to offer the
+option; it is that **you cannot press Export without having seen which one you
+are getting.** `describeScope()` already produces that summary line and
+`CORPUS.episodes` already holds the archive total, so this is presentation.
+
+Sort order carries over to both — an unfiltered export still has a useful order.
+
+### 2. Explain by showing
+
+The dialogue currently *describes* what you will get in a paragraph. The
+stronger version shows it, and the data is already on the page:
+
+- **A preview of the first rows**, in the chosen format. Two rows of real data
+  answer "what does it pull" more completely and more permanently than a
+  sentence, and they make the format choice concrete — the difference between
+  CSV and JSON stops being abstract when you can see both.
+- **The actual column list**, which doubles as the groundwork for the column
+  picker already outstanding in `export-spec.md`.
+- **Where the data comes from**, in one line: it is read from this archive —
+  built from your feed and updated daily — not fetched from Podbean at the
+  moment you press the button. That matters because it explains why the export
+  is instant, why it works offline from Podbean's point of view, and why the
+  audio columns are *links* rather than files.
+
+**Not a second dialogue.** There are already four, and the clip editor work
+established that stacking them is a maze. This is progressive disclosure inside
+the export modal: a collapsed **"What's in the file"** section that expands.
+The common case — open, pick CSV, press Export — stays two clicks and gets no
+longer.
+
+### The model belongs in the package, not the dialogue
+
+"Could it be a model?" splits in two, and both halves are right in different
+places. A **data model** — entities, fields, types, how they relate — is
+genuinely needed, but a producer choosing between CSV and JSON is not the
+audience for it. It belongs in the exported package as `DATA-DICTIONARY.md` and
+`datapackage.json`, where it serves the "hand it to any AI" goal directly. The
+dialogue gets a preview; the package gets the schema.
+
+---
+
 ## What audio is actually for — the expiring archive
 
 **A link is not a copy, and only some links are worth turning into copies.**

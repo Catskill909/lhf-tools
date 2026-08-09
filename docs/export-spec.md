@@ -1,8 +1,17 @@
 # Export — specification
 
-**Status: BUILT** (4 Aug 2026). CSV / TSV / JSON export of the current result
-set, plus the `/episode/<id>/transcript` route. Verified: 78 results on screen,
-78 rows exported.
+**Status: BUILT** (4 Aug 2026, extended 9 Aug). CSV / TSV / JSON export, plus
+the `/episode/<id>/transcript` route. Verified: 78 results on screen, 78 rows
+exported.
+
+**Since extended in two ways.** The dialogue now offers a **scope** — this
+search, or the whole archive — because "exactly what's on screen" made the full
+database unreachable without first clearing every filter, and a file quietly
+holding 78 of 200 episodes is a mistake found late. Both counts are always
+visible. And **"What's in the file, exactly"** lists every column and shows the
+first two rows of the real file, fetched through the same endpoint the download
+uses via a new `limit` parameter — a preview built separately could disagree
+with the file, which would be worse than none.
 
 Still outstanding from this spec: column picker, `.zip` transcript bundle,
 passage-level CSV, Dublin Core XML, citations, and storing the raw `.srt`.

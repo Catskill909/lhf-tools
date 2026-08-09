@@ -722,13 +722,26 @@ class Handler(BaseHTTPRequestHandler):
 
         if path == "/api/export":
             fmt = (one("format") or "csv").lower()
+            # `limit` exists so the export dialogue can show a couple of real
+            # rows before you commit to the file. Deliberately the same code
+            # path as the download rather than a preview built in JS — a
+            # preview that could disagree with the file would be worse than
+            # none. Only passed when valid, because export_rows sets its own
+            # default and None would override it.
+            extra = {}
+            try:
+                if one("limit"):
+                    extra["limit"] = max(1, min(5000, int(one("limit"))))
+            except ValueError:
+                pass
             conn = connect()
             try:
                 rows, err = export_rows(
                     conn, f"http://{self.headers.get('Host', 'localhost:8000')}",
                     q=one("q") or "", show=one("show"), year=one("year"),
                     encore=one("encore"), person=one("person"),
-                    topic=one("topic"), role=one("role"), sort=one("sort"))
+                    topic=one("topic"), role=one("role"), sort=one("sort"),
+                    **extra)
             finally:
                 conn.close()
             if err:
