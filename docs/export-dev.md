@@ -38,6 +38,13 @@ thousand between them is not a difference of degree, and one mechanism cannot
 serve both well. So there are **two exports**, and confusing them is the main
 way this feature could go wrong.
 
+**And the audio question is smaller than it looks.** Podbean is still hosting
+all of it, so the default everywhere is a *link*. What deserves copying is the
+tail that is about to leave the feed — roughly two episodes a week rather than
+two hundred at once. See [What audio is actually
+for](#what-audio-is-actually-for--the-expiring-archive), which is the section to
+read if you only read one.
+
 ---
 
 ## Export A — the catalogue package
@@ -82,10 +89,66 @@ silently lose text, which is the worst failure mode a backup can have.
 
 ---
 
+## What audio is actually for — the expiring archive
+
+**A link is not a copy, and only some links are worth turning into copies.**
+
+The default is a **URL**, in every format the catalogue package emits. Podbean
+is still serving those files, they cost nothing to reference, and downloading
+12 GB of audio that somebody else is already hosting is work for its own sake.
+
+What changes that is **expiry**. Podbean serves the most recent 100 episodes per
+show, and both shows are at exactly that number, so from the next publication
+onward an episode rotates out every week per show. **An episode that has left
+the feed is the one whose audio is worth holding**, because it is the only one
+nobody else is reliably keeping.
+
+That reframes the whole media question. It is not "back up 12 GB". It is:
+
+> **Keep the audio that is about to become unreachable, and link to the rest.**
+
+Roughly two episodes a week, about 41 MB each — **~80 MB a week, ~4 GB a year**,
+and nothing at all for the 200 episodes still in the feed. A completely
+different proposition from a one-off 12 GB pull, and one that arrives gradually
+rather than as a project.
+
+### Detecting expiry costs almost nothing
+
+`ingest.py` sets `updated_at = datetime('now')` on every episode it finds in the
+feed ([`ingest/ingest.py:230`](../ingest/ingest.py#L230)), and the loop runs
+daily. **An episode whose `updated_at` stops advancing has left the feed.** No
+new request, no new scraping, no comparison against anything.
+
+Two caveats worth handling rather than ignoring:
+
+- `updated_at` is also touched by `transcripts.py`
+  ([`ingest/transcripts.py:178`](../ingest/transcripts.py#L178)), so it is
+  overloaded. A dedicated `last_seen_in_feed` column is the honest version and
+  costs one line in the same `UPDATE`. Worth adding **before** episodes start
+  expiring, because the transition cannot be reconstructed afterwards.
+- **Nobody knows yet whether Podbean deletes the file when an episode leaves the
+  feed, or merely stops listing it.** The `audio_url` is a direct CDN link and
+  may well keep resolving. This is empirically testable the first time an
+  episode expires, and the answer decides whether rescuing audio is urgent or
+  merely tidy. **Test it then; do not assume either way.**
+
+### What this looks like in the app
+
+An **"at risk"** filter alongside the existing chips — episodes no longer in the
+feed — and a rescue action on them. The archive already knows which they are;
+this is presentation, not new machinery. It also gives the client something
+concrete to look at when deciding whether they care.
+
+---
+
 ## Export B — the media archive
 
-Audio and artwork: 8–12 GB. This one is **not a download button**, and the
-reasons are worth stating plainly because the obvious approach fails badly.
+The full pull: audio and artwork, 8–12 GB. Wanted less often than the rescue
+case above, but the mechanism is the same and it is the right shape for "give me
+everything, once".
+
+This one is **not a download button**, and the reasons are worth stating plainly
+because the obvious approach fails badly.
 
 A browser cannot responsibly do this:
 
@@ -122,6 +185,46 @@ clip editor already works.
 **A file that failed must be recorded as failed.** A package quietly missing
 three episodes is worse than one that says so, because it will be discovered
 years later by someone who needed those three.
+
+---
+
+## Where this runs — the infrastructure boundary
+
+Worth stating explicitly, because it is a client conversation rather than a
+technical one, and because everything above was designed to respect it.
+
+**Today this application is deliberately weightless.** Stdlib only, no build
+step, no dependencies, two containers and one 53 MB file. That is why it runs
+happily alongside other work on a shared Coolify box, and why a redeploy cannot
+break in six interesting ways. It is a property worth defending, not an
+accident.
+
+**Storing audio and processing media are a different class of thing.** Ten to
+twelve gigabytes of MP3, growing weekly, plus transcoding or waveform
+generation, is not a feature increment — it is a different server with different
+disk, different bandwidth and a different backup obligation. It does not belong
+on shared infrastructure hosting somebody else's projects.
+
+So the line is:
+
+| Stays here | Needs their own machine |
+|---|---|
+| Catalogue, search, transcripts, the editor | Stored audio at archive scale |
+| Metadata export, manifests, the download kit | Media processing of any kind |
+| Clip cutting (browser → CDN, never our disk) | Anything that grows without bound |
+
+**This is why both exports push the bytes to the client's own hardware.** The
+catalogue package is built in their browser; the media kit runs on their
+machine. Neither routes media through our server, and that is the design
+constraint that makes the rest of it affordable.
+
+If the client wants stored audio, AI processing, or an admin surface that edits
+records, **that is the point at which they need their own VPS** — and given they
+now have two projects with a third arriving, one machine of their own is
+cheaper and cleaner than three tenancies on somebody else's. It also settles
+the authentication question in `docs/ai-layer.md` and the shared-library
+question in `docs/clip-library.md`, both of which are waiting on the same
+decision.
 
 ---
 
@@ -215,14 +318,21 @@ the same idea one level down.
 
 ## Phases
 
+0. **Record when an episode was last seen in the feed.** One column, one line in
+   an existing `UPDATE`. It is first because it is the only item here with a
+   closing window: both shows are at the cap, so episodes begin rotating out
+   within days, and the moment one leaves cannot be reconstructed after the
+   fact. Everything about expiry depends on it, and it costs almost nothing.
 1. **The catalogue package.** The ZIP, `episodes.csv`, `passages.csv`,
-   transcripts in three formats, README and data dictionary. This is 80% of the
-   value and it is all client-side. Ship it alone.
+   transcripts in three formats, README and data dictionary. Audio as URLs.
+   This is 80% of the value and it is all client-side. Ship it alone.
 2. **The picker and size estimate.** Choose the parts; see the weight first.
    Absorbs the column picker already outstanding.
-3. **The media download kit.** Manifest plus `fetch.py`. Resumable,
-   verifiable, incremental.
-4. **The archival layer.** BagIt, Dublin Core, citations — the last gated on
+3. **At-risk episodes.** The filter, and rescue for the handful that have left
+   the feed. Small, and it is the audio case that actually matters.
+4. **The full media download kit.** Manifest plus `fetch.py`. Resumable,
+   verifiable, incremental. Only worth building if they say they want all of it.
+5. **The archival layer.** BagIt, Dublin Core, citations — the last gated on
    the format question.
 
 ---
@@ -230,9 +340,15 @@ the same idea one level down.
 ## Open questions
 
 1. **Which citation style?** Blocks one item, costs one email.
-2. **Do they want the audio at all**, or are metadata and transcripts the
-   backup they have in mind? 12 GB is a real commitment of disk and hours.
-3. **Where would it live** — a NAS, an external drive, institutional storage?
-   The answer changes whether BagIt matters and whether incremental updates do.
-4. **One package for both shows, or one each?** They are separate programmes
+2. **Does Podbean keep serving an MP3 after the episode leaves the feed?**
+   Testable the first time one expires, which is days away. The answer decides
+   whether rescuing audio is urgent or merely tidy — and it is the single most
+   consequential unknown in this document.
+3. **Do they want the *whole* archive's audio**, or only the expiring tail?
+   The tail is ~80 MB a week; everything is 12 GB and a decision about
+   infrastructure.
+4. **Where would stored audio live?** See the infrastructure boundary above.
+   If the answer involves a server rather than their own disks, they need their
+   own VPS, and that decision reaches well past this document.
+5. **One package for both shows, or one each?** They are separate programmes
    with separate histories, and an archivist would probably expect separately.
