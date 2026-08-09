@@ -3,6 +3,14 @@
 Read `HANDOFF.md` first. This file is only the things that are easy to break
 without knowing them.
 
+> **If this file disagrees with the code, the code is right — and this file is a
+> bug.** It is loaded automatically and therefore trusted more than the other
+> documents, which makes a stale line here more expensive than a stale line
+> anywhere else. Six claims elsewhere in this repo were true when written and
+> quietly stopped being true; assume the same rot applies here. Keep it to
+> constraints and traps, which change slowly. Feature status belongs in
+> `HANDOFF.md`.
+
 ## Hard constraints
 
 - **Stdlib only. No pip, no venv, no build step, no lockfile.** The image is the
