@@ -20,7 +20,7 @@ import json
 import os
 import re
 import sqlite3
-from datetime import date
+from datetime import date, datetime, timezone
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from urllib.parse import parse_qs, urlparse
 
@@ -460,6 +460,11 @@ EXPORT_COLUMNS = [
     ("source_url",       "Source transcript"),
     ("archive_url",      "Archive transcript"),
     ("audio_url",        "Audio"),
+    # Last on purpose. A spreadsheet reader does not want to meet a 40-character
+    # identifier first, but it is the only column here that survives the
+    # database being rebuilt — so anything referencing an episode from outside
+    # the file keys on this rather than on a row number.
+    ("guid",             "Feed ID"),
 ]
 
 
@@ -471,17 +476,18 @@ def export_rows(conn, base_url, **kw):
         return None, data["error"]
 
     ids = [r["id"] for r in data["results"]]
-    words, src = {}, {}
+    words, src, guids = {}, {}, {}
     if ids:
         marks = ",".join("?" * len(ids))
         for r in conn.execute(
-            f"""SELECT id, transcript_url,
+            f"""SELECT id, transcript_url, guid,
                        CASE WHEN transcript_text IS NULL THEN 0
                             ELSE LENGTH(transcript_text)
                                  - LENGTH(REPLACE(transcript_text,' ','')) + 1 END AS w
                 FROM episodes WHERE id IN ({marks})""", ids):
             words[r["id"]] = r["w"]
             src[r["id"]] = r["transcript_url"]
+            guids[r["id"]] = r["guid"]
 
     rows = []
     for r in data["results"]:
@@ -508,6 +514,11 @@ def export_rows(conn, base_url, **kw):
             "source_url": src.get(r["id"]) or "",
             "archive_url": f"{base_url}/episode/{r['id']}/transcript" if has_tx else "",
             "audio_url": r["audio_url"] or "",
+            # Last, because a spreadsheet reader does not want to meet it
+            # first — but present, because it is the only identifier here that
+            # survives the database being rebuilt. Everything that references
+            # an episode from outside this file uses it.
+            "guid": guids.get(r["id"]) or "",
         })
     return rows, None
 
@@ -559,6 +570,70 @@ def facets(conn):
         "years": [dict(r) for r in years],
         "totals": dict(totals),
     }
+
+
+def bundle(conn, base_url, want_transcripts, want_passages, **kw):
+    """Everything the archive package needs, in one request.
+
+    The browser assembles the .zip itself — that is the constraint this project
+    keeps, and it is why the media never touches our disk — but it should not
+    have to make 288 requests to do it. One call, one set of queries, and the
+    client does the packaging.
+
+    Everything is keyed on `guid`. Episode ids are assigned in ingest order, so
+    a package keyed on them stops meaning anything the first time the database
+    is rebuilt from empty, and this project has already been burned by exactly
+    that (HANDOFF.md, "Small things that were wrong").
+    """
+    rows, err = export_rows(conn, base_url, **kw)
+    if err:
+        return None, err
+
+    # export_rows calls search() with these same arguments, so this returns the
+    # same episodes in the same order. Matching on guid rather than position
+    # anyway, because "these two lists line up" is the kind of assumption that
+    # is true until someone adds a filter to one of them.
+    ids = [r["id"] for r in search(conn, **{**kw, "limit": 5000})["results"]]
+
+    out = {
+        "generated_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
+        "episode_count": len(rows),
+        "episodes": rows,
+    }
+
+    if not ids:
+        if want_transcripts:
+            out["transcripts"] = {}
+        if want_passages:
+            out["passages"] = []
+        return out, None
+
+    marks = ",".join("?" * len(ids))
+    guid_of = {r["id"]: r["guid"] for r in conn.execute(
+        f"SELECT id, guid FROM episodes WHERE id IN ({marks})", ids)}
+
+    if want_transcripts:
+        out["transcripts"] = {
+            guid_of[r["id"]]: r["transcript_text"]
+            for r in conn.execute(
+                f"""SELECT id, transcript_text FROM episodes
+                    WHERE id IN ({marks}) AND transcript_text IS NOT NULL
+                      AND transcript_text <> ''""", ids)
+        }
+
+    if want_passages:
+        out["passages"] = [
+            {"guid": guid_of[r["episode_id"]],
+             "start_sec": r["start_sec"],
+             "end_sec": r["end_sec"],
+             "text": r["text"]}
+            for r in conn.execute(
+                f"""SELECT episode_id, start_sec, end_sec, text FROM segments
+                    WHERE episode_id IN ({marks})
+                    ORDER BY episode_id, start_sec, id""", ids)
+        ]
+
+    return out, None
 
 
 _VERSION = {"key": None, "value": None}
@@ -865,6 +940,23 @@ class Handler(BaseHTTPRequestHandler):
         # Deliberately tiny and database-free: the page asks for this every time
         # it regains focus, and it must stay cheap enough that nobody thinks
         # twice about the frequency.
+        # One request instead of 288: everything the browser needs to build the
+        # archive package, for exactly the scope the dialogue is showing.
+        if path == "/api/bundle":
+            conn = connect()
+            try:
+                data, err = bundle(
+                    conn, f"http://{self.headers.get('Host', 'localhost:8000')}",
+                    one("transcripts") == "1", one("passages") == "1",
+                    q=one("q") or "", show=one("show"), year=one("year"),
+                    encore=one("encore"), person=one("person"),
+                    topic=one("topic"), role=one("role"), sort=one("sort"))
+            finally:
+                conn.close()
+            if err:
+                return self._send(400, json.dumps({"error": err}))
+            return self._send(200, json.dumps(data))
+
         if path == "/api/version":
             return self._send(200, json.dumps({"version": app_version()}))
 

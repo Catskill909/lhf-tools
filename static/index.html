@@ -1021,6 +1021,26 @@
   .scope .what { font-size: 0.84rem; color: var(--ink-2); }
   .scope .what b { color: var(--ink); font-weight: 600; }
 
+  .pkg-opts {
+    margin-top: 0.6rem; padding: 0.75rem 0.9rem;
+    border: 1px solid var(--rule); border-left: 2px solid var(--spot);
+    border-radius: 3px; background: var(--paper-2);
+  }
+  .pkg-opts label {
+    display: flex; gap: 0.6rem; align-items: flex-start; cursor: pointer;
+    font-size: 0.84rem; color: var(--ink-2); line-height: 1.5;
+    padding: 0.25rem 0;
+  }
+  .pkg-opts label b { color: var(--ink); font-weight: 600; }
+  .pkg-opts input { margin-top: 0.2rem; accent-color: var(--spot); flex: none; }
+  .pkg-opts .sz {
+    display: block; font-size: 0.74rem; color: var(--ink-3);
+  }
+  .pkg-size {
+    margin: 0.5rem 0 0; padding-top: 0.5rem; border-top: 1px solid var(--rule);
+    font-size: 0.8rem; color: var(--ink-2);
+  }
+
   /* The detail nobody needs until they need it. Closed, it costs one line. */
   .whats-in { margin-top: 1rem; }
   .whats-in > summary {
@@ -1657,6 +1677,27 @@
           <span><span class="name">JSON</span>
             <span class="desc">For feeding another system.</span></span>
         </button>
+        <button class="fmt" role="radio" data-fmt="zip" aria-checked="false">
+          <span class="dot"></span>
+          <span><span class="name">Archive package (.zip)</span>
+            <span class="desc">The spreadsheet, the transcripts and a README
+              explaining the whole thing — a copy of the archive that doesn't
+              need this website to be readable.</span></span>
+        </button>
+      </div>
+
+      <!-- Only meaningful for the package, so it only appears for the package.
+           Both are on by default: a package missing the transcripts is the
+           thing people will wish they had, and the whole lot is under 10 MB. -->
+      <div class="pkg-opts" id="pkgOpts" hidden>
+        <label><input type="checkbox" id="pkgTx" checked>
+          <span><b>Transcripts</b> — one readable text file per episode
+            <span class="sz">144 files, 4.7 MB</span></span></label>
+        <label><input type="checkbox" id="pkgPass" checked>
+          <span><b>Timestamps</b> — every spoken line with the second it was
+            said, as a spreadsheet
+            <span class="sz">14,937 rows</span></span></label>
+        <p class="pkg-size" id="pkgSize">About 2 MB zipped.</p>
       </div>
 
       <p class="cols-note">
@@ -2065,7 +2106,8 @@
           <li><b>Choose the shape.</b> <b>CSV</b> opens in Sheets, Excel or
             Numbers. <b>Copy to clipboard</b> skips the file and pastes
             straight into a sheet you already have open. <b>JSON</b> is for
-            feeding another system.</li>
+            feeding another system. <b>Archive package</b> is all of it at
+            once — see below.</li>
           <li><b>See it before you commit.</b> <b>What's in the file, exactly</b>
             lists every column with a plain description, and shows the first
             couple of rows of your actual file — in whichever format you've
@@ -2082,7 +2124,43 @@
           spreadsheet cell stops at 50,000, so it would be cut off without
           telling you. The links get you the full text instead — and the
           <b>Transcript</b> button downloads any single episode as plain text
-          or subtitles.</p>
+          or subtitles. The archive package below carries them as real files.</p>
+      </section>
+
+      <section class="help-sec">
+        <h3>The archive package</h3>
+        <p class="lede">A single <code>.zip</code> holding the catalogue, the
+          transcripts and a README that explains itself — <b>a copy of the
+          archive that doesn't need this website to be readable</b>. The whole
+          thing, all 200 episodes and every transcript, comes to under
+          4&nbsp;MB. It's small enough to email and plain enough that another
+          developer, or any AI, could rebuild the catalogue from it.</p>
+        <p class="lede">Inside:</p>
+        <ul class="help-list">
+          <li><code>README.md</code> — what the package is, what every column
+            means, and what to know about the data. Written for someone who has
+            never seen this site.</li>
+          <li><code>episodes.csv</code> and <code>episodes.json</code> — one row
+            per episode, the same rows as the spreadsheet export.</li>
+          <li><code>passages.csv</code> — <b>every spoken line with the second
+            it was said</b>, all 14,937 of them. This is the file for finding a
+            quote and knowing exactly where it is in the audio.</li>
+          <li><code>transcripts/</code> — one plain-text file per episode,
+            named by date so the folder reads chronologically.</li>
+        </ul>
+        <p class="lede">Transcripts and timestamps are each a tick box, so you
+          can take just the catalogue if that's all you need.</p>
+        <p class="lede"><b>The filename says what it is.</b> Export with
+          <b>Everything</b> selected and you get
+          <code>…-complete.zip</code>; export a filtered view and you get
+          <code>…-filtered.zip</code>, with a warning inside the README. A
+          partial export is a perfectly good dataset, but it isn't a backup —
+          and a year later nothing else would tell you which one you were
+          looking at.</p>
+        <p class="lede"><b>Audio isn't in the package</b>, only links to it.
+          The archive's audio runs to 8–12&nbsp;GB, which is a download rather
+          than a file. Podbean hosts it, and <code>audio_url</code> points
+          straight at each MP3.</p>
       </section>
 
       <h2 class="help-group-head">Keyboard</h2>
@@ -2151,6 +2229,7 @@
 <script type="module">
 import { cutClip, clipFilename, probeMp3 } from "./mp3cut.js";
 import { getPeaks, drawWave, drawRuler, snapToSilence, clipWindow, nextSilence } from "./waveform.js";
+import { makeZip, slug, toCsv } from "./zip.js";
 
 const $  = s => document.querySelector(s);
 const state = { q: "", show: null, year: null, encore: false, person: null, personLabel: "", topic: null, topicLabel: "", sort: "newest" };
@@ -2830,10 +2909,199 @@ async function loadPreview() {
   }
 }
 
+/* ---------- the archive package ----------
+   Assembled here rather than on the server: the server's job is to answer
+   questions about the archive, not to hold a 10 MB zip in memory for every
+   producer who wants one. One request for the data, and the packaging happens
+   on the machine that asked. */
+
+function packageReadme(meta) {
+  const { complete, scopeText, count, when, hasTx, hasPass } = meta;
+  return `# ${complete ? "LHF Archive" : "LHF Archive — partial export"}
+
+Exported ${when} from the LHF Digital Asset Manager.
+
+**This package contains ${count} episode${count === 1 ? "" : "s"} — ${
+    complete
+      ? "the complete archive as it stood on the day it was exported."
+      : `**only part of the archive**: ${scopeText}.
+
+> This is a FILTERED export. It is a valid dataset, but it is not a backup —
+> anything outside that filter is simply not here. For a complete copy, export
+> again with "Everything" selected.`
+  }**
+
+---
+
+## What's in here
+
+| File | What it is |
+|---|---|
+| \`episodes.csv\` | One row per episode. Opens in Sheets, Excel or Numbers. |
+| \`episodes.json\` | The same rows, structured, for a program to read. |
+${hasPass ? "| `passages.csv` | Every spoken line with the second it was said. |\n" : ""}${hasTx ? "| `transcripts/` | One plain-text file per episode that has a transcript. |\n" : ""}
+### episodes.csv — the columns
+
+| Column | Meaning |
+|---|---|
+| show | Which programme it aired on |
+| title | Episode title as published |
+| published | Date, ISO format (YYYY-MM-DD), so spreadsheets sort it correctly |
+| duration_min | Length in whole minutes, as a number you can total |
+| is_encore | TRUE / FALSE — whether the title marks it as an encore |
+| topics | Subjects, where they have been derived |
+| guests | Who appeared |
+| interviewer | Who was asking |
+| tags | People, bands, books and museums linked in the original show notes |
+| reair_dates | Other dates this same programme has run |
+| has_transcript | TRUE / FALSE |
+| transcript_words | Word count |
+| episode_url | The Podbean page — the stable public link |
+| source_url | The original .srt subtitle file from the podcast feed |
+| archive_url | The cleaned transcript, readable in a browser |
+| audio_url | The MP3 itself, hosted by Podbean |
+${hasPass ? `
+### passages.csv — the columns
+
+| Column | Meaning |
+|---|---|
+| guid | Which episode the line belongs to (see below) |
+| show, title, published | Repeated so the file stands alone |
+| start_sec, end_sec | When the line was spoken, in seconds from the start |
+| timecode | The same start, as h:mm:ss, for reading |
+| text | What was said |
+
+One row per spoken line. This is the file to use for finding a quote and
+knowing exactly where it is in the audio.
+` : ""}${hasTx ? `
+### transcripts/
+
+One \`.txt\` per episode, named \`<date>-<title>.txt\` so the folder sorts
+chronologically. These are the same words as passages.csv, without the timings,
+for reading rather than searching.
+` : ""}
+---
+
+## Things worth knowing
+
+**Audio and artwork are links, not files.** Podbean hosts them, and the whole
+archive's audio runs to 8–12 GB — far too much for a package meant to be
+emailed. \`audio_url\` in episodes.csv points straight at each MP3.
+
+**The transcripts are machine-made.** They come from the podcast feed, produced
+by the producers' own editing software. They are accurate enough to search and
+to find a moment, but names take damage. Good for finding a quote; check it
+against the audio before printing it.
+
+**Episodes are identified by \`guid\`**, the identifier the podcast feed itself
+uses. It never changes, which is why the files here reference it rather than a
+row number.
+
+**Dates are ISO** (2026-08-09) everywhere, and durations are plain numbers, so
+a spreadsheet treats both as what they are.
+
+---
+
+## Rebuilding from this
+
+This package is deliberately plain — CSV, JSON and text, no database and no
+proprietary format. Everything needed to reconstruct the catalogue is here,
+which means it can be read by any tool, any language, or a person, without the
+website that produced it still existing.
+
+The only thing it does not carry is the audio itself, which remains at the
+\`audio_url\` links for as long as Podbean serves them.
+`;
+}
+
+async function buildPackage(done) {
+  const complete = exportScope === "all";
+  const p = exportParams();
+  const wantTx = $("#pkgTx").checked;
+  const wantPass = $("#pkgPass").checked;
+  if (wantTx) p.set("transcripts", "1");
+  if (wantPass) p.set("passages", "1");
+
+  done.hidden = false;
+  done.textContent = "Collecting…";
+  const data = await (await fetch("/api/bundle?" + p)).json();
+  if (data.error) { done.textContent = "Couldn't build it: " + data.error; return; }
+
+  done.textContent = "Packaging…";
+  const stamp = new Date().toISOString().slice(0, 10);
+  // The filename carries whether this is everything. A filtered package that
+  // looks like a complete one is the one genuinely dangerous thing this
+  // feature can produce.
+  const base = `lhf-archive-${stamp}-${complete ? "complete" : "filtered"}`;
+
+  const cols = ["show", "title", "published", "duration_min", "is_encore",
+                "topics", "guests", "interviewer", "tags", "reair_dates",
+                "has_transcript", "transcript_words", "episode_url",
+                "source_url", "archive_url", "audio_url", "guid"];
+
+  const files = [
+    { name: `${base}/README.md`,
+      data: packageReadme({
+        complete, scopeText: lastScope, count: data.episode_count,
+        when: data.generated_at, hasTx: wantTx, hasPass: wantPass }) },
+    // The BOM is what stops Excel mangling "No Pasarán".
+    { name: `${base}/episodes.csv`, data: "﻿" + toCsv(cols, data.episodes) },
+    { name: `${base}/episodes.json`, data: JSON.stringify(data.episodes, null, 2) },
+  ];
+
+  // Every row carries its guid, so transcripts and passages can be matched to
+  // their episode by identity rather than by position. Only 144 of 200
+  // episodes have a transcript, so lining up two arrays by index would quietly
+  // attach the wrong words to the wrong show.
+  const byGuid = {};
+  data.episodes.forEach(e => { if (e.guid) byGuid[e.guid] = e; });
+
+  if (wantPass && data.passages) {
+    const rows = data.passages.map(x => {
+      const ep = byGuid[x.guid] || {};
+      return {
+        guid: x.guid,
+        show: ep.show || "",
+        title: ep.title || "",
+        published: ep.published || "",
+        start_sec: x.start_sec,
+        end_sec: x.end_sec,
+        timecode: hms(x.start_sec),
+        text: x.text,
+      };
+    });
+    files.push({ name: `${base}/passages.csv`,
+                 data: "﻿" + toCsv(
+                   ["guid", "show", "title", "published",
+                    "start_sec", "end_sec", "timecode", "text"], rows) });
+  }
+
+  if (wantTx && data.transcripts) {
+    for (const [g, text] of Object.entries(data.transcripts)) {
+      const ep = byGuid[g] || {};
+      // Date first so the folder sorts chronologically in any file browser.
+      const name = `${ep.published || "0000-00-00"}-${slug(ep.title || g)}`;
+      files.push({ name: `${base}/transcripts/${name}.txt`, data: text });
+    }
+  }
+
+  const blob = await makeZip(files);
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = base + ".zip";
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 10000);
+
+  const mb = (blob.size / 1048576).toFixed(1);
+  done.textContent = `${base}.zip — ${mb} MB, ${files.length} files.`;
+}
+
 function openExport() {
   exportFocus = document.activeElement;
   exportScope = "view";
   paintScope();
+  $("#pkgOpts").hidden = exportFmt !== "zip";
+  $("#whatsIn").hidden = exportFmt === "zip";
   $("#whatsIn").open = false;
   $("#exportDone").hidden = true;
   exportModal.hidden = false;
@@ -2857,6 +3125,8 @@ document.querySelectorAll(".fmt").forEach(b =>
     exportFmt = b.dataset.fmt;
     document.querySelectorAll(".fmt").forEach(x =>
       x.setAttribute("aria-checked", String(x === b)));
+    $("#pkgOpts").hidden = exportFmt !== "zip";
+    $("#whatsIn").hidden = exportFmt === "zip";   // the package explains itself
     if ($("#whatsIn").open) loadPreview();   // the sample follows the format
   }));
 
@@ -2876,6 +3146,20 @@ $("#exportGo").addEventListener("click", async () => {
   const p = exportParams();
   const done = $("#exportDone");
   const n = exportScope === "all" ? (CORPUS.episodes || 0) : lastTotal;
+
+  if (exportFmt === "zip") {
+    const btn = $("#exportGo");
+    btn.disabled = true;
+    try {
+      await buildPackage(done);
+    } catch (e) {
+      done.hidden = false;
+      done.textContent = "Couldn't build the package — " + (e.message || e);
+    } finally {
+      btn.disabled = false;
+    }
+    return;
+  }
 
   if (exportFmt === "clipboard") {
     p.set("format", "tsv");

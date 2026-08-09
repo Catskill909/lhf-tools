@@ -292,6 +292,7 @@ run it from.
 | `serve.py` | JSON API + serves the UI and its JS. Stdlib `http.server`; swap for FastAPI at deploy. |
 | `static/index.html` | The whole UI — markup, styles and app code. No build step. |
 | `static/mp3cut.js` | Lossless MP3 clip extraction. `probeMp3()` measures each file; `cutClip()` copies frames. |
+| `static/zip.js` | ZIP writer, CSV writer and filename slug for the archive package. No dependency — `CompressionStream` does the deflating. Deterministic output so two exports can be diffed. |
 | `static/waveform.js` | Peaks at 8 kHz, IndexedDB cache, canvas rendering, snap-to-silence. |
 | `static/index.html` | The whole interface — single file, no build step. |
 | `README.md` | Run instructions, API reference, useful SQL. |
@@ -579,6 +580,7 @@ the same place.
 ```bash
 node tests/test-waveform.mjs        # pure: peak reduction + snap-to-silence
 node tests/test-update-prompt.mjs   # pure: the new-version reload prompt
+node tests/test-zip.mjs             # pure: the archive packager
 node tests/verify-clips.mjs         # live: needs the server running + network
 ```
 

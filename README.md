@@ -69,8 +69,17 @@ retrying — transient network errors are normal and shouldn't need a human.
 **3. Coolify scheduled task** — same command as the cron line, configured
 against the container.
 
-Whichever you choose, **back the SQLite file up off-box first**. The feeds
-re-scrape for free; 882k words of transcript don't.
+Whichever you choose, **back the database up off-box**. `backup.py` does it
+safely against a live database:
+
+```bash
+ssh HOST 'docker exec CONTAINER python3 /app/backup.py --stdout' > lhf-$(date +%F).sqlite
+```
+
+This matters more than it used to. Podbean serves only the most recent 100
+episodes per show and **both shows are now at exactly that number**, so from
+here on an episode rotates out of the feed every week while the database keeps
+it. Re-scraping no longer recovers everything. See `HANDOFF.md`, "Backups".
 
 ## Deploying
 
@@ -137,7 +146,9 @@ serve.py               JSON API + serves the UI and its JS
 static/index.html      the interface (markup, styles, app code — no build step)
 static/mp3cut.js       lossless MP3 clip extraction (probe + frame copy)
 static/waveform.js     peaks, IndexedDB cache, canvas waveform, snap-to-silence
-tests/                 clip editor tests (node; dev only, not shipped)
+static/zip.js          ZIP + CSV writers for the archive package (no dependency)
+backup.py              consistent snapshot of the database; --stdout to pull it
+tests/                 node tests (dev only, not shipped)
 data/lhf.sqlite        the database (gitignored)
 ```
 
@@ -251,6 +262,7 @@ The UI is just a client — swap it for anything without touching the backend.
 | `GET /api/episode/<id>` | one episode, for shared moment links |
 | `GET /api/episode/<id>/segments?q=` | every transcript line with its timings, server-highlighted for `q` — what the transcript modal reads |
 | `GET /episode/<id>/transcript?format=txt\|srt\|vtt` | one transcript to read, print or caption with |
+| `GET /api/bundle?transcripts=1&passages=1&…` | Everything the archive package needs in one request — rows, transcripts and timed passages for the given scope, keyed on `guid`. The browser builds the `.zip` itself. |
 | `GET /api/version` | content hash of `index.html` and the two ES modules. The page re-checks this when its tab regains focus, so a browser left open across a deploy can offer a reload instead of silently running old code. Database-free and cheap on purpose. |
 
 Every response carries an `ETag` and honours `If-None-Match`, so a reload that
@@ -357,6 +369,7 @@ sending notes on demand rather than up front becomes the obvious first saving.
 ```bash
 node tests/test-waveform.mjs      # pure — peak reduction, snap-to-silence
 node tests/test-update-prompt.mjs # pure — the new-version reload prompt
+node tests/test-zip.mjs           # pure — the archive packager (needs python3)
 node tests/verify-clips.mjs       # live — needs the server running + network
 ```
 
