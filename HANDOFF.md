@@ -273,7 +273,9 @@ run it from.
 | `docs/export-spec.md` | Export design + the CSV details that decide whether it imports cleanly. **Built.** |
 | `docs/client-guide.md` | **Send this one.** Feature + usage guide for LHF, with screenshot slots. Every figure verified against the database. |
 | `docs/audio-editor-spec.md` | Browser-side clip editor: the **export** design (frame copy, bitrate probing) and its verification. **Built.** The editing *surface* it describes has since been rebuilt — see the dev doc below. |
-| `docs/audio-editor-dev.md` | Audit of the editing *surface* + phased plan to fix it. **Not started.** Read before touching the editor UI. |
+| `docs/audio-editor-dev.md` | Audit of the editing *surface* + phased plan. **Phases 1–4 built and verified; Phase 6 open.** Opens with a status summary. Read before touching the editor UI. |
+| `docs/clip-library.md` | Design for saving clips. **Not built.** Deliberately narrow — local storage, no folders — with the cut features and the reasons for cutting them recorded. |
+| `backup.py` | Consistent snapshot of the archive, stdlib only. Verifies what it wrote and exits non-zero if it cannot. See **Backups** below — this matters more every week now. |
 | `ingest/enrich.py` | Deterministic enrichment, **no AI**. Re-airs + linked entities. Safe to re-run. |
 | `ingest/extract.py` | The one AI step: topics, guests, interviewers. Written, tested, **never run**. Not in `refresh.py` — needs a key and costs money. `--dry-run` and `--rebuild` need neither. |
 | `ingest/schema.sql` | Tables, FTS5 index, triggers. Already has `transcript_source` and a source-agnostic `segments` table. |
@@ -350,8 +352,32 @@ project most depends on. Schema already handles the hybrid via
 3. **How far back do the Descript projects go** — they've deleted some over time.
 4. **Podbean API credentials**, if we want the pre-2024 archive.
 
+5. **What happens to episodes that fall off the feed — on their side?** Raised
+   9 August 2026, when both shows were measured at exactly the 100-episode cap
+   (see Backups). We know what *our* archive does: it keeps them, permanently,
+   and becomes the only copy we can reach. What we do not know is what they
+   have, and it changes what this product is:
+
+   - **Do they hold their own masters** for everything back to the start of
+     each show, or is Podbean their archive too? If the latter, this database
+     is closer to a system of record than anyone has treated it as.
+   - **Has anything already been lost** — episodes deleted from Podbean, or
+     predating it entirely?
+   - **Do they want the pre-feed backlog ingested**, which is thread 4 and a
+     one-time recovery, or is the rolling window genuinely all they need?
+   - **Do they expect the app to hold shows the feed no longer carries** as a
+     feature — i.e. "this is where the whole archive lives" — or as a side
+     effect nobody has thought about?
+
+   The last one is the fork. If the app is meant to be the archive of record,
+   then backup, an admin surface and eventually authentication stop being
+   nice-to-haves, and that is the same shell `docs/ai-layer.md` is blocked on.
+   **Their answer is expected soon; capture it here when it arrives.**
+
 Nothing is blocked on these. They're slow-moving; the interface work continues
-regardless.
+regardless — **except that backups should not wait for thread 5.** The archive
+is already accumulating episodes the feed no longer serves, whatever the client
+decides they want.
 
 ---
 
@@ -596,9 +622,34 @@ older than that. The Podbean back-end export remains the only route to the
 pre-feed backlog, and it is a one-time recovery.
 
 So: back up the Coolify volume, and start before it matters rather than after.
-`sqlite3 /data/lhf.sqlite ".backup /somewhere/else.sqlite"` is safe to run
-against a live database in WAL mode. The other half of the same problem is the
-Podbean back-end export, which would recover the pre-feed backlog once.
+
+`backup.py` does this and nothing else:
+
+```bash
+python3 backup.py                       # snapshot to data/backups/, keep 7
+python3 backup.py --dest /mnt/nas/lhf   # somewhere off the volume
+python3 backup.py --verify-only FILE    # check an old snapshot
+```
+
+Three things it does that a file copy does not:
+
+- **It takes a consistent snapshot of a live database.** `cp`, `rsync` and
+  volume snapshots can catch a torn page or miss commits still in the `-wal`
+  file, and the result usually *opens fine* while being quietly incomplete —
+  the worst way for a backup to fail. This uses SQLite's online backup API.
+- **It converts the snapshot out of WAL mode**, so a backup is one
+  self-contained file rather than three, and can be opened read-only anywhere.
+- **It verifies what it wrote** — integrity check plus a row count — and renames
+  the file `.FAILED` and exits non-zero if it cannot. A scheduler will notice.
+
+**A snapshot inside the same volume is not a backup.** It defends against
+corruption and a bad migration, and against nothing at all if the volume is
+lost, which is the failure that matters here. Point `--dest` somewhere off the
+volume, or copy the output off the host after each run. The script says so in
+its own output when it detects this.
+
+The other half of the same problem is the Podbean back-end export, which would
+recover the pre-September-2024 backlog once — see Open threads.
 
 ### Deploys and stale browsers
 
