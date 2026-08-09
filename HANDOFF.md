@@ -299,6 +299,7 @@ run it from.
 | `ingest/ingest.py` | RSS → SQLite. Idempotent, keys on `<guid>`. Also the weekly-cron path. |
 | `ingest/transcripts.py` | Podcast 2.0 `.srt` → `segments`. Idempotent; `--retry` re-attempts failures. |
 | `refresh.py` | Runs all three pipeline steps in order; `--loop 24h` schedules itself. |
+| `CLAUDE.md` | The constraints and traps that are easy to break without knowing them, for whoever (or whatever) picks this up. Read `HANDOFF.md` first. |
 | `docs/export-spec.md` | Export design + the CSV details that decide whether it imports cleanly. **Built.** |
 | `docs/export-dev.md` | The export as the client's full backup of their Podbean archive — catalogue, transcripts, artwork, audio. **Not built.** Explains why it is two exports: 5 MB of text against 8–12 GB of media. |
 | `docs/client-guide.md` | **Send this one.** Feature + usage guide for LHF, with screenshot slots. Every figure verified against the database. |
