@@ -23,9 +23,16 @@ It found 22 encores and 5 programmes that ran on both — which I think is the
 "have we run this already" problem Chris described.
 
 There's also a Help button explaining the search options, with examples you can
-click to try, and an Export button — whatever you're looking at downloads as a
-spreadsheet that opens straight in Google Sheets, with links back to each
-episode, its transcript and the audio.
+click to try, and an Export button. That gives you a spreadsheet of either
+what you're looking at or the whole archive — your choice, with both counts
+shown — opening straight in Google Sheets, with links back to each episode, its
+transcript and the audio.
+
+There's also a one-click archive package: a single zip holding that
+spreadsheet, every transcript as a readable text file, every spoken line with
+the second it was said, and a README explaining the lot. The whole archive
+comes to under 4 MB, and it's plain text throughout — readable by anything,
+with or without this site.
 
 Still to come is proper topic tagging and catching the guests who weren't
 linked in the show notes. I'll put together a first pass and send you a draft
