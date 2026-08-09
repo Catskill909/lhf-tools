@@ -83,16 +83,28 @@ decision, and an admin screen to run it from. See `docs/ai-layer.md`.
 - 22 encores flagged automatically from title convention
 
 **Export**
-- CSV / TSV / JSON of **exactly what's on screen** — same filters, same order,
-  same count. Calls `search()` rather than reimplementing the query, so the
-  file and the screen can't drift apart.
-- CSV written for spreadsheet import: UTF-8 BOM (Excel mangles "No Pasarán"
-  without it), ISO dates that parse as dates, numeric durations that sum,
-  `TRUE`/`FALSE` that Sheets treats as booleans
+- **Choose the scope** — this search, or the whole archive. Both counts are
+  always visible, so a file quietly holding 78 of 200 episodes can't happen by
+  accident. Calls `search()` rather than reimplementing the query, so the file
+  and the screen can't drift apart.
+- CSV / TSV / JSON, written for spreadsheet import: UTF-8 BOM (Excel mangles
+  "No Pasarán" without it), ISO dates that parse as dates, numeric durations
+  that sum, `TRUE`/`FALSE` that Sheets treats as booleans
 - Three URL columns at different fidelities — Podbean page, original `.srt`,
-  and our cleaned transcript at `/episode/<id>/transcript`
-- Transcript text deliberately excluded: ~49k chars per episode against a
-  50k-character spreadsheet cell cap would truncate silently
+  and our cleaned transcript at `/episode/<id>/transcript` — plus `guid` last,
+  the only key that survives a rebuild
+- **"What's in the file, exactly"** lists every column and shows the first two
+  rows of the real file, fetched through the same endpoint as the download via
+  `?limit=` — a preview assembled separately could disagree with the file
+- **Archive package (.zip)** — the catalogue, every transcript, all 14,937
+  timed passages and a README that explains the lot. **12 MB of content, 3.8 MB
+  zipped**, built in the browser by `static/zip.js` with no dependency. Named
+  `-complete` or `-filtered` so a partial export can never be mistaken for a
+  backup. This is the app-independent copy: plain CSV, JSON and text that
+  another developer could rebuild the catalogue from.
+- Transcript text deliberately excluded from the *spreadsheet*: ~49k chars per
+  episode against a 50k-character cell cap would truncate silently. The package
+  carries them as real files instead.
 - Clipboard option for pasting straight into an open sheet
 
 **Clip extraction** *(all in the browser — our server does nothing)*
@@ -163,6 +175,16 @@ decision, and an admin screen to run it from. See `docs/ai-layer.md`.
 - Back-to-top in the gutter; floats centred on tablet and phone
 - Responsive; no build step, single HTML file
 
+**Deployment is done.** It is live on Coolify and updating itself daily. The
+first attempt failed and taught three things, all fixed and all written up in
+README.md under "Coolify settings that matter": Coolify runs its own health
+check rather than the Dockerfile's, it shells out to `curl` which
+`python:3.12-slim` does not ship, and building the archive *before* starting the
+server means nothing is listening during the build, so the container is killed
+as unhealthy and the build restarts for ever. The container now opens the port
+in **1 second** and fetches the archive behind itself. **Coolify's "Ports
+Exposes" must be 8000**; it defaults to 3000.
+
 ### Not built yet
 
 - **Topics, un-hyperlinked guests, interviewer roles** → the code is written
@@ -175,16 +197,14 @@ decision, and an admin screen to run it from. See `docs/ai-layer.md`.
 - The 55 episodes with no feed transcript (~$9.52 via Google STT)
 - One broken transcript link on Podbean's side ("MLK in Memphis" 404s);
   `python3 ingest/transcripts.py --retry` will pick it up if they fix it
-- **Deployment.** First attempt on Coolify failed and taught us three things,
-  all now fixed: Coolify runs its own health check (not the Dockerfile's), it
-  shells out to `curl` which `python:3.12-slim` doesn't have, and — the real
-  bug — building the archive *before* starting the server means nothing is
-  listening during the build, so the container is killed as unhealthy and the
-  build restarts forever. The container now opens the port in **1 second** and
-  fetches the archive in the background.
-  **Coolify's "Ports Exposes" must be set to 8000**; it defaults to 3000.
-- Off-box backups of the volume. It is the only copy of the scraped archive.
-- Failure notification on the refresh loop (it logs to stderr; nobody watches stderr)
+- **Somewhere to keep the backups.** `backup.py` exists and pulls a verified
+  snapshot with `--stdout`, so the tooling is done — what is missing is a
+  decision about where the copies live and how often they are taken. This is
+  no longer optional: both shows are at the feed cap, so the volume is becoming
+  the only reachable copy of anything that rotates out. See **Backups**.
+- Failure notification on the refresh loop (it logs to stderr; nobody watches
+  stderr). A silently broken updater is how this rots, and the symptom — an
+  archive that quietly stops growing — is one nobody notices for months.
 - A styled embed widget for laborheritage.org. The `?q=` deep link means a
   plain search box already works — the widget is polish, not plumbing.
 

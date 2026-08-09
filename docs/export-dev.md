@@ -1,9 +1,18 @@
 # Export — development plan
 
-**Status:** planned, not built. Written 9 August 2026. **Companion to**
-`docs/export-spec.md`, which records the export **as built** — CSV/TSV/JSON of
-the current result set, plus the transcript route. That document is still
-correct; this one covers what the export is *for* beyond a spreadsheet.
+**Status:** **phase 0 and the catalogue package are built** (9 August 2026);
+the media half is not. **Companion to** `docs/export-spec.md`, which records the
+row-level export as built. This document covers what the export is *for* beyond
+a spreadsheet.
+
+| Phase | | |
+|---|---|---|
+| 0 | Record what the feed still carries | ✅ built |
+| 1 | The catalogue package (.zip) | ✅ built |
+| 2 | Picker and size estimate | partly — transcripts and timestamps are optional, sizes are static |
+| 3 | At-risk episodes: the filter and rescue | not started |
+| 4 | The full media download kit | not started |
+| 5 | BagIt, Dublin Core, citations | not started |
 
 ---
 

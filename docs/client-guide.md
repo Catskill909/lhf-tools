@@ -122,10 +122,37 @@ down to a fraction of a second on one edge.
 **Tags** — 232 people, bands, museums and books, taken from the links in your
 own show notes rather than guessed. Click one to see every episode featuring it.
 
-**Export** — whatever's on screen downloads as a spreadsheet, with links back to
-each episode, its transcript and the audio.
+**Export** — a spreadsheet of the archive, with links back to each episode, its
+transcript and the audio. You choose how much: **this search** gives you exactly
+what's on screen, filters and all; **everything** gives you all 200 episodes.
+Both counts are shown, so you always know which file you're about to get. CSV
+for Sheets or Excel, straight to the clipboard, or JSON.
+
+Before downloading, **What's in the file, exactly** lists every column in plain
+English and shows the first couple of rows of your actual file.
 
 ![The export panel — CSV, clipboard or JSON](screenshots/05-export.png)
+
+**And there's a fourth option: the archive package.** One `.zip` containing the
+spreadsheet, every transcript as a readable text file, every spoken line with
+the second it was said, and a README explaining all of it. The whole archive —
+200 episodes, 144 transcripts, 14,937 passages — comes to **under 4 MB**, small
+enough to email.
+
+It's worth knowing what that file is, because it's more than a download:
+
+- **It doesn't need this website.** Everything in it is plain text — CSV, JSON
+  and .txt. Anyone could read it, now or in twenty years, with no special
+  software and without this site still existing.
+- **It's a copy you hold.** Given the feed limit above, that matters more than
+  it used to.
+- **The filename tells you what it is.** Export everything and you get
+  `…-complete.zip`; export a filtered view and you get `…-filtered.zip`, with a
+  note inside saying so. A partial export is perfectly useful, but it isn't a
+  backup, and a year later nothing else would tell you which one you had.
+
+Audio isn't inside it — only links to it. All 143 hours would be 8–12 GB, which
+is a download rather than a file.
 
 **Links** — the address bar always matches what you're looking at, so any search
 can be pasted to a colleague, or pointed at a single moment. That's also how a

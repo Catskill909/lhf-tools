@@ -13,6 +13,11 @@ first two rows of the real file, fetched through the same endpoint the download
 uses via a new `limit` parameter — a preview built separately could disagree
 with the file, which would be worse than none.
 
+**The `.zip` archive package is also built**, closing the "zip transcript
+bundle" and "passage-level CSV" items from the list below. See
+`docs/export-dev.md`. Two things from this spec remain: the column picker, and
+Dublin Core / citations — the latter still blocked on a format decision.
+
 Still outstanding from this spec: column picker, `.zip` transcript bundle,
 passage-level CSV, Dublin Core XML, citations, and storing the raw `.srt`.
 

@@ -1700,7 +1700,7 @@
         <p class="pkg-size" id="pkgSize">About 2 MB zipped.</p>
       </div>
 
-      <p class="cols-note">
+      <p class="cols-note" id="colsNote">
         <b>What you get:</b> one row per episode — show, title, date, length,
         encore flag, tags and re-air dates, plus links to the episode page, the
         original transcript, our transcript, and the audio.
@@ -1743,6 +1743,7 @@
             <tr><td>source_url</td><td>The original <code>.srt</code> from your feed</td></tr>
             <tr><td>archive_url</td><td>Our cleaned transcript, readable in a browser</td></tr>
             <tr><td>audio_url</td><td>The MP3 itself, direct from Podbean</td></tr>
+            <tr><td>guid</td><td>The feed's own identifier for the episode. Last, because it's long — but it's the one column that still means something after a rebuild, so anything referencing an episode from outside the file uses it.</td></tr>
           </tbody>
         </table>
 
@@ -2891,6 +2892,17 @@ function paintScope() {
   $("#scopeAllN").textContent = (CORPUS.episodes || 0).toLocaleString();
 }
 
+/* The row-based formats and the package explain themselves differently: one
+   with a column list and a sample, the other with its own options and the
+   README inside it. Showing both at once would describe a file nobody asked
+   for. */
+function paintFormat() {
+  const pkg = exportFmt === "zip";
+  $("#pkgOpts").hidden = !pkg;
+  $("#whatsIn").hidden = pkg;
+  $("#colsNote").hidden = pkg;
+}
+
 /* Two real rows, through the same endpoint the download uses. A preview built
    separately in JS could disagree with the file, which would be worse than
    showing nothing. */
@@ -3100,8 +3112,7 @@ function openExport() {
   exportFocus = document.activeElement;
   exportScope = "view";
   paintScope();
-  $("#pkgOpts").hidden = exportFmt !== "zip";
-  $("#whatsIn").hidden = exportFmt === "zip";
+  paintFormat();
   $("#whatsIn").open = false;
   $("#exportDone").hidden = true;
   exportModal.hidden = false;
@@ -3125,8 +3136,7 @@ document.querySelectorAll(".fmt").forEach(b =>
     exportFmt = b.dataset.fmt;
     document.querySelectorAll(".fmt").forEach(x =>
       x.setAttribute("aria-checked", String(x === b)));
-    $("#pkgOpts").hidden = exportFmt !== "zip";
-    $("#whatsIn").hidden = exportFmt === "zip";   // the package explains itself
+    paintFormat();
     if ($("#whatsIn").open) loadPreview();   // the sample follows the format
   }));
 
