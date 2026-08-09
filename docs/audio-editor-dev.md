@@ -632,6 +632,44 @@ the actual editor remain the better detector for that class.
 
 ---
 
+## Phase 6 — Show that a momentary action is momentary (not started)
+
+Reported from live use, 9 August 2026.
+
+**The problem.** Audition in / Audition out play a fixed two seconds and stop on
+their own. Nothing on screen says that is what will happen, and nothing marks
+that it is happening. A play button that stops by itself is unusual — most keep
+going until you stop them — so the silence afterwards reads as ambiguous: did it
+finish, did it fail, did I mis-click? The user is left unsure what happened.
+
+**The fix.** Light the button while its own playback is running and un-light it
+when that playback ends. Seeing the highlight come on and go off *teaches* the
+behaviour in one press: this button plays a segment and returns. No text needed.
+
+**Notes for whoever picks it up:**
+
+- `.tool.on` already exists — Repeat uses it. Reuse it rather than inventing a
+  second "active" style, so "lit" means one thing across the editor.
+- The transport needs to know *which* control started the current playback.
+  `playRange` currently records `playFrom` / `playTo` / `follow`; add the
+  originating element (or a small id) alongside them, and have `setPlaying`
+  light and clear it. Do not track it in the click handlers — that is the
+  press-time-capture shape that has already produced three bugs in this file.
+- Clearing must be handled on **every** exit: natural end in `tickPlay`, `stop`,
+  `pause`, a different control taking over, and `closeClip`. The failure mode is
+  a button left lit after the audio stops, which is worse than no indicator.
+- Same treatment applies to Snap in / Snap out, which are also momentary but
+  have no feedback at all — the mark moves and that is the only signal. A brief
+  flash of the same highlight would make the two families read alike. Worth
+  doing in the same pass; consider whether Snap should also be *audible* (it
+  currently changes a cut point without ever playing it).
+- Play/pause in the transport is **not** in this family — it is a mode, not a
+  momentary action, and already shows its state through the ▶/❚❚ glyph.
+- Verification is a browser check: click Audition in, assert the button carries
+  `.on` while `#tPlay` reads "Pause", then assert `.on` is gone once it reads
+  "Play" again. Poll for the condition rather than sleeping — fixed sleeps
+  against the CDN produced several false failures during Phases 1–4.
+
 ## Brainstorm — features for LHF and the labor podcast network
 
 Not planned, not costed, not committed. Captured so the phase plan above can be

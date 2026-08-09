@@ -155,8 +155,13 @@
     color: var(--ink);
     font: inherit;
     font-size: 1.1rem;
-    padding: 0.9rem 2.8rem 0.9rem 2.9rem;
+    padding: 0.9rem 3.2rem 0.9rem 2.9rem;
   }
+  /* type="search" gives us a second, native clear button in WebKit sitting
+     right next to our own. One X is enough — ours is the one that resets
+     state, so the browser's goes. */
+  #q::-webkit-search-cancel-button,
+  #q::-webkit-search-decoration { -webkit-appearance: none; appearance: none; display: none; }
   #q::placeholder { color: var(--ink-3); }
   /* The field is the largest element on the page, so the hard accent ring used
      on chips and buttons reads as an alert at this size. A soft halo plus a
@@ -168,13 +173,19 @@
     border-color: var(--spot);
     box-shadow: 0 0 0 3px var(--spot-soft);
   }
+  /* Sole clear affordance now, so it carries the weight the native one used
+     to share: readable ink rather than the faint --ink-3, and a 44px square
+     so it is a comfortable target rather than a glyph you have to aim at. */
   #clear {
-    position: absolute; right: 0.5rem;
+    position: absolute; right: 0.35rem;
     background: none; border: none; cursor: pointer;
-    color: var(--ink-3); font-size: 1.4rem; line-height: 1;
-    padding: 0.2rem 0.55rem; display: none;
+    color: var(--ink-2); font-size: 1.9rem; line-height: 1;
+    width: 44px; height: 44px; padding: 0;
+    border-radius: 4px;
+    display: none; align-items: center; justify-content: center;
   }
-  #clear:hover { color: var(--spot); }
+  #clear:hover { color: var(--spot); background: var(--paper); }
+  #clear:focus-visible { outline: 2px solid var(--spot); outline-offset: -2px; }
 
   .filters {
     display: flex; gap: 1.4rem; margin-top: 0.85rem;
@@ -2258,7 +2269,7 @@ async function run() {
 
 $("#q").addEventListener("input", e => {
   state.q = e.target.value;
-  $("#clear").style.display = state.q ? "block" : "none";
+  $("#clear").style.display = state.q ? "flex" : "none";
   clearTimeout(timer);
   timer = setTimeout(run, 140);
 });
@@ -2305,7 +2316,7 @@ help.querySelectorAll(".try[data-q]").forEach(b =>
   b.addEventListener("click", () => {
     state.q = b.dataset.q;
     $("#q").value = state.q;
-    $("#clear").style.display = "block";
+    $("#clear").style.display = "flex";
     closeHelp();
     run();
   }));
@@ -3559,7 +3570,7 @@ function readURL() {
   state.topicLabel = "";           // ditto, from the rendered topics
   if (SORTS.some(([k]) => k === p.get("sort"))) state.sort = p.get("sort");
   $("#q").value = state.q;
-  if (state.q) $("#clear").style.display = "";
+  if (state.q) $("#clear").style.display = "flex";
   return p;
 }
 
