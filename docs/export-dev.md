@@ -22,6 +22,13 @@ as txt / srt / vtt per episode, clipboard copy.
 **What this adds:** everything else — and one architectural decision that the
 numbers make for us.
 
+**It is also the migration path.** With every table and the transcripts in it,
+the package is a complete reconstruction of the database minus the audio —
+readable by another developer, or a language model, without this codebase
+existing. See [The package as a migration
+path](#the-package-as-a-migration-path). That is a different and longer-lived
+thing than `backup.py`, which restores this application and only this one.
+
 ### The number that decides the design
 
 Measured against the live archive, 9 August 2026:
@@ -86,6 +93,82 @@ near the front.
 **Transcripts ship as files, not cells.** Google Sheets truncates a cell at
 50,000 characters and episodes average ~49,000. Putting them in a column would
 silently lose text, which is the worst failure mode a backup can have.
+
+### How big is the transcript folder, exactly
+
+Measured 9 August 2026, not estimated:
+
+| | |
+|---|---|
+| Episodes carrying text | **144** |
+| Plain text, all of them | **4.7 MB** |
+| Average per episode | **33 KB** |
+| Largest single episode | **57 KB** |
+| Same content as SRT | **5.2 MB** (14,937 cues, timestamps included) |
+| All three formats (txt + srt + vtt) | **~15 MB** |
+| **Zipped** | **1.8 MB** for the text — 38% of raw |
+
+**The whole catalogue package, transcripts and all, is under 10 MB zipped.**
+Eight hundred and eighty-two thousand words of spoken labor history fits
+comfortably inside a single email attachment. There is no size argument against
+including all of it, in every format, every time.
+
+---
+
+## The package as a migration path
+
+This is the strongest reason to build it, and it is worth stating plainly
+because it changes what the export *is*.
+
+**There are two kinds of backup here, and they are not substitutes.**
+
+| | `backup.py` | The export package |
+|---|---|---|
+| Format | SQLite | CSV, JSON, plain text, SRT |
+| Restores | This application, exactly | Any application, any language |
+| Needs | This codebase and SQLite | Nothing but a text editor |
+| Good for | An accident on Tuesday | A different developer in 2031 |
+
+`backup.py` is an **operational** backup: fast, exact, and worthless if the
+thing you have lost is the application rather than the data. The export package
+is a **preservation** copy — plain text with a data dictionary, readable by
+anyone who has never seen this repository, and the format an archivist would
+expect precisely because it outlives the software that produced it.
+
+**And if it carries every table, it is a complete logical reconstruction of the
+database minus the audio.** Another developer, or a language model, could
+rebuild this entire application from the package alone. That is the client's
+own instinct — *"a path to a possible full backup, for another dev or a new
+app"* — and it is correct.
+
+### What completeness actually requires
+
+The package is only a migration path if it carries everything, which means more
+than `episodes.csv`:
+
+- **`segments`** with their millisecond timings — the transcripts *and* the
+  index that makes them searchable
+- **The original `.srt`**, not only our derived text. It is the artefact the
+  producers' own workflow generated, and re-deriving from it is always possible;
+  re-deriving *it* is not.
+- **`description_html`** as published, not just the stripped text. The
+  hyperlinks in it are where all 232 tags came from.
+- **`mentions`, `reairs`, `topics`, `people`, `shows`** — every table, not only
+  the ones a spreadsheet user would ask for
+- **Keyed on `guid`** throughout, so the reconstruction does not depend on row
+  ids this project has already been burned by
+
+### The trap this creates
+
+**A partial export that calls itself a backup is dangerous**, and the scope
+control makes that easy to do by accident: export while filtered to 2025 and
+you get a perfectly valid 107-episode package that looks exactly like a
+complete one.
+
+So the package export **states its scope in the README and in the filename**,
+and a filtered package is named as such — `lhf-archive-2026-08-09-filtered.zip`
+against `lhf-archive-2026-08-09-complete.zip`. The row-level exports may be
+filtered freely; a thing claiming to be an archive has to say what it left out.
 
 ---
 
