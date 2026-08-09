@@ -278,6 +278,7 @@ run it from.
 | `ingest/transcripts.py` | Podcast 2.0 `.srt` → `segments`. Idempotent; `--retry` re-attempts failures. |
 | `refresh.py` | Runs all three pipeline steps in order; `--loop 24h` schedules itself. |
 | `docs/export-spec.md` | Export design + the CSV details that decide whether it imports cleanly. **Built.** |
+| `docs/export-dev.md` | The export as the client's full backup of their Podbean archive — catalogue, transcripts, artwork, audio. **Not built.** Explains why it is two exports: 5 MB of text against 8–12 GB of media. |
 | `docs/client-guide.md` | **Send this one.** Feature + usage guide for LHF, with screenshot slots. Every figure verified against the database. |
 | `docs/audio-editor-spec.md` | Browser-side clip editor: the **export** design (frame copy, bitrate probing) and its verification. **Built.** The editing *surface* it describes has since been rebuilt — see the dev doc below. |
 | `docs/audio-editor-dev.md` | Audit of the editing *surface* + phased plan. **Phases 1–4 built and verified; Phase 6 open.** Opens with a status summary. Read before touching the editor UI. |

@@ -7,6 +7,12 @@ set, plus the `/episode/<id>/transcript` route. Verified: 78 results on screen,
 Still outstanding from this spec: column picker, `.zip` transcript bundle,
 passage-level CSV, Dublin Core XML, citations, and storing the raw `.srt`.
 
+**All of those are now folded into a larger plan.** `docs/export-dev.md` treats
+the export as the client's complete backup of their Podbean archive — catalogue,
+transcripts, artwork and audio — and works out why that has to be two exports
+rather than one: the text weighs 5 MB and the audio 8–12 GB. Read it before
+picking up any item in that list.
+
 ## The principle
 
 **Export whatever is on screen.** Not a separate reporting area with its own
