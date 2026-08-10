@@ -29,6 +29,13 @@ without knowing them.
   material. **The first write endpoint is a security decision**, not a feature
   increment — and it is the same decision the AI layer and a shared clip
   library are both waiting on.
+- **The browser persists exactly two things, and both rebuild themselves**:
+  `localStorage["lhf-theme"]` and the IndexedDB peaks cache. Nothing else — the
+  update prompt's dismissal is an in-memory variable, not storage. **Anything
+  new that persists is the first user data this application can actually lose**,
+  so it has to say where it lives, in the interface, at the point the user forms
+  the belief. `docs/clip-library.md` → *What lives where* is the boundary, and
+  `docs/client-guide.md` states it to the client.
 
 ## Traps that have already bitten this project
 
@@ -67,8 +74,14 @@ nothing.
 node tests/test-waveform.mjs        # pure: peaks, snap-to-silence, rulers
 node tests/test-update-prompt.mjs   # pure: the new-version reload prompt
 node tests/test-zip.mjs             # pure: the archive packager
+node tests/test-clips.mjs           # pure: the saved-clip store + labels
 node tests/verify-clips.mjs 8000    # live: needs the server running + network
 ```
+
+`test-clips.mjs` shims `localStorage` onto `globalThis` and imports the real
+module. **Adding a front-end module means adding it to `names` in `serve.py`'s
+`/api/version`** — nothing derives that tuple, and a module missing from it can
+never trigger the reload prompt. `zip.js` was missing from the day it shipped.
 
 `verify-clips.mjs` is the one that checks the exported bytes are still the
 broadcast audio. Run it before any commit that goes near `mp3cut.js` — and if

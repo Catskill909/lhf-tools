@@ -15,7 +15,7 @@
     --paper-2:    #1a1d22;
     --ink:        #efece4;
     --ink-2:      #a09a8c;
-    --ink-3:      #6d6961;
+    --ink-3:      #837f75;
     --rule:       rgba(239,236,228,0.11);
     --rule-hard:  rgba(239,236,228,0.22);
     --spot:       #d8503a;
@@ -32,7 +32,7 @@
     --paper-2:    #fffdf8;
     --ink:        #1b1a17;
     --ink-2:      #5f5a50;
-    --ink-3:      #8b857a;
+    --ink-3:      #746f66;
     --rule:       rgba(27,26,23,0.13);
     --rule-hard:  rgba(27,26,23,0.28);
     --spot:       #b8331d;
@@ -48,7 +48,7 @@
       --paper-2:    #fffdf8;
       --ink:        #1b1a17;
       --ink-2:      #5f5a50;
-      --ink-3:      #8b857a;
+      --ink-3:      #746f66;
       --rule:       rgba(27,26,23,0.13);
       --rule-hard:  rgba(27,26,23,0.28);
       --spot:       #b8331d;
@@ -126,13 +126,52 @@
     width: 100%; height: 0.22rem;
     background: var(--spot);
   }
-  #themeToggle {
-    background: none; border: 1px solid var(--rule); color: var(--ink-2);
+  /* Every control in the masthead. This was written out three times by id —
+     once each for Export, Help and Theme — so a fourth button added later
+     matched nothing and rendered as a white browser default in a dark header.
+     One class, so the next one can't. Hovers stay per-button below: the two
+     that open a dialogue go spot; Theme, which only changes appearance, does
+     not claim that weight. */
+  .mast-btn {
+    display: inline-flex; align-items: center; gap: 0.42rem;
+    background: none; border: 1px solid var(--ink-3); color: var(--ink);
     border-radius: 2px; cursor: pointer; font: inherit;
     font-size: 0.7rem; letter-spacing: 0.08em; text-transform: uppercase;
     padding: 0.3rem 0.6rem;
   }
-  #themeToggle:hover { color: var(--ink); border-color: var(--rule-hard); }
+  .mast-btn:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+  /* Theme only changes appearance, so it lifts its edge rather than claiming
+     the spot red the two dialogue-openers use. */
+  #themeToggle:hover { border-color: var(--ink); }
+
+  /* The count is a footnote to the word, not a badge on it — the same
+     treatment the filter chips give their counts. A filled pill here read as
+     a notification demanding attention, which a count of your own saved work
+     is not. */
+  /* A filled counter, not a dimmed number.
+     An earlier pass tried opacity for hierarchy and landed at 2.84:1 dark /
+     2.38:1 light — under the floor for a UI element, never mind text. Colour
+     does the work instead, and here it inverts: the count is the one thing in
+     the masthead that changes because of something you did, so it takes the
+     spot fill rather than a step down the ink scale.
+     A circle is in-vocabulary — the transport, the play control and the modal
+     close are all round — and the solid spot fill is the same "this is live"
+     language the pressed filter chips use.
+     Digit colour is --paper, not white: it measures better on the dark ground
+     (4.42:1 against 4.09:1) and it is exactly what the modal close button does
+     on hover, so the pairing already exists in the design.
+     min-width == height gives a circle at one digit and a stadium at two or
+     three, without a second rule. */
+  #libBtn .n {
+    display: inline-grid; place-items: center;
+    min-width: 1.05rem; height: 1.05rem;
+    padding: 0 0.3rem;
+    border-radius: 999px;
+    background: var(--spot); color: var(--paper);
+    font-size: 0.64rem; font-weight: 700; line-height: 1;
+    letter-spacing: 0; font-variant-numeric: tabular-nums;
+  }
+  #libBtn:hover .n { background: var(--spot-ink); }
 
   /* --------------------------------------------------------- search */
   .search-zone {
@@ -891,14 +930,8 @@
     font-size: 0.75rem; color: var(--ink-3);
   }
 
-  #helpBtn {
-    background: none; border: 1px solid var(--rule); color: var(--ink-2);
-    border-radius: 2px; cursor: pointer; font: inherit;
-    font-size: 0.7rem; letter-spacing: 0.08em; text-transform: uppercase;
-    padding: 0.3rem 0.6rem;
-  }
+  /* Shape comes from .mast-btn. */
   #helpBtn:hover { color: var(--spot-ink); border-color: var(--spot); }
-  #helpBtn:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
 
   @media (max-width: 560px) {
     .help-row { grid-template-columns: 1fr; }
@@ -981,14 +1014,8 @@
 
 
   /* -------------------------------------------------------- export */
-  #exportBtn {
-    background: none; border: 1px solid var(--rule); color: var(--ink-2);
-    border-radius: 2px; cursor: pointer; font: inherit;
-    font-size: 0.7rem; letter-spacing: 0.08em; text-transform: uppercase;
-    padding: 0.3rem 0.6rem;
-  }
+  /* Shape comes from .mast-btn. */
   #exportBtn:hover { color: var(--spot-ink); border-color: var(--spot); }
-  #exportBtn:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
 
   /* Two choices sharing the radio treatment used for formats below, so "pick
      one of these" reads the same way twice in one dialogue. */
@@ -1488,6 +1515,400 @@
   @media (max-width: 30rem) {
     .update-bar { left: 1rem; right: 1rem; transform: none; }
   }
+  /* ------------------------------------------------------ clip library
+     Built from furniture that already exists — .chip and its aria-pressed
+     state for the label bar, .row's hover marker for the rows, #exportDone's
+     slot for confirmation. A new species of control here would read as a
+     different application bolted on. */
+
+  #libBtn[data-empty="1"] .n { display: none; }
+
+  #libModal .modal { width: min(780px, 100%); }
+
+  .lib-tools { display: flex; align-items: center; gap: 0.7rem; padding: 0.9rem 0 0.6rem; }
+  #libFilter {
+    flex: 1 1 auto;
+    background: var(--paper-2); border: 2px solid var(--ink-3); border-radius: 2px;
+    color: var(--ink); font: inherit; font-size: 0.85rem; padding: 0.38rem 0.6rem;
+  }
+  #libFilter::placeholder { color: var(--ink-3); }
+  #libFilter:focus-visible { outline: 2px solid var(--focus); outline-offset: 1px; }
+  #libTotal {
+    flex: none; font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 0.7rem; letter-spacing: 0.05em; color: var(--ink-3);
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* Top labels only. A bar that grows without limit stops being a summary
+     and becomes a second list to read. */
+  #libLabels { padding: 0.1rem 0 0.75rem; border-bottom: 1px solid var(--rule); }
+  #libLabels[hidden] { display: none; }
+  #libLabels .chip.more-labels {
+    border-style: none; color: var(--ink-3);
+    text-decoration: underline; text-underline-offset: 2px;
+    padding-left: 0.25rem; padding-right: 0.25rem;
+  }
+  #libLabels .chip.more-labels:hover { color: var(--ink); }
+
+  .lib-group {
+    display: block; font-size: 0.66rem; letter-spacing: 0.15em;
+    text-transform: uppercase; color: var(--ink-3);
+    padding: 1.25rem 0 0.45rem; border-bottom: 1px solid var(--rule);
+  }
+
+  .cliprow {
+    position: relative;
+    display: grid;
+    /* The action column is auto, not a fixed 30px: it holds two 26px buttons,
+       so a fixed width made them overflow and collide with the timecode. */
+    grid-template-columns: 34px minmax(0, 1fr) auto auto auto;
+    align-items: center; gap: 0.4rem 1rem;
+    padding: 0.62rem 0.35rem 0.62rem 0.75rem;
+    border-bottom: 1px solid var(--rule);
+  }
+  .cliprow::before {
+    content: ""; position: absolute; left: 0; top: 0.5rem; bottom: 0.5rem;
+    width: 3px; background: var(--spot);
+    opacity: 0; transition: opacity 0.16s ease;
+  }
+  .cliprow:hover::before, .cliprow:focus-within::before { opacity: 1; }
+  .cliprow:hover { background: var(--spot-tint); }
+  .cliprow.leaving { opacity: 0.35; }
+  .cliprow.leaving .cr-title { text-decoration: line-through; }
+
+  /* Play is the row's primary affordance, so it gets a real edge rather than
+     the --rule-hard hairline it launched with, which read as a disabled
+     control against the row's own borders. */
+  .cliprow .cr-play {
+    grid-row: span 3; align-self: start; margin-top: 0.05rem;
+    width: 32px; height: 32px; border-radius: 50%;
+    display: grid; place-items: center; padding: 0;
+    background: none; border: 1px solid var(--ink-3);
+    color: var(--ink); cursor: pointer;
+    transition: background 0.16s ease, color 0.16s ease, border-color 0.16s ease;
+  }
+  .cliprow .cr-play:hover { background: var(--spot-soft); color: var(--spot-ink); border-color: var(--spot); }
+  .cliprow .cr-play:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+  .cliprow.playing .cr-play { background: var(--spot); border-color: var(--spot); color: #fff; }
+
+  .cliprow .cr-title {
+    margin: 0; font-size: 0.95rem; line-height: 1.35; color: var(--ink);
+    cursor: text; border-radius: 2px;
+    padding: 0.05rem 0.2rem; margin-left: -0.2rem;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  .cliprow .cr-title:hover { background: var(--rule); }
+  .cliprow .cr-title:focus {
+    outline: 2px solid var(--focus); outline-offset: 1px;
+    background: var(--paper-2); white-space: normal;
+  }
+  /* A generated label is not something anybody said. Italic says so without
+     needing a badge. */
+  .cliprow .cr-title.generated { font-style: italic; color: var(--ink-2); }
+
+  .cliprow .cr-times, .cliprow .cr-len {
+    font-size: 0.82rem; font-variant-numeric: tabular-nums;
+    white-space: nowrap; align-self: start; padding-top: 0.1rem;
+  }
+  .cliprow .cr-times { color: var(--ink-2); }
+  .cliprow .cr-len { color: var(--ink-3); }
+
+  .cliprow .cr-meta {
+    grid-column: 2 / -1; font-size: 0.74rem; color: var(--ink-3);
+    display: flex; align-items: center; gap: 0.4rem; min-width: 0;
+  }
+  .cliprow .cr-meta .show { color: var(--ink-2); }
+  .cliprow .cr-meta .dot { opacity: 0.4; }
+
+  .cliprow .cr-labels {
+    grid-column: 2 / -1;
+    display: flex; flex-wrap: wrap; align-items: center; gap: 0.3rem;
+    margin-top: 0.1rem;
+  }
+  .lblmini {
+    display: inline-flex; align-items: center; gap: 0.28rem;
+    background: none; border: 1px solid var(--rule); border-radius: 2px;
+    color: var(--ink-3); font: inherit; font-size: 0.7rem;
+    padding: 0.05rem 0.36rem; cursor: pointer; white-space: nowrap;
+    transition: color 0.14s ease, border-color 0.14s ease, background 0.14s ease;
+  }
+  .lblmini:hover { color: var(--ink); border-color: var(--ink-3); }
+  .lblmini:focus-visible { outline: 2px solid var(--focus); outline-offset: 1px; }
+  .lblmini[data-active="1"] { color: var(--spot-ink); border-color: var(--spot); background: var(--spot-tint); }
+  .lblmini .x { color: var(--ink-3); font-size: 0.85em; line-height: 1; opacity: 0; transition: opacity 0.14s ease; }
+  .cliprow:hover .lblmini .x, .cliprow:focus-within .lblmini .x { opacity: 1; }
+  .lblmini .x:hover { color: var(--spot-ink); }
+
+  .lbladd {
+    background: none; border: 1px dashed var(--rule-hard); border-radius: 2px;
+    color: var(--ink-3); font: inherit; font-size: 0.7rem;
+    padding: 0.05rem 0.4rem; cursor: pointer;
+    opacity: 0; transition: opacity 0.14s ease, color 0.14s ease, border-color 0.14s ease;
+  }
+  .cliprow:hover .lbladd, .cliprow:focus-within .lbladd { opacity: 1; }
+  .lbladd:focus-visible { opacity: 1; outline: 2px solid var(--focus); outline-offset: 1px; }
+  .lbladd:hover { color: var(--ink); border-color: var(--ink-3); }
+
+  .lblinput {
+    background: var(--paper-2); border: 1px solid var(--spot); border-radius: 2px;
+    color: var(--ink); font: inherit; font-size: 0.7rem;
+    padding: 0.05rem 0.36rem; width: 11ch;
+  }
+  .lblinput:focus-visible { outline: 2px solid var(--focus); outline-offset: 1px; }
+
+  /* Download is the outcome people came for, so it is a control on the row
+     rather than a line inside a menu. The menu keeps the two that are rarer
+     and more consequential. */
+  .cliprow .cr-acts { display: flex; gap: 0.3rem; align-self: start; }
+  .cliprow .cr-more, .cliprow .cr-dl {
+    width: 26px; height: 26px; border-radius: 2px;
+    background: none; border: 1px solid transparent; color: var(--ink-3);
+    cursor: pointer; font: inherit; font-size: 1rem; line-height: 1; padding: 0;
+    display: grid; place-items: center;
+  }
+  .cliprow .cr-dl svg { width: 14px; height: 14px; fill: currentColor; }
+  .cliprow:hover .cr-more, .cliprow:focus-within .cr-more,
+  .cliprow:hover .cr-dl, .cliprow:focus-within .cr-dl {
+    border-color: var(--rule); color: var(--ink-2);
+  }
+  .cliprow .cr-more:hover { color: var(--ink); border-color: var(--ink-3); }
+  .cliprow .cr-dl:hover { color: var(--spot-ink); border-color: var(--spot); }
+  .cliprow .cr-more:focus-visible, .cliprow .cr-dl:focus-visible {
+    outline: 2px solid var(--focus); outline-offset: 1px;
+  }
+  .cliprow .cr-dl:disabled { opacity: 0.4; cursor: default; }
+
+  /* The scope of a bulk download is never implied. The archive export already
+     shows both counts so "a file quietly holding 78 of 200" can't happen by
+     accident; the same rule applies to a bag of clips. */
+  #libZip { margin-right: 0.4rem; }
+  #libZip:disabled { opacity: 0.5; cursor: default; }
+
+  /* The scrubber exists only while a clip is playing. A permanent rail on
+     every row would be four bars of furniture reporting nothing; appearing on
+     play makes the bar itself the signal that this row is the live one. */
+  .cliprow .cr-scrub {
+    grid-column: 2 / -1;
+    display: flex; align-items: center; gap: 0.6rem;
+    margin-top: 0.35rem;
+  }
+  .cr-scrub .rail {
+    flex: 1 1 auto; height: 16px; position: relative;
+    cursor: pointer; background: none; border: none; padding: 0;
+  }
+  .cr-scrub .rail::before {
+    content: ""; position: absolute; left: 0; right: 0; top: 50%;
+    height: 3px; margin-top: -1.5px; border-radius: 2px;
+    background: var(--rule-hard);
+  }
+  .cr-scrub .fill {
+    position: absolute; left: 0; top: 50%;
+    height: 3px; margin-top: -1.5px; border-radius: 2px;
+    background: var(--spot); width: 0;
+  }
+  .cr-scrub .rail:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+  .cr-scrub .el {
+    flex: none;
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 0.7rem; color: var(--ink-2);
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* ---- the download-all dialogue ---- */
+  #zipModal .modal { width: min(520px, 100%); }
+  #zipModal .modal-body {
+    display: flex; flex-direction: column; gap: 1.15rem; padding-top: 1.1rem;
+  }
+  #zipName, #zipNote {
+    width: 100%;
+    background: var(--paper-2); border: 2px solid var(--ink-3);
+    border-radius: 2px; color: var(--ink);
+    font: inherit; font-size: 0.9rem; padding: 0.45rem 0.6rem;
+  }
+  #zipNote { min-height: 5.5rem; resize: vertical; line-height: 1.45; }
+  #zipName:focus, #zipNote:focus { outline: none; border-color: var(--spot); }
+  #zipName:focus-visible, #zipNote:focus-visible {
+    outline: 2px solid var(--focus); outline-offset: 1px;
+  }
+  .zip-name-row { display: flex; align-items: stretch; gap: 0; }
+  .zip-name-row .ext {
+    flex: none; display: grid; place-items: center;
+    padding: 0 0.55rem; border: 2px solid var(--ink-3); border-left: none;
+    border-radius: 0 2px 2px 0;
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 0.8rem; color: var(--ink-3); background: var(--paper);
+  }
+  .zip-name-row #zipName { border-radius: 2px 0 0 2px; }
+  #zipScope {
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 0.78rem; color: var(--ink-2);
+    font-variant-numeric: tabular-nums;
+    border-left: 3px solid var(--spot);
+    padding: 0.15rem 0 0.15rem 0.7rem;
+  }
+  #zipProgress { margin-right: auto; font-size: 0.8rem; color: var(--spot-ink); }
+  #zipProgress[hidden] { display: none; }
+
+  .cr-menu {
+    position: absolute; right: 0.2rem; top: 2.2rem; z-index: 5;
+    background: var(--paper-2); border: 1px solid var(--rule-hard);
+    border-radius: 2px; box-shadow: 0 12px 32px rgba(0,0,0,0.4);
+    padding: 0.22rem; display: flex; flex-direction: column; min-width: 140px;
+  }
+  :root[data-theme="light"] .cr-menu { box-shadow: 0 12px 32px rgba(27,26,23,0.16); }
+  .cr-menu[hidden] { display: none; }
+  .cr-menu button {
+    background: none; border: none; text-align: left;
+    color: var(--ink-2); font: inherit; font-size: 0.82rem;
+    padding: 0.34rem 0.55rem; border-radius: 2px; cursor: pointer;
+  }
+  .cr-menu button:hover, .cr-menu button:focus-visible {
+    background: var(--spot-soft); color: var(--ink); outline: none;
+  }
+  .cr-menu button.danger:hover { color: var(--spot-ink); }
+
+  /* Confirmation and undo speak from the same slot export progress uses. */
+  .lib-status {
+    margin-right: auto; font-size: 0.8rem; color: var(--spot-ink);
+    display: flex; align-items: center; gap: 0.6rem;
+  }
+  .lib-status[hidden] { display: none; }
+  .lib-status .undo {
+    background: none; border: 1px solid var(--spot); color: var(--spot-ink);
+    border-radius: 2px; font: inherit; font-size: 0.75rem;
+    padding: 0.15rem 0.5rem; cursor: pointer;
+  }
+  .lib-status .undo:hover { background: var(--spot-tint); }
+  .lib-status .undo[hidden] { display: none; }
+  .lib-status .ticker {
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 0.7rem; color: var(--ink-3); font-variant-numeric: tabular-nums;
+  }
+  .lib-status.warn { color: var(--gold); }
+
+  /* Said once, quietly, where the belief is formed — not as a banner. */
+  .lib-where {
+    font-size: 0.72rem; color: var(--ink-3);
+    padding: 0.9rem 0 0; margin: 0;
+    display: flex; align-items: center; gap: 0.4rem;
+  }
+  .lib-where svg { width: 12px; height: 12px; fill: currentColor; flex: none; opacity: 0.7; }
+
+  .lib-empty {
+    padding: 2.2rem 0 1.4rem; display: flex; flex-direction: column;
+    gap: 1.05rem; align-items: flex-start; max-width: 46ch;
+  }
+  .lib-empty h3 { margin: 0; font-size: 1.05rem; }
+  .lib-empty p { margin: 0; font-size: 0.88rem; color: var(--ink-2); }
+  .lib-empty .demo {
+    align-self: stretch; border: 1px dashed var(--rule-hard); border-radius: 2px;
+    padding: 0.7rem 0.8rem; background: var(--paper-2);
+    display: flex; align-items: center; justify-content: flex-end;
+    gap: 0.6rem; flex-wrap: wrap;
+  }
+  .lib-empty .demo .ghostbtn {
+    border: 1px solid var(--rule); color: var(--ink-3);
+    border-radius: 2px; font-size: 0.78rem; padding: 0.35rem 0.8rem;
+  }
+  .lib-empty .demo .pointat {
+    border: 1px solid var(--spot); color: var(--spot-ink);
+    border-radius: 2px; font-size: 0.78rem; font-weight: 600;
+    padding: 0.35rem 0.8rem; box-shadow: 0 0 0 4px var(--spot-tint);
+  }
+  .lib-empty .caption {
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 0.68rem; letter-spacing: 0.06em; color: var(--ink-3);
+  }
+
+  .lib-none { font-size: 0.86rem; color: var(--ink-3); padding: 1.4rem 0 0.6rem; margin: 0; }
+
+  /* Quiet geometry, spot voice. Beside Cancel a .btn-quiet reads as a second
+     dismissal; a .btn-primary would fight Download, which is still the action
+     that produces the deliverable. */
+  .btn-accent {
+    background: none; border: 1px solid var(--spot); color: var(--spot-ink);
+    border-radius: 2px; font: inherit; font-size: 0.82rem; font-weight: 600;
+    padding: 0.42rem 0.95rem; cursor: pointer;
+    transition: background 0.16s ease;
+  }
+  .btn-accent:hover { background: var(--spot-tint); }
+  .btn-accent:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+
+  /* ------------------------------------------------- save-to-library
+     Labelling was a dashed chip in the editor body and was missed entirely.
+     The lesson generalises: on a surface with two waveforms, a transport and
+     four tool buttons, anything drawn in --ink-3 is decoration. So saving
+     became a dialogue, where the label field is the subject of the screen. */
+
+  #saveModal .modal { width: min(540px, 100%); }
+  #saveModal .modal-body {
+    display: flex; flex-direction: column; gap: 1.15rem;
+    padding-top: 1.1rem;
+  }
+
+  .save-span {
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 0.78rem; color: var(--ink-2);
+    font-variant-numeric: tabular-nums;
+    border-left: 3px solid var(--spot);
+    padding: 0.15rem 0 0.15rem 0.7rem;
+  }
+
+  .save-field { display: flex; flex-direction: column; gap: 0.45rem; }
+  .save-lbl {
+    font-size: 0.66rem; letter-spacing: 0.13em; text-transform: uppercase;
+    color: var(--ink-3);
+  }
+  .save-hint { font-size: 0.74rem; color: var(--ink-3); }
+
+  #saveTitleIn, #saveLabelIn {
+    width: 100%;
+    background: var(--paper-2);
+    border: 2px solid var(--ink-3);
+    border-radius: 2px;
+    color: var(--ink);
+    font: inherit; font-size: 0.9rem;
+    padding: 0.45rem 0.6rem;
+  }
+  #saveTitleIn::placeholder, #saveLabelIn::placeholder { color: var(--ink-3); }
+  #saveTitleIn:focus, #saveLabelIn:focus {
+    outline: none; border-color: var(--spot);
+  }
+  #saveTitleIn:focus-visible, #saveLabelIn:focus-visible {
+    outline: 2px solid var(--focus); outline-offset: 1px;
+  }
+
+  .save-add { display: flex; gap: 0.5rem; align-items: stretch; }
+  .save-add .btn-quiet { flex: none; }
+
+  .save-chosen { display: flex; flex-wrap: wrap; gap: 0.35rem; }
+  .save-chosen:empty { display: none; }
+  /* Chosen labels are full-weight, not the hairline row-chip: here they are
+     the thing you are setting, not metadata you are reading past. */
+  .save-chosen .lblmini {
+    color: var(--ink); border-color: var(--spot);
+    background: var(--spot-tint);
+    font-size: 0.78rem; padding: 0.16rem 0.5rem;
+  }
+  .save-chosen .lblmini .x { opacity: 1; color: var(--spot-ink); }
+
+  .save-recent { display: flex; flex-wrap: wrap; gap: 0.35rem; align-items: baseline; }
+  .save-recent[hidden] { display: none; }
+  .save-recent .rlbl {
+    font-size: 0.66rem; letter-spacing: 0.13em; text-transform: uppercase;
+    color: var(--ink-3); margin-right: 0.15rem;
+  }
+  /* One tap beats typing. Most labelling is reuse, not invention. */
+  .save-recent .chip { font-size: 0.75rem; padding: 0.14rem 0.5rem; }
+
+  /* The Add button carries real weight now. It sat as a quiet outline next to
+     Download and read as furniture; a saved clip is a first-class outcome. */
+  #clipSave { font-size: 0.84rem; padding: 0.44rem 1rem; }
+
+  @media (max-width: 620px) {
+    .cliprow { grid-template-columns: 34px minmax(0, 1fr) auto; }
+    .cliprow .cr-len { display: none; }
+  }
 </style>
 </head>
 <body>
@@ -1500,9 +1921,10 @@
       <h1 class="display">LHF Digital Asset Manager</h1>
     </div>
     <div style="display:flex;align-items:center;gap:0.5rem;">
-      <button id="exportBtn" title="Export these results" aria-haspopup="dialog">Export</button>
-      <button id="helpBtn" title="Search help (?)" aria-haspopup="dialog">Help</button>
-      <button id="themeToggle" title="Toggle light/dark">Theme</button>
+      <button class="mast-btn" id="libBtn" title="Your saved clips" aria-haspopup="dialog" data-empty="1">Clips<span class="n" id="libCount">0</span></button>
+      <button class="mast-btn" id="exportBtn" title="Export these results" aria-haspopup="dialog">Export</button>
+      <button class="mast-btn" id="helpBtn" title="Search help (?)" aria-haspopup="dialog">Help</button>
+      <button class="mast-btn" id="themeToggle" title="Toggle light/dark">Theme</button>
     </div>
   </header>
 
@@ -1616,15 +2038,163 @@
         <button class="tool" id="snapOut">Snap out to silence</button>
       </div>
 
+      <!-- Labelling used to live here as a quiet dashed chip. On an interface
+           this dense it was invisible — reported as "I missed it entirely" —
+           so it moved into the save dialogue, where it is the subject rather
+           than one more control competing with four tool buttons. -->
+
       <div class="clip-status" id="clipStatus"></div>
     </div>
 
     <div class="modal-actions">
+      <div class="lib-status" id="clipAdded" hidden>
+        <span id="clipAddedText"></span>
+        <button class="undo" type="button" id="clipAddedUndo">Undo</button>
+        <span class="ticker" id="clipAddedTick"></span>
+      </div>
       <button class="btn-quiet" id="clipCancel">Cancel</button>
+      <button class="btn-accent" id="clipSave">＋ Add to library</button>
       <button class="btn-primary" id="clipGo">Download MP3</button>
     </div>
   </div>
 </div>
+
+<!-- The library sits UNDER the clip editor: Edit on a row opens the editor on
+     top, and closing it returns you to the list you were reading rather than to
+     the archive. #clipModal and #exportModal share a z-index and are told apart
+     by DOM order; this one is given the rule explicitly instead. -->
+<div class="backdrop" id="libModal" hidden style="z-index:49">
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="libTitle">
+    <div class="modal-head">
+      <div>
+        <h2 class="display" id="libTitle">Clips</h2>
+        <p>Saved in this browser, for you. Nothing here is uploaded.</p>
+      </div>
+      <button id="libClose" aria-label="Close">&times;</button>
+    </div>
+
+    <div class="modal-body">
+      <div class="lib-tools" id="libToolsRow" hidden>
+        <input id="libFilter" type="search" placeholder="Filter clips" aria-label="Filter clips">
+        <span id="libTotal"></span>
+      </div>
+
+      <div class="filter-group" id="libLabels" hidden></div>
+
+      <div id="libList"></div>
+
+      <p class="lib-where">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 1 3 5v6c0 5.6 3.8 10.7 9 12 5.2-1.3 9-6.4 9-12V5zm0 2.2 7 3.1V11c0 4.5-3 8.7-7 9.9-4-1.2-7-5.4-7-9.9V6.3z"/></svg>
+        Stored on this computer only. Clearing your browser data removes them.
+      </p>
+    </div>
+
+    <div class="modal-actions">
+      <div class="lib-status" id="libStatus" hidden>
+        <span id="libStatusText"></span>
+        <button class="undo" type="button" id="libUndo">Undo</button>
+        <span class="ticker" id="libTick"></span>
+      </div>
+      <button class="btn-accent" id="libZip" hidden>Download all</button>
+      <button class="btn-quiet" id="libCloseFoot">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- Saving is its own dialogue, above the editor (z-index 51 against the
+     editor's 50). It exists because labelling inline was invisible on a busy
+     editing surface — and because "what am I about to save, and what is it
+     called" is a question worth a moment of its own. It is also the surface
+     that grows: anything else a saved clip should carry belongs here. -->
+<div class="backdrop" id="saveModal" hidden style="z-index:51">
+  <div class="modal save" role="dialog" aria-modal="true" aria-labelledby="saveTitle">
+    <div class="modal-head">
+      <div>
+        <h2 class="display" id="saveTitle">Save to library</h2>
+        <p id="saveWhat">—</p>
+      </div>
+      <button id="saveClose" aria-label="Close">&times;</button>
+    </div>
+
+    <div class="modal-body">
+      <div class="save-span" id="saveSpan">—</div>
+
+      <label class="save-field">
+        <span class="save-lbl">Title</span>
+        <input id="saveTitleIn" type="text" autocomplete="off" spellcheck="false">
+        <span class="save-hint">What this clip will be called in your library.</span>
+      </label>
+
+      <div class="save-field">
+        <span class="save-lbl">Labels</span>
+        <div class="save-chosen" id="saveChosen"></div>
+        <div class="save-add">
+          <input id="saveLabelIn" type="text" list="libLabelList" autocomplete="off"
+                 spellcheck="false" placeholder="Add a label — promo, intro, out-cue…"
+                 aria-label="Add a label">
+          <button class="btn-quiet" type="button" id="saveLabelGo">Add</button>
+        </div>
+        <div class="save-recent" id="saveRecent" hidden></div>
+      </div>
+
+      <p class="lib-where">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 1 3 5v6c0 5.6 3.8 10.7 9 12 5.2-1.3 9-6.4 9-12V5zm0 2.2 7 3.1V11c0 4.5-3 8.7-7 9.9-4-1.2-7-5.4-7-9.9V6.3z"/></svg>
+        Saved on this computer only. The audio stays where it is — this keeps the times.
+      </p>
+    </div>
+
+    <div class="modal-actions">
+      <button class="btn-quiet" id="saveCancel">Cancel</button>
+      <button class="btn-primary" id="saveGo">Save clip</button>
+    </div>
+  </div>
+</div>
+
+<!-- Naming the bag before it lands. A zip called lhf-clips-2026-08-09.zip in a
+     downloads folder six months later says nothing about why it was made; the
+     note goes into clips.txt beside the listing, so the reason travels with
+     the audio rather than living in somebody's memory. Above the library. -->
+<div class="backdrop" id="zipModal" hidden style="z-index:51">
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="zipTitle">
+    <div class="modal-head">
+      <div>
+        <h2 class="display" id="zipTitle">Download clips</h2>
+        <p>A single zip. The audio is copied, never re-encoded.</p>
+      </div>
+      <button id="zipClose" aria-label="Close">&times;</button>
+    </div>
+
+    <div class="modal-body">
+      <div id="zipScope">—</div>
+
+      <label class="save-field">
+        <span class="save-lbl">File name</span>
+        <span class="zip-name-row">
+          <input id="zipName" type="text" autocomplete="off" spellcheck="false">
+          <span class="ext" aria-hidden="true">.zip</span>
+        </span>
+      </label>
+
+      <label class="save-field">
+        <span class="save-lbl">Note <span style="text-transform:none;letter-spacing:0">(optional)</span></span>
+        <textarea id="zipNote" spellcheck="true"
+                  placeholder="What this selection is for — a show, a promo, a date."></textarea>
+        <span class="save-hint">Saved inside the zip as <code>clips.txt</code>, alongside a list of every clip.</span>
+      </label>
+    </div>
+
+    <div class="modal-actions">
+      <span id="zipProgress" hidden></span>
+      <button class="btn-quiet" id="zipCancel">Cancel</button>
+      <button class="btn-primary" id="zipGo">Download</button>
+    </div>
+  </div>
+</div>
+
+<!-- Autocomplete for label entry, in both the library and the save dialogue.
+     "promo" must land on an existing "Promo" rather than becoming a second
+     label beside it — clips.js does the folding, this makes it visible. -->
+<datalist id="libLabelList"></datalist>
 
 <div class="backdrop" id="exportModal" hidden>
   <div class="modal" role="dialog" aria-modal="true" aria-labelledby="exportTitle">
@@ -2082,6 +2652,67 @@
           the podcast host.</p>
       </section>
 
+      <h2 class="help-group-head">Your clips</h2>
+
+      <section class="help-sec">
+        <h3>Keeping a clip</h3>
+        <p class="lede">Finding a moment in 143 hours is work worth doing once.
+          In the editor, <b>＋ Add to library</b> opens a short dialogue where you
+          name the clip and give it labels, then saves it — <b>without closing the
+          editor</b>, so you can nudge a handle and save a second version of the
+          same quote.</p>
+        <p class="lede"><b>Clips</b> in the top bar opens the list, with the count
+          beside it.</p>
+      </section>
+
+      <section class="help-sec">
+        <h3>Labels</h3>
+        <p class="lede">Your own words — <i>promo</i>, <i>intro</i>,
+          <i>out-cue</i>, whatever suits how you work. A clip can carry any
+          number, and the most-used ones sit across the top of the list as
+          filters. Choosing two shows only clips carrying both.</p>
+        <p class="lede">Typing <code>promo</code> when <code>Promo</code> already
+          exists reuses the one you have rather than making a second. Labels you
+          set carry over to the next clip you save, so a run of promos is labelled
+          once.</p>
+        <p class="lede">These are separate from <b>Tags</b> in search results —
+          those come from the links in your show notes and are the same for
+          everyone. Labels are yours.</p>
+      </section>
+
+      <section class="help-sec">
+        <h3>The list</h3>
+        <p class="lede">Press <b>▶</b> to hear a clip without opening the editor;
+          a scrubber appears on that row while it plays, and you can click along
+          it to move within the clip. Click a title to rename it. The
+          <b>download arrow</b> saves that one clip as an MP3;
+          <b>⋯</b> holds <i>Edit in editor</i> and <i>Remove</i>.</p>
+        <p class="lede">Removing something gives you ten seconds to undo it.
+          Clips are grouped by when you saved them — today, yesterday, last
+          week.</p>
+      </section>
+
+      <section class="help-sec">
+        <h3>Downloading them all</h3>
+        <p class="lede"><b>Download all</b> packs every clip into one zip. You
+          can name the file and add a note — the note is saved inside as
+          <code>clips.txt</code>, alongside a list of every clip with its show,
+          date, times and labels, so the bag explains itself later.</p>
+        <p class="lede">If you've filtered by a label, the button says
+          <b>Download these 3</b> rather than <b>Download all</b>, and the file is
+          named <code>…-filtered</code>. You always know which you're getting.</p>
+      </section>
+
+      <section class="help-sec">
+        <h3>Where clips are kept</h3>
+        <p class="lede">In this browser, on this computer, and nowhere else.
+          Nothing is uploaded, so the list works offline — but it doesn't follow
+          you to another machine, and clearing your browsing data removes it. The
+          audio itself is never at risk; only the record of what you found.</p>
+        <p class="lede">A downloaded MP3 is a normal file and outlives all of
+          this.</p>
+      </section>
+
       <h2 class="help-group-head">Sharing &amp; export</h2>
 
       <section class="help-sec">
@@ -2231,6 +2862,9 @@
 import { cutClip, clipFilename, probeMp3 } from "./mp3cut.js";
 import { getPeaks, drawWave, drawRuler, snapToSilence, clipWindow, nextSilence } from "./waveform.js";
 import { makeZip, slug, toCsv } from "./zip.js";
+// Namespaced deliberately: every clip read or write in this file reads as
+// Clips.something, so the one place storage lives is impossible to miss.
+import * as Clips from "./clips.js";
 
 const $  = s => document.querySelector(s);
 const state = { q: "", show: null, year: null, encore: false, person: null, personLabel: "", topic: null, topicLabel: "", sort: "newest" };
@@ -3278,7 +3912,7 @@ function paintClip() {
   // frame while audio plays, and each getComputedStyle forces a recalc.
   const css = getComputedStyle(document.documentElement);
   const ink = css.getPropertyValue("--ink").trim() || "#efece4";
-  const ink3 = css.getPropertyValue("--ink-3").trim() || "#6d6961";
+  const ink3 = css.getPropertyValue("--ink-3").trim() || "#837f75";
 
   // The rulers only need a duration, which arrives with the search result, so
   // they draw immediately rather than waiting on the audio like the waveforms.
@@ -3415,6 +4049,10 @@ async function openClip(ep, fromSec, toSec) {
   document.querySelectorAll(".player audio").forEach(a => a.pause());
   document.querySelectorAll(".moment.playing").forEach(x => x.classList.remove("playing"));
   $("#clipEp").textContent = `${ep.title} · ${ep.show_name}`;
+  // Labels carry over between clips on purpose — "Promo" applies across
+  // episodes, and re-typing it for every cut is how labelling stops happening.
+  // They are shown and edited in the save dialogue, not here.
+  clipStrip.hide();
   clipModal.hidden = false;
   $("#clipClose").focus();
   // Open framed on the passage, with a little context either side.
@@ -3828,6 +4466,15 @@ $("#clipGo").addEventListener("click", async () => {
 
 addEventListener("keydown", e => {
   if (!clipOpen()) return;
+  // A dialogue above the editor owns the keyboard while it is open, or Escape
+  // closes the wrong thing and I/O/[/] fire at a form.
+  if (saveOpen()) return;
+  // And nothing here may fire while the user is typing. This is the general
+  // form of a bug that already shipped once — Space on Download played audio
+  // instead of downloading — and every text field added above the editor from
+  // now on would reintroduce it one field at a time. Guard the class.
+  const t = e.target;
+  if (t && (t.tagName === "INPUT" || t.tagName === "TEXTAREA" || t.isContentEditable)) return;
   if (e.key === "Escape") { e.preventDefault(); closeClip(); return; }
   if (e.target.matches("input, textarea")) return;
 
@@ -4244,6 +4891,734 @@ addEventListener("visibilitychange", () => {
   if (document.visibilityState === "visible") checkVersion();
 });
 addEventListener("focus", checkVersion);
+
+/* ======================================================== clip library ====
+ * Everything here goes through clips.js. Nothing else in this file knows that
+ * clips live in localStorage, which is what makes moving them to a server
+ * later a one-file change rather than a hunt.
+ */
+
+const libModal = $("#libModal");
+const libOpen  = () => !libModal.hidden;
+
+let libFilterText = "";
+let libActive     = [];      // chosen labels, ANDed
+let libShowAll    = false;   // top labels vs all
+let libAudio      = null;    // the row player — deliberately not the page player
+let libPlayingId  = null;
+const LIB_TOP     = 6;
+
+/* Labels chosen in the editor persist across adds. Pulling four promos from
+ * one episode means labelling once; re-typing it four times is how a labelling
+ * feature quietly stops being used. */
+let clipDraftLabels = [];
+
+function libCount() {
+  const n = Clips.count();
+  $("#libCount").textContent = n;
+  $("#libBtn").dataset.empty = n ? "0" : "1";
+  $("#libBtn").title = n ? `Your saved clips — ${n}` : "Your saved clips";
+}
+
+/* ---- the undo strip, shared by remove here and add in the editor ---- */
+function makeStrip(box, textEl, undoBtn, tickEl) {
+  let timer = null, pending = null;
+  function clear() { if (timer) { clearInterval(timer); timer = null; } }
+  return {
+    say(text, onUndo, warn) {
+      clear();
+      textEl.textContent = text;
+      box.hidden = false;
+      box.classList.toggle("warn", !!warn);
+      undoBtn.hidden = !onUndo;
+      tickEl.hidden = !onUndo;
+      pending = onUndo || null;
+      if (!onUndo) {
+        tickEl.textContent = "";
+        timer = setInterval(() => { clear(); box.hidden = true; }, 2800);
+        return;
+      }
+      let left = 10;
+      tickEl.textContent = left + "s";
+      timer = setInterval(() => {
+        left -= 1;
+        tickEl.textContent = left + "s";
+        if (left <= 0) { clear(); box.hidden = true; pending = null; }
+      }, 1000);
+    },
+    undo() {
+      clear();
+      box.hidden = true;
+      const p = pending; pending = null;
+      if (p) p();
+    },
+    hide() { clear(); box.hidden = true; pending = null; },
+  };
+}
+
+const libStrip  = makeStrip($("#libStatus"), $("#libStatusText"), $("#libUndo"), $("#libTick"));
+const clipStrip = makeStrip($("#clipAdded"), $("#clipAddedText"), $("#clipAddedUndo"), $("#clipAddedTick"));
+$("#libUndo").addEventListener("click", () => libStrip.undo());
+$("#clipAddedUndo").addEventListener("click", () => clipStrip.undo());
+
+/* ---- rendering ---- */
+
+function libMatching() {
+  const q = libFilterText.trim().toLowerCase();
+  return Clips.list().filter(c => {
+    if (libActive.length && !libActive.every(l => (c.labels || []).includes(l))) return false;
+    if (!q) return true;
+    return `${c.title} ${c.show} ${c.date} ${(c.labels || []).join(" ")}`.toLowerCase().includes(q);
+  });
+}
+
+function libRenderLabels() {
+  const counts = Clips.labelCounts();
+  const box = $("#libLabels");
+  if (!counts.length) { box.hidden = true; box.innerHTML = ""; return; }
+  box.hidden = false;
+  const shown = libShowAll ? counts : counts.slice(0, LIB_TOP);
+  const hidden = counts.length - shown.length;
+  let h = `<span class="lbl">Labels</span>`
+    + `<button class="chip all" type="button" data-label="" aria-pressed="${libActive.length ? "false" : "true"}">All<span class="n">${Clips.count()}</span></button>`;
+  for (const t of shown) {
+    h += `<button class="chip" type="button" data-label="${esc(t.label)}" aria-pressed="${libActive.includes(t.label)}">${esc(t.label)}<span class="n">${t.n}</span></button>`;
+  }
+  if (hidden > 0) h += `<button class="chip more-labels" type="button" data-more="1">+${hidden} more</button>`;
+  else if (libShowAll && counts.length > LIB_TOP) h += `<button class="chip more-labels" type="button" data-more="1">Show fewer</button>`;
+  box.innerHTML = h;
+}
+
+function libRender() {
+  libCount();
+  const all = Clips.list();
+  $("#libToolsRow").hidden = all.length < 6;   // a filter over four rows is furniture
+  libRenderLabels();
+
+  const list = $("#libList");
+  if (!all.length) {
+    $("#libZip").hidden = true;
+    list.innerHTML = `
+      <div class="lib-empty">
+        <h3 class="display">Keep the moments you find</h3>
+        <p>Finding a quote in 143 hours is work worth doing once. Cut a clip in the
+           editor, add it here, and it's still here tomorrow — titled with the words
+           that were spoken.</p>
+        <div class="demo" aria-hidden="true">
+          <span class="ghostbtn">Cancel</span>
+          <span class="pointat">＋ Add to library</span>
+          <span class="ghostbtn">Download MP3</span>
+        </div>
+        <span class="caption">↑ in the editor footer, next to Download</span>
+      </div>`;
+    return;
+  }
+
+  const rows = libMatching();
+  const secs = rows.reduce((a, c) => a + (c.out - c.in), 0);
+  $("#libTotal").textContent = `${rows.length} clip${rows.length === 1 ? "" : "s"} · ${hms(secs)}`;
+  libRenderZipBtn();
+
+  if (!rows.length) { list.innerHTML = `<p class="lib-none">Nothing matches that.</p>`; return; }
+
+  let h = "", group = null;
+  for (const c of rows) {
+    const g = Clips.groupOf(c.createdAt);
+    if (g !== group) { group = g; h += `<span class="lib-group">${esc(g)}</span>`; }
+    const labels = (c.labels || []).map(l =>
+      `<button class="lblmini" type="button" data-label="${esc(l)}"${libActive.includes(l) ? ' data-active="1"' : ""}>${esc(l)}<span class="x" data-unlabel="${esc(l)}" aria-label="Remove label ${esc(l)}">×</span></button>`).join("");
+    h += `<div class="cliprow${libPlayingId === c.id ? " playing" : ""}" data-id="${c.id}">
+      <button class="cr-play" type="button" aria-label="${libPlayingId === c.id ? "Pause" : "Play"} clip">${libPlayingId === c.id ? PAUSE_ICON : PLAY_ICON}</button>
+      <h3 class="cr-title${c.generated ? " generated" : ""}" contenteditable="true" spellcheck="false" role="textbox" aria-label="Clip title">${esc(c.title)}</h3>
+      <span class="cr-times">${fmt(c.in)} – ${fmt(c.out)}</span>
+      <span class="cr-len">${(c.out - c.in).toFixed(1)}s</span>
+      <span class="cr-acts">
+        <button class="cr-dl" type="button" data-act="download" aria-label="Download this clip as MP3" title="Download MP3">${DL_ICON}</button>
+        <button class="cr-more" type="button" aria-label="More actions" aria-haspopup="true">⋯</button>
+      </span>
+      <span class="cr-meta"><span class="show">${esc(c.show)}</span><span class="dot">·</span><span>${esc((c.date || "").slice(0, 10))}</span></span>
+      <div class="cr-labels">${labels}<button class="lbladd" type="button" aria-label="Add a label">＋ label</button></div>
+      ${libPlayingId === c.id ? `<div class="cr-scrub">
+        <button class="rail" type="button" aria-label="Seek within this clip"><span class="fill"></span></button>
+        <span class="el">0:00 / ${hms(c.out - c.in)}</span>
+      </div>` : ""}
+      <div class="cr-menu" hidden>
+        <button type="button" data-act="edit">Edit in editor</button>
+        <button type="button" class="danger" data-act="remove">Remove</button>
+      </div>
+    </div>`;
+  }
+  list.innerHTML = h;
+}
+
+const PLAY_ICON  = `<svg viewBox="0 0 24 24" width="11" height="11" aria-hidden="true" style="fill:currentColor"><path d="M8 5v14l11-7z"/></svg>`;
+const PAUSE_ICON = `<svg viewBox="0 0 24 24" width="11" height="11" aria-hidden="true" style="fill:currentColor"><path d="M6 5h4v14H6zm8 0h4v14h-4z"/></svg>`;
+const DL_ICON    = `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v10.2l3.6-3.6 1.4 1.4-6 6-6-6 1.4-1.4L10 13.2V3zM5 19h14v2H5z"/></svg>`;
+
+/* ---- playing a row ----
+ * A clip is a range of an MP3 already on the CDN, so this is currentTime = in
+ * and stop at out. Its own audio element rather than the page player's: the
+ * library can be open over a result list, and hijacking that player would
+ * leave the page's transport showing something it isn't playing. */
+function libStopAudio() {
+  if (libAudio) { libAudio.pause(); libAudio.src = ""; libAudio = null; }
+  libPlayingId = null;
+}
+
+/* The scrubber is written straight into the DOM rather than re-rendered.
+ * timeupdate fires ~4x a second; rebuilding the list at that rate would throw
+ * away any title being edited and fight the row menu. Only the two things that
+ * actually change are touched. */
+function libPaintScrub(c, t) {
+  const row = $("#libList").querySelector(`.cliprow[data-id="${c.id}"] .cr-scrub`);
+  if (!row) return;
+  const span = Math.max(0.001, c.out - c.in);
+  const done = Math.min(span, Math.max(0, t - c.in));
+  row.querySelector(".fill").style.width = (done / span * 100).toFixed(2) + "%";
+  row.querySelector(".el").textContent = `${hms(done)} / ${hms(span)}`;
+}
+
+function libPlay(c) {
+  if (libPlayingId === c.id) { libStopAudio(); libRender(); return; }
+  // Starting a second clip removes the first one's scrubber, because the
+  // element only ever exists on the row that is actually playing.
+  libStopAudio();
+  const a = new Audio(c.url);
+  a.preload = "none";
+  libAudio = a;
+  libPlayingId = c.id;
+  a.addEventListener("timeupdate", () => {
+    if (a.currentTime >= c.out) { libStopAudio(); libRender(); return; }
+    libPaintScrub(c, a.currentTime);
+  });
+  a.addEventListener("ended", () => { libStopAudio(); libRender(); });
+  a.addEventListener("error", () => {
+    libStopAudio(); libRender();
+    libStrip.say("Couldn't reach that audio.", null, true);
+  });
+  a.currentTime = c.in;
+  // Some browsers ignore currentTime before metadata arrives; set it again.
+  a.addEventListener("loadedmetadata", () => { a.currentTime = c.in; }, { once: true });
+  a.play().catch(() => { libStopAudio(); libRender(); });
+  libRender();
+}
+
+/* Seeking is clamped to the clip, not the episode: the rail represents the
+ * clip's own span, so dragging to the far right means the clip's out-point. */
+function libSeek(c, railEl, clientX) {
+  if (!libAudio || libPlayingId !== c.id) return;
+  const r = railEl.getBoundingClientRect();
+  const frac = Math.min(1, Math.max(0, (clientX - r.left) / r.width));
+  const t = c.in + frac * (c.out - c.in);
+  libAudio.currentTime = t;
+  libPaintScrub(c, t);
+}
+
+/* ---- label entry, shared by a row and the editor footer ---- */
+function openLabelInput(holder, onCommit) {
+  const btn = holder.querySelector(".lbladd");
+  if (!btn) return;
+  const input = document.createElement("input");
+  input.className = "lblinput";
+  input.setAttribute("aria-label", "New label");
+  input.placeholder = "label…";
+  input.setAttribute("list", "libLabelList");
+  btn.replaceWith(input);
+  input.focus();
+  let done = false;
+  const commit = () => {
+    if (done) return;
+    done = true;
+    onCommit(Clips.canonicalLabel(input.value));
+  };
+  input.addEventListener("keydown", e => {
+    e.stopPropagation();                      // Space must not reach the transport
+    if (e.key === "Enter") { e.preventDefault(); commit(); }
+    if (e.key === "Escape") { e.preventDefault(); done = true; onCommit(null); }
+  });
+  input.addEventListener("blur", commit);
+}
+
+function refreshLabelList() {
+  const dl = $("#libLabelList");
+  dl.innerHTML = Clips.labelNames().map(l => `<option value="${esc(l)}"></option>`).join("");
+}
+
+/* ---- library interactions ---- */
+
+$("#libFilter").addEventListener("input", e => { libFilterText = e.target.value; libRender(); });
+
+$("#libLabels").addEventListener("click", e => {
+  const btn = e.target.closest("button");
+  if (!btn) return;
+  if (btn.dataset.more) { libShowAll = !libShowAll; return libRender(); }
+  const l = btn.dataset.label;
+  if (!l) { libActive = []; return libRender(); }
+  const i = libActive.indexOf(l);
+  if (i > -1) libActive.splice(i, 1); else libActive.push(l);
+  libRender();
+});
+
+function closeRowMenus() {
+  $("#libList").querySelectorAll(".cr-menu").forEach(m => { m.hidden = true; });
+}
+
+$("#libList").addEventListener("click", e => {
+  const row = e.target.closest(".cliprow");
+  if (!row) return;
+  const id = row.dataset.id;
+  const c = Clips.list().find(x => x.id === id);
+  if (!c) return;
+
+  // Checked before .lblmini — the × lives inside it.
+  const x = e.target.closest("[data-unlabel]");
+  if (x) {
+    e.stopPropagation();
+    Clips.update(id, { labels: (c.labels || []).filter(l => l !== x.dataset.unlabel) });
+    refreshLabelList();
+    return libRender();
+  }
+
+  const mini = e.target.closest(".lblmini");
+  if (mini) {
+    const l = mini.dataset.label;
+    const i = libActive.indexOf(l);
+    if (i > -1) libActive.splice(i, 1); else libActive.push(l);
+    return libRender();
+  }
+
+  if (e.target.closest(".lbladd")) {
+    return openLabelInput(row.querySelector(".cr-labels"), name => {
+      if (name && !(c.labels || []).includes(name)) {
+        Clips.update(id, { labels: [...(c.labels || []), name] });
+        refreshLabelList();
+      }
+      libRender();
+    });
+  }
+
+  const rail = e.target.closest(".cr-scrub .rail");
+  if (rail) return libSeek(c, rail, e.clientX);
+
+  if (e.target.closest(".cr-play")) return libPlay(c);
+
+  if (e.target.closest(".cr-more")) {
+    const menu = row.querySelector(".cr-menu");
+    const wasOpen = !menu.hidden;
+    closeRowMenus();
+    menu.hidden = wasOpen;
+    return;
+  }
+
+  const actEl = e.target.closest("[data-act]");
+  const act = actEl?.dataset.act;
+  if (!act) return;
+  closeRowMenus();
+  if (act === "remove")   return libRemove(c);
+  // Pass the button so it can disable itself: a second click while the first
+  // range request is still in flight starts a duplicate download.
+  if (act === "download") return libDownload(c, actEl.classList.contains("cr-dl") ? actEl : null);
+  if (act === "edit")     return libEdit(c);
+});
+
+document.addEventListener("click", e => {
+  if (libOpen() && !e.target.closest(".cliprow")) closeRowMenus();
+});
+
+/* Rename inline. Enter commits, Escape restores, blur commits. A title that
+   came from the transcript stops being "generated" once a person has touched
+   it, so it loses the italic. */
+$("#libList").addEventListener("keydown", e => {
+  const t = e.target;
+  if (!t.classList?.contains("cr-title")) return;
+  e.stopPropagation();
+  if (e.key === "Enter") { e.preventDefault(); t.blur(); }
+  if (e.key === "Escape") {
+    const c = Clips.list().find(x => x.id === t.closest(".cliprow").dataset.id);
+    if (c) t.textContent = c.title;
+    t.blur();
+  }
+});
+$("#libList").addEventListener("focusout", e => {
+  const t = e.target;
+  if (!t.classList?.contains("cr-title")) return;
+  const row = t.closest(".cliprow");
+  const c = Clips.list().find(x => x.id === row.dataset.id);
+  if (!c) return;
+  const next = t.textContent.trim();
+  if (!next) { t.textContent = c.title; return; }
+  if (next !== c.title) {
+    Clips.update(c.id, { title: next, generated: false });
+    libRender();
+  }
+});
+
+function libRemove(c) {
+  const at = Clips.indexOf(c.id);
+  const row = $("#libList").querySelector(`.cliprow[data-id="${c.id}"]`);
+  if (row) row.classList.add("leaving");
+  Clips.remove(c.id);
+  libCount();
+  const short = c.title.length > 34 ? c.title.slice(0, 33) + "…" : c.title;
+  libStrip.say(`Removed “${short}”`, () => {
+    Clips.restore(c, at);
+    refreshLabelList();
+    libRender();
+  });
+  // The row keeps its place struck through until the strip expires, so the
+  // list doesn't jump under a second click.
+  setTimeout(() => { if (!$("#libStatus").hidden) return; libRender(); }, 10200);
+}
+
+function cutMeta(c) {
+  return {
+    title: `${c.title} (${fmt(c.in)}–${fmt(c.out)})`,
+    artist: c.show,
+    album: "LHF Digital Asset Manager",
+    comment: `Clip from ${c.title}, ${(c.date || "").slice(0, 10)}`,
+  };
+}
+
+function saveBlob(blob, name) {
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = name;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 10000);
+}
+
+async function libDownload(c, btn) {
+  if (btn) btn.disabled = true;
+  libStrip.say("Cutting…", null);
+  try {
+    const { blob } = await cutClip(c.url, c.in, c.out, { meta: cutMeta(c) });
+    saveBlob(blob, clipFilename(c.show, c.date, c.title, c.in, c.out));
+    libStrip.say("Downloaded.", null);
+  } catch (e) {
+    libStrip.say("Couldn't cut that: " + e.message, null, true);
+  } finally {
+    if (btn) btn.disabled = false;
+  }
+}
+
+/* Bulk download.
+ *
+ * MP3 frames are already compressed, so entries are *stored* rather than
+ * deflated — makeZip would fall back to stored anyway once deflate failed to
+ * shrink them, but asking for it up front skips a wasted pass over every
+ * megabyte. Stored also keeps the bytes bit-identical to the broadcast audio,
+ * which is the guarantee the whole export path exists to protect.
+ *
+ * The button says what it will actually take. The archive export already shows
+ * both counts so that "a file quietly holding 78 of 200" cannot happen by
+ * accident; a filtered bag of clips is the same trap, so the filtered zip is
+ * both named and labelled differently.
+ */
+function libZipScope() {
+  const rows = libMatching();
+  const filtered = rows.length !== Clips.count();
+  return { rows, filtered };
+}
+
+function libRenderZipBtn() {
+  const btn = $("#libZip");
+  const { rows, filtered } = libZipScope();
+  btn.hidden = rows.length < 2;
+  btn.textContent = filtered ? `Download these ${rows.length}` : `Download all ${rows.length}`;
+  btn.title = filtered
+    ? "Only the clips matching your current filter"
+    : "Every clip in your library";
+}
+
+/* Naming and annotating the bag before it lands. A zip in a downloads folder
+ * six months later should say what it is; the note travels inside it rather
+ * than in somebody's memory. */
+const zipModal = $("#zipModal");
+const zipOpen  = () => !zipModal.hidden;
+
+function openZip() {
+  const { rows, filtered } = libZipScope();
+  if (!rows.length) return;
+  const secs = rows.reduce((a, c) => a + (c.out - c.in), 0);
+  $("#zipScope").textContent =
+    `${rows.length} clip${rows.length === 1 ? "" : "s"} · ${hms(secs)} · `
+    + (filtered ? `a filtered selection of ${Clips.count()}` : "your whole library");
+  const stamp = new Date().toISOString().slice(0, 10);
+  $("#zipName").value = `lhf-clips-${stamp}-${filtered ? "filtered" : "complete"}`;
+  $("#zipNote").value = "";
+  $("#zipProgress").hidden = true;
+  $("#zipGo").disabled = false;
+  zipModal.hidden = false;
+  $("#zipName").focus();
+  $("#zipName").select();
+}
+
+function closeZip() {
+  zipModal.hidden = true;
+  if (libOpen()) $("#libZip").focus();
+}
+
+$("#libZip").addEventListener("click", openZip);
+$("#zipClose").addEventListener("click", closeZip);
+$("#zipCancel").addEventListener("click", closeZip);
+zipModal.addEventListener("mousedown", e => { if (e.target === zipModal) closeZip(); });
+addEventListener("keydown", e => {
+  if (!zipOpen()) return;
+  if (e.key === "Escape") { e.preventDefault(); e.stopPropagation(); closeZip(); }
+});
+$("#zipGo").addEventListener("click", libZipAll);
+
+async function libZipAll() {
+  const btn = $("#zipGo");
+  const { rows, filtered } = libZipScope();
+  if (!rows.length) return;
+
+  // Whatever the browser would reject in a filename, plus the extension the
+  // ext-suffix in the dialogue already promises.
+  // slug() returns "untitled" for empty input rather than "", so an emptied
+  // field must be caught before slugging or the dated default never applies.
+  const typed = $("#zipName").value.trim().replace(/\.zip$/i, "");
+  const note  = $("#zipNote").value.trim();
+  const zipName = (typed ? slug(typed) : `lhf-clips-${new Date().toISOString().slice(0, 10)}`) + ".zip";
+
+  btn.disabled = true;
+  const prog = $("#zipProgress");
+  prog.hidden = false;
+  libStopAudio();
+  const files = [];
+  const failed = [];
+  const used = new Set();
+
+  for (let i = 0; i < rows.length; i++) {
+    const c = rows[i];
+    prog.textContent = `Cutting ${i + 1} of ${rows.length}…`;
+    try {
+      const { blob } = await cutClip(c.url, c.in, c.out, { meta: cutMeta(c) });
+      let name = clipFilename(c.show, c.date, c.title, c.in, c.out);
+      // Two clips from the same second of the same episode would collide, and
+      // a zip with a duplicate name unpacks to one file. Number the second.
+      let n = 2;
+      const base = name.replace(/\.mp3$/i, "");
+      while (used.has(name)) name = `${base} (${n++}).mp3`;
+      used.add(name);
+      files.push({ name, data: new Uint8Array(await blob.arrayBuffer()) });
+    } catch (e) {
+      failed.push(c.title);
+    }
+  }
+
+  if (!files.length) {
+    prog.hidden = true;
+    btn.disabled = false;
+    libStrip.say("Couldn't reach any of those. Nothing downloaded.", null, true);
+    closeZip();
+    return;
+  }
+
+  // A bag of MP3s six months from now should still explain itself — the same
+  // reasoning as the archive package's README and the clip filenames. The
+  // user's note goes at the top, where a reader looks first.
+  const stamp = new Date().toISOString().slice(0, 10);
+  const n = files.length;
+  files.push({
+    name: "clips.txt",
+    data: [
+      "LHF Digital Asset Manager — saved clips",
+      `Exported ${stamp}`,
+      filtered
+        ? `This is a FILTERED selection: ${n} of ${Clips.count()} saved clips.`
+        : `The whole library: ${n} clips.`,
+      ...(note ? ["", "NOTE", ...note.split("\n").map(l => "  " + l)] : []),
+      "",
+      "Audio is copied frame-for-frame from the broadcast file — no re-encoding,",
+      "so each clip is bit-identical to what went out.",
+      "",
+      ...rows.filter(c => !failed.includes(c.title)).map(c =>
+        `${c.show} · ${(c.date || "").slice(0, 10)} · ${fmt(c.in)}–${fmt(c.out)} (${(c.out - c.in).toFixed(1)}s)`
+        + `${(c.labels || []).length ? "  [" + c.labels.join(", ") + "]" : ""}\n    ${c.title}`),
+      ...(failed.length ? ["", "COULD NOT BE INCLUDED:", ...failed.map(t => "  " + t)] : []),
+    ].join("\n"),
+  });
+
+  prog.textContent = "Packing…";
+  try {
+    const zip = await makeZip(files, { compress: false });
+    saveBlob(zip, zipName);
+    closeZip();
+    libStrip.say(
+      failed.length
+        ? `Downloaded ${n} — ${failed.length} couldn't be reached.`
+        : `Downloaded ${n} clip${n === 1 ? "" : "s"}.`,
+      null, failed.length > 0);
+  } catch (e) {
+    prog.hidden = true;
+    libStrip.say("Couldn't build the zip: " + e.message, null, true);
+    closeZip();
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+
+/* Re-open a saved clip in the editor. openClip wants an episode row; a saved
+   clip carries everything it needs except duration, which openClip recovers
+   from the peaks anyway. */
+function libEdit(c) {
+  libStopAudio();
+  clipDraftLabels = (c.labels || []).slice();
+  openClip({
+    audio_url: c.url, title: c.title, show_name: c.show,
+    published_at: c.date, id: c.epId, duration_sec: 0,
+  }, c.in, c.out);
+}
+
+function openLib() {
+  libStopAudio();
+  libFilterText = "";
+  $("#libFilter").value = "";
+  libActive = [];
+  libShowAll = false;
+  refreshLabelList();
+  libRender();
+  libModal.hidden = false;
+  $("#libClose").focus();
+}
+
+function closeLib() {
+  libStopAudio();
+  libStrip.hide();
+  closeRowMenus();
+  libModal.hidden = true;
+  libRender();
+}
+
+$("#libBtn").addEventListener("click", openLib);
+$("#libClose").addEventListener("click", closeLib);
+$("#libCloseFoot").addEventListener("click", closeLib);
+libModal.addEventListener("mousedown", e => { if (e.target === libModal) closeLib(); });
+addEventListener("keydown", e => {
+  // The editor sits on top; it owns Escape while it's open.
+  // Anything stacked above the library owns Escape while it is open.
+  if (!libOpen() || clipOpen() || zipOpen()) return;
+  if (e.key === "Escape") { e.preventDefault(); closeLib(); }
+});
+
+/* ---- the save dialogue ----
+ *
+ * Labelling lived in the editor body as a dashed chip and was invisible on a
+ * surface that already carries two waveforms, a transport and four tool
+ * buttons. It is now a dialogue where the label field is the subject, which is
+ * also where anything else a saved clip should carry will go.
+ */
+
+const saveModal = $("#saveModal");
+const saveOpen  = () => !saveModal.hidden;
+
+function renderSaveLabels() {
+  $("#saveChosen").innerHTML = clipDraftLabels.map(l =>
+    `<button class="lblmini" type="button" data-unlabel="${esc(l)}" aria-label="Remove label ${esc(l)}">${esc(l)}<span class="x">×</span></button>`
+  ).join("");
+
+  // Reuse is the common case, so existing labels are one tap rather than a
+  // remembered spelling. Only ones not already on this clip are offered.
+  const recent = Clips.labelNames().filter(l => !clipDraftLabels.includes(l)).slice(0, 8);
+  const box = $("#saveRecent");
+  box.hidden = !recent.length;
+  box.innerHTML = recent.length
+    ? `<span class="rlbl">Reuse</span>` + recent.map(l =>
+        `<button class="chip" type="button" data-pick="${esc(l)}">${esc(l)}</button>`).join("")
+    : "";
+}
+
+function addDraftLabel(raw) {
+  const name = Clips.canonicalLabel(raw);
+  if (name && !clipDraftLabels.includes(name)) clipDraftLabels.push(name);
+  $("#saveLabelIn").value = "";
+  renderSaveLabels();
+}
+
+function openSave() {
+  if (!clip) return;
+  const len = clip.out - clip.in;
+  $("#saveWhat").textContent = `${clip.show} · ${(clip.date || "").slice(0, 10)}`;
+  $("#saveSpan").textContent = `${fmt(clip.in)} – ${fmt(clip.out)}  ·  ${len.toFixed(1)}s`;
+  $("#saveTitleIn").value = clip.title || "";
+  refreshLabelList();
+  renderSaveLabels();
+  saveModal.hidden = false;
+  // Focus the label field, not the title: the title already has a sensible
+  // value and labelling is the reason this dialogue exists.
+  $("#saveLabelIn").focus();
+}
+
+function closeSave() {
+  saveModal.hidden = true;
+  if (clipOpen()) $("#clipSave").focus();
+}
+
+$("#clipSave").addEventListener("click", openSave);
+$("#saveClose").addEventListener("click", closeSave);
+$("#saveCancel").addEventListener("click", closeSave);
+saveModal.addEventListener("mousedown", e => { if (e.target === saveModal) closeSave(); });
+
+$("#saveChosen").addEventListener("click", e => {
+  const x = e.target.closest("[data-unlabel]");
+  if (!x) return;
+  clipDraftLabels = clipDraftLabels.filter(l => l !== x.dataset.unlabel);
+  renderSaveLabels();
+});
+
+$("#saveRecent").addEventListener("click", e => {
+  const p = e.target.closest("[data-pick]");
+  if (p) addDraftLabel(p.dataset.pick);
+});
+
+$("#saveLabelGo").addEventListener("click", () => addDraftLabel($("#saveLabelIn").value));
+$("#saveLabelIn").addEventListener("keydown", e => {
+  // Enter adds the label rather than submitting the dialogue — you are far more
+  // likely to be adding a second label than finished.
+  if (e.key === "Enter") { e.preventDefault(); addDraftLabel(e.target.value); }
+});
+
+/* Saving must NOT close the editor. The workflow that justifies a library is
+   pulling three quotes from one episode; if each save dismisses the editor,
+   the round trips it exists to remove are all still there. The selection stays
+   put, so nudging a handle and saving again gives you two variants of the same
+   quote — a real thing producers do when they can't decide on an out-point. */
+$("#saveGo").addEventListener("click", () => {
+  if (!clip) return;
+  const title = $("#saveTitleIn").value.trim() || clip.title;
+  let saved;
+  try {
+    saved = Clips.add({
+      url: clip.url, epId: clip.id, title, show: clip.show,
+      date: clip.date, in: clip.in, out: clip.out, labels: clipDraftLabels,
+    });
+  } catch (e) {
+    // Quota exhausted, or a browser refusing storage. Saying so is the whole
+    // point — reporting success and losing the work is the one worse outcome.
+    clipStrip.say("Couldn't save — this browser is refusing to store it.", null, true);
+    closeSave();
+    return;
+  }
+  libCount();
+  refreshLabelList();
+  closeSave();
+  clipStrip.say(`Saved — ${Clips.count()} in library`, () => {
+    Clips.remove(saved.id);
+    libCount();
+    refreshLabelList();
+  });
+});
+
+addEventListener("keydown", e => {
+  if (!saveOpen()) return;
+  // This dialogue sits above the editor, so it owns Escape while it is open.
+  if (e.key === "Escape") { e.preventDefault(); e.stopPropagation(); closeSave(); }
+});
+
+libCount();
+refreshLabelList();
 
 const _p = readURL();
 loadFacets().then(run).then(() => openFromURL(_p));

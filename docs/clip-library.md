@@ -1,7 +1,20 @@
 # Clip library — design
 
-**Status:** designed, not built. Written 9 August 2026, rewritten the same day
-after the scope discussion that cut it down. **Companion to**
+**Status: ✅ BUILT, 9 August 2026.** Shipped as `static/clips.js` plus the
+library, save and download dialogues in `static/index.html`, covered by
+`tests/test-clips.mjs` (41 pure checks). Written, rewritten after the scope
+discussion that cut it down, extended with labels and a
+[What lives where](#what-lives-where) section, then built — all the same day.
+
+**What shipped differs from this design in four places**, each recorded at
+[As built](#as-built) rather than by editing the design silently:
+
+1. **"Labels", not "tags"** — the word collided twice over.
+2. **Labelling moved into a save dialogue.** Inline in the editor was invisible.
+3. **A download icon on every row**, not a line in the `⋯` menu.
+4. **Zip export shipped in v1**, with a naming dialogue. It was parked here.
+
+**Companion to**
 `docs/audio-editor-dev.md`, which lists "clip bin", "run sheet", "named clips as
 citations" and "a shared clip library" as brainstorm bullets. This document
 covers **only the first**, deliberately.
@@ -40,14 +53,20 @@ is **finding and extracting** the moment. The library's job is **not losing it**
 - **Automatic grouping by date** — Today, Yesterday, Last week
 - **A filter box**, because this is a search application and a list without one
   would be odd here
+- **Tags, and a top-tags bar** — added to v1 on 9 August 2026 at the client's
+  request. See [Tags](#tags--added-to-v1) for what that changed and what it
+  replaced.
 
 ### Not in v1
 
-Folders, collections, run sheets, target durations, the cart wall, ZIP export,
-joined export, AI, and any form of sharing. Each is argued in
+Run sheets, target durations, the cart wall, ZIP export, joined export, AI, and
+any form of sharing. Each is argued in
 [Parked for later](#parked-for-later) — they are ideas to consider, not a
 roadmap, and none of them should be built before the flat list has been used in
 anger.
+
+**Folders are not on that list**, and are not coming: tags do the job a folder
+tree was wanted for, without the copying that makes a tree go wrong. See below.
 
 ---
 
@@ -74,6 +93,74 @@ a second object that *references* clips rather than containing them.
 
 The right moment to build any of that is when somebody says "I can't find the
 clip I saved last month". That day is legible; it has not arrived.
+
+> **Update, 9 August 2026.** Tags were added to v1 — see below. That does not
+> reopen folders; it closes them. The prediction in this section was that if
+> filing ever arrived it had to be labels rather than directories, and that is
+> exactly what arrived. **No folder tree should be built on top of tags later**,
+> because the reuse case that motivates one is already served.
+
+## Tags — added to v1
+
+Requested by the client on 9 August 2026, after seeing the flat list. Building
+it, because the reasoning above already concluded that *if* filing arrived this
+is the shape it had to take — so this is bringing a parked item forward, not
+overturning a decision.
+
+**One concern, stated once and then set aside.** Tags earn their keep at thirty
+clips and are overhead at six: the first week of use will involve tagging things
+that were findable anyway. That is a reason to keep the feature cheap and
+optional, not a reason to withhold it, and the client asked with the list in
+front of them. Nothing below makes tagging a required step.
+
+### What it is
+
+- **Tags are free text, many-to-many, user-authored.** A clip carries any number;
+  a tag belongs to any number of clips. No hierarchy, no colours, no rename
+  screen — a tag exists because a clip carries it and stops existing when the
+  last one drops it.
+- **A top-tags bar** above the list: the **six most-used** tags, with counts,
+  ordered by use and tie-broken alphabetically so the bar does not reshuffle
+  unpredictably as counts even out. The tail sits behind `+n more`. A bar that
+  grows without limit stops being a summary and becomes a second list to read.
+- **Selecting two tags is an AND**, and tags combine with the text filter. This
+  matches the boolean search people already use upstairs rather than inventing a
+  second mental model inside one product.
+- **Tagging is inline** — hover a row, press the dashed `＋`, type, Enter.
+  Existing tags autocomplete through a `<datalist>`.
+- **Tags can also be set in the editor footer, before the add**, because you
+  know a clip is a promo while you are cutting it, not later while scrolling a
+  list. They persist across adds in one session: pulling four promos from one
+  episode means tagging once. Re-typing `Promo` four times is how a tagging
+  feature quietly stops being used.
+
+### Two things that must be right or the feature rots
+
+1. **Case folding on entry.** `promo` must resolve to an existing `Promo` rather
+   than becoming a second tag beside it. A library where the same word exists
+   twice in different cases stops working within a fortnight, and no amount of
+   later tidying fixes the muscle memory. Match case-insensitively against
+   existing names; keep the first spelling as canonical.
+2. **Removing the last use removes the tag.** There is no tag registry to garbage
+   collect, precisely so that there is nothing to garbage collect. Derive the tag
+   list from the clips on every read.
+
+### The naming collision — unresolved
+
+**This product already uses "tags" to mean something else**: the 232 people,
+bands, museums and books lifted from hyperlinks in the show notes. Those are
+global, derived, identical for every visitor and attached to *episodes*. Clip
+tags are local, hand-written, private to one person and attached to *clips*.
+
+That is two meanings for one word inside one product, which is the exact problem
+that barred *Replay* in `docs/audio-editor-dev.md` — "this product already uses
+replay and re-air to mean putting an old episode back on the air, and two
+meanings for one word inside one product is worse than a little jargon."
+
+The consistent call would be **Labels** for the clip-side concept. The client
+asked for "tags", so the mockup says Tags. **Flagged, not decided** — it is a
+one-word change now and an expensive one after the client guide ships with it.
+Recorded in [Open questions](#open-questions).
 
 ### No sessions, but grouped by date
 
@@ -124,6 +211,69 @@ from facts rather than from scratch.
 
 ---
 
+## What lives where
+
+**Settled, and not a question this build reopens: v1 is browser storage.** What
+the client is still deciding — shared clips, episodes that have fallen off the
+feed, the AI features, how many people use this — is v2, and none of it blocks
+the work. The seam in decision 1 above is what keeps that true.
+
+This table is the whole boundary. It is the source for the plain-language
+version in `docs/client-guide.md`, and the two must agree.
+
+| Thing | Where | Rebuildable if lost? |
+|---|---|---|
+| Episodes, transcripts, search index | Server (`lhf.sqlite` on the `lhf-data` volume) | **No longer** — both shows are at the feed cap. See `HANDOFF.md` → Backups. |
+| Light / dark choice | This browser — `localStorage["lhf-theme"]` | Trivially; it is one click. |
+| Waveform peaks | This browser — IndexedDB `lhf-peaks`, keyed on audio URL, `v: 2` | Yes, at the cost of one 30–105 MB download. |
+| **Saved clips and their tags** | **This browser — `localStorage`** | **No.** This is the new one, and the only client-side data that is not derived from something else. |
+
+**Verified 9 August 2026** by reading the source, because a client-facing claim
+about where their work is kept should not be written from memory: the app
+persists exactly two things today, `lhf-theme`
+([`static/index.html:2242`](../static/index.html#L2242)) and the peaks database
+([`static/waveform.js:17`](../static/waveform.js#L17)). Nothing else. In
+particular the update-prompt dismissal is **not** persisted — `hushedVersion`
+([`static/index.html:4213`](../static/index.html#L4213)) is an ordinary variable,
+so it is forgotten on reload. `HANDOFF.md`'s "dismissal is remembered per build"
+is true only within a session, and the client guide must not imply otherwise.
+
+### What this means for the interface
+
+Saved clips are the **first thing in this application a user can lose**. Peaks
+re-download; a theme is one click; a clip that took twenty minutes to find is
+gone. Three consequences, all in the mockup:
+
+- **Every surface that writes says so, once, quietly.** The library modal and its
+  empty state both carry one line: *"Stored on this computer only. Clearing your
+  browser data removes them."* Not a warning banner — a fact, stated where the
+  belief is formed.
+- **The empty state says it before there is anything to lose**, which is the only
+  time saying it is free.
+- **Download stays the primary action in the editor footer.** A downloaded MP3 is
+  the copy that outlives the browser, and demoting it in favour of Add would
+  quietly make the losable thing the default.
+
+### Features that would need the server
+
+All four want the same missing shell, and that is the point — it is one decision,
+not four:
+
+| Feature | Needs |
+|---|---|
+| Seeing a colleague's clips | Write path + auth |
+| Clips that survive a new laptop | Write path + auth |
+| Topics, guests, interviewers, segment boundaries | Key + admin screen + auth |
+| Staff notes, tag corrections, `replayed_at` | Admin screen + auth |
+
+`serve.py` is `do_GET` only ([`serve.py:602`](../serve.py#L602)) and there is no
+authentication, deliberately, which is correct while everything served is
+already-published material. **A save button ends that**, and the first write
+endpoint is a security decision rather than a feature increment. Making it once,
+on purpose, is much better than arriving at it three times by accident.
+
+---
+
 ## Four decisions that make later features cheap
 
 The way to be future-aware here is **not** to add empty columns for features
@@ -145,12 +295,19 @@ schema. What actually makes v2 cheap is a seam and three fields.
 A record is therefore roughly:
 
 ```js
-{ id, url, guid, title, show, date, in, out, createdAt }
+{ id, url, guid, title, show, date, in, out, createdAt, tags: [] }
 ```
 
-About 150 bytes. A thousand clips is 150 KB against `localStorage`'s ~5 MB, so
-there is no storage problem to solve and no reason to reach for IndexedDB, which
-is already carrying the peaks cache and is asynchronous.
+About 150 bytes, plus a few per tag. A thousand clips is well under 200 KB
+against `localStorage`'s ~5 MB, so there is no storage problem to solve and no
+reason to reach for IndexedDB, which is already carrying the peaks cache and is
+asynchronous.
+
+**`tags` is an array on the clip, and there is no tag table.** The list of tags
+that exists is whatever the clips currently carry, derived on read. This is the
+cheap half of decision 1 above: a separate registry would need creating,
+renaming, merging and garbage collecting, all to store information the clips
+already hold.
 
 ---
 
@@ -237,21 +394,41 @@ the Phases 1–2 audit — controls inside `.modal-actions` keep Space for activ
 rather than yielding it to the transport — covers the new button automatically.
 Worth verifying rather than assuming, since that fix was itself a shipped bug.
 
+### The tag bar
+
+Directly under the filter box, above the list, built from the app's existing
+filter furniture rather than a new control: `.chip`, its `aria-pressed` state and
+the dashed `.chip.all` that reads as the resting position
+([`static/index.html:204-235`](../static/index.html#L204-L235)). The episode
+filters upstairs already look and behave exactly like this, which is most of the
+argument for it.
+
+```
+TAGS   [All 6]  [Promo 4]  [Interview 2]  [Intro 2]  [Music 1]  [Atmos 1]  +1 more
+```
+
 ### The row
 
 ```
 ▶   "…and that's why we marched."               12:03 – 12:31   28.4s   ⋯
     Labor History Today · 14 Mar 2026
+    [Promo ×] [Marches ×] [＋ tag]
 ```
 
 - **The title defaults to the words.** Where the episode has a transcript — 144
   do, with millisecond `segments` — the text at the in-point *is* the best name a
   clip can have, and it is a string slice. Episodes without one fall back to
-  `Show — 12:03–12:31`. The title is editable inline, because the automatic one
-  will sometimes start mid-word.
+  `Show — 12:03–12:31`, **set in italic** so a generated label never passes for
+  something that was said. The title is editable inline, because the automatic
+  one will sometimes start mid-word.
 - **Play is in place.** A clip is a range of an MP3 already streaming from the
   CDN, so playing one is `currentTime = in` and stop at `out`, using the page's
   existing player. Do not open the editor to hear something.
+- **Tags sit on their own line**, quieter than the bar above — smaller, hairline
+  border, `--ink-3`. They are labels first and controls second, but clicking one
+  filters by it, because having read a tag the obvious next thought is "show me
+  the others". The `×` and the dashed `＋ tag` appear on hover or focus only, so
+  a row at rest is information rather than a control panel.
 - **`⋯` holds** Edit, Download, Remove. Remove undoes for ten seconds by the same
   mechanism as Add.
 
@@ -344,8 +521,9 @@ Ideas to consider if the flat list proves itself, roughly in the order I would
 revisit them. **None is committed, and the first question about each is whether
 anyone has asked for it.**
 
-- **Labels, presented as folders.** Many-to-many, never directories. See the
-  modelling trap above.
+- ~~**Labels, presented as folders.**~~ **Pulled into v1 on 9 August 2026** as
+  tags — see [Tags](#tags--added-to-v1). Many-to-many, never directories, as this
+  list always said it would have to be.
 - **Ordered collections and a run sheet** — sequence clips, show cumulative
   duration against a target. The feature most specific to who these users are
   (broadcast slots are exact), and the most likely of these to be genuinely
@@ -376,11 +554,135 @@ anyone has asked for it.**
 
 ---
 
+## As built
+
+Shipped 9 August 2026. Everything above is the design as written; this section
+is where it and the code disagree, and why.
+
+### 1. "Labels", not "tags" — the collision was worse than recorded
+
+The naming question above listed three claimants. Building it settled the
+argument: the first two — the 232 producer-hyperlinked entities and the
+proposed 34-term subject vocabulary — are both *shared, derived and attached to
+episodes*. The clip-side one is **private, hand-typed and attached to a clip**.
+It is the odd one out, so it takes the different word.
+
+`Tags` therefore keeps its existing meaning throughout, `Topics` stays free for
+the subject vocabulary in `docs/ai-layer.md`, and clips carry **Labels**. Zero
+churn on anything already shipped. The help modal says so explicitly, because
+two words for adjacent concepts needs one sentence of disambiguation or it
+generates a support question a week.
+
+### 2. Labelling moved out of the editor and into a save dialogue
+
+The design put a `＋ label` chip in the editor body. Built, it was reported as
+**"so dark I missed it entirely"** — correctly. The clip editor already carries
+two waveforms, a transport, four tool buttons and a readout; a dashed `--ink-3`
+chip in that company is decoration, not a control.
+
+So `＋ Add to library` opens a dialogue instead, carrying the span, an editable
+title, chosen labels as full-weight chips, a **Reuse** row of existing labels as
+one-tap chips, and the storage line. Focus lands on the label field, not the
+title, because labelling is why the dialogue exists.
+
+**This is a better surface than the inline row ever was**, and not only for
+visibility: it is the obvious home for anything else a saved clip should carry.
+
+The lesson generalises and is worth keeping: **on a dense surface, `--ink-3` is
+decoration.** Anything that must be found needs its own surface or full ink.
+
+### 3. Download is a row control, not a menu item
+
+`⋯` was to hold Edit, Download and Remove. Download is the outcome people came
+for, so it is an icon on the row; the menu keeps the two that are rarer and more
+consequential.
+
+### 4. Zip export shipped in v1
+
+Parked under [Parked for later](#parked-for-later) as "deferred only because
+clips can already be downloaded one at a time". Asked for and built the same
+day, and cheaper than the sixty hand-written lines estimated there, because
+`static/zip.js` already existed for the archive package.
+
+Three things the design did not anticipate:
+
+- **Entries are stored, not deflated** (`makeZip(files, { compress: false })`).
+  MP3 frames are already compressed, so deflating them is a wasted pass over
+  every megabyte — and stored keeps the bytes bit-identical, which is the
+  guarantee the whole export path exists to protect.
+- **A naming dialogue.** `lhf-clips-2026-08-09.zip` in a downloads folder says
+  nothing about why it was made, so the user names the file and can attach a
+  note. The note lands at the top of `clips.txt` beside a listing of every clip.
+- **Scope is stated, never implied.** Filtered by a label, the button reads
+  *"Download these 3"* and the file is named `-filtered`. This is the archive
+  export's own rule — both counts always visible so "a file quietly holding 78
+  of 200" cannot happen — applied to a bag of clips.
+
+Duplicate filenames are numbered (two clips from the same second of one episode
+would otherwise unpack to a single file), and a clip that cannot be fetched is
+named in `clips.txt` under **COULD NOT BE INCLUDED** rather than silently
+missing.
+
+### Also built, not in the design
+
+- **A scrubber on the playing row.** It exists only while that clip plays and
+  vanishes when it stops or another starts, so the bar itself is the signal for
+  which row is live. Painted by direct DOM writes: `timeupdate` fires ~4×/second
+  and re-rendering the list at that rate would discard a title mid-edit and
+  close an open row menu.
+- **Storage is versioned** (`{ v: 1, clips: [...] }`), and a wrong or missing
+  version reads as empty rather than as current data — the same rule as the
+  peaks cache, for the same reason.
+
+### Two bugs found by building it
+
+1. **`serve.py`'s `/api/version` did not hash `zip.js`.** It listed
+   `index.html`, `mp3cut.js`, `waveform.js` only, so shipping a fix to the
+   archive packager alone could never prompt an open tab to reload. Present
+   since `zip.js` was added. Both it and `clips.js` are in the tuple now, and
+   verified: touching either moves the hash.
+2. **The editor's Space handler would have fired at a text field.** It exempted
+   `.modal-actions` only, so typing a space in the new label input would have
+   played audio instead. This is the third instance of the shape recorded in
+   `docs/audio-editor-dev.md`, so it was fixed as a class: the editor's keyboard
+   bails when a dialogue is open above it **and** whenever focus is in an
+   `input`, `textarea` or contenteditable.
+
+### One design flaw the build exposed
+
+The masthead buttons were styled by **three copies of the same rule, keyed by
+id**. A fourth button matched none of them and rendered as a white browser
+default in a dark header. Consolidated to one `.mast-btn` class.
+
+While there, the ink scale was measured: `--ink-3` was **3.31:1 dark / 3.30:1
+light** — a non-text contrast level, used throughout for small-caps labels at
+0.66rem, placeholders and meta lines. Raised to `#837f75` / `#746f66`
+(**4.53:1 / 4.50:1**), hue untouched so the warm bias survives. This is why the
+interface reads brighter; it was not a clip-library change.
+
+---
+
 ## Open questions
 
-1. **Does anyone play clips live during a recording?** Not to build it — only
+1. ~~**"Tags" or "Labels" for the clip-side concept?**~~ **Resolved 9 August
+   2026 — Labels.** See [As built](#1-labels-not-tags--the-collision-was-worse-than-recorded).
+   The reasoning, kept because the table is what settled it: the word had
+   **three claimants**, and the clip-side one is the odd one out.
+
+   | Meaning | Scope | Source |
+   |---|---|---|
+   | 232 entities — people, bands, museums, books | Episodes, global, shared | Producer hyperlinks (≈LCNAF names) |
+   | 34 subjects — Mining, Organizing, Child Labor | Episodes, global, shared | *Proposed* — `docs/ai-layer.md` → A shared vocabulary (≈LCSH) |
+   | Personal labels — promo, intro, atmos | Clips, local, private to one person | This document |
+
+   The first two are legitimately both "tags" and libraries deliberately carry
+   both axes. **The third is the odd one out** — it is the only one that is
+   hand-written, private and unshared — which makes it the one that should take
+   the different word. See [the naming collision](#the-naming-collision--unresolved).
+   A one-word change today; an expensive one once the client guide is out.
+2. **Does anyone play clips live during a recording?** Not to build it — only
    because the answer changes what this product is.
-2. **Does the volume backup exist?** Blocks nothing in v1, blocks anything shared.
-3. **Is a joined single file wanted**, or do producers prefer the parts to
+3. **Does the volume backup exist?** Blocks nothing in v1, blocks anything shared.
+4. **Is a joined single file wanted**, or do producers prefer the parts to
    assemble in their own tool? Decides whether that item is ever worth
    prototyping.

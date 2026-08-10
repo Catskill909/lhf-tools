@@ -30,6 +30,136 @@ Everything else in the brief is built and working without AI.
 
 ---
 
+## A shared vocabulary — the option worth raising first
+
+**Added 9 August 2026. Nothing here is built, and nothing should be built before
+the client has been asked. This is a consideration, recorded so the conversation
+starts from facts.**
+
+### The thing that already exists
+
+LHF has a second system: the **Labor Arts & Culture Database**
+(<https://labor-database.supersoul.top>, source at
+<https://github.com/Catskill909/labor-database>). It carries a controlled
+vocabulary that is live, in use, and classifying **~5,950 entries** — roughly
+2,190 films, 1,915 quotes, 1,410 history records and 435 music, measured
+9 August 2026 and growing.
+
+**34 canonical tags in three facets**, from `server/tags.ts`. Note **34, not the
+35 its own `tags-dev.md` claims** — that document says "35 canonical tags" and
+then lists 13 + 13 + 8. Verified against the live `/api/tags`.
+
+| Facet | n | Examples |
+|---|---|---|
+| Theme | 13 | Strikes & Lockouts, Organizing, Collective Bargaining, Child Labor, Labor Culture & Arts |
+| Industry | 13 | Mining, Steel & Manufacturing, Textiles & Garment, Maritime & Dockworkers, Domestic Workers |
+| Social Dimension | 8 | Civil Rights & Race, Women & Gender, Immigration, Socialism & Left Politics, Working Class |
+
+The taxonomy is the smaller half of that file. It also carries:
+
+| | |
+|---|---|
+| `TAG_RULES` | **145 regex patterns** mapping text → canonical tag |
+| `TAG_NORMALIZATION` | 175 legacy-term mappings → canonical |
+| `PEOPLE_TAGS` / `EVENT_TAGS` / `ORG_TAGS` | 42 / 31 / 28 named entities → tags |
+
+`GET /api/tags` is public and unauthenticated, returning the canonical list with
+per-tag counts and facet groups.
+
+### Why this reframes the topics question
+
+The client's question is expected to be **"do we tag by hand, or let AI do it?"**
+Both options as posed are weak, and the vocabulary makes a third one available
+that is better than either.
+
+- **By hand** is ~7 hours for the 200-episode backlog, plus two episodes a week
+  forever. It is nobody's job, which is why archives go untagged.
+- **Free-form AI** is already rejected above, and correctly.
+- **Against a fixed list of 34**, the work splits three ways, cheapest first.
+
+**1 — Rules first, with no AI at all.** The 145 patterns run against 882,346
+words of transcript for free, deterministically, and re-runnably. This archive
+has far more text per item than the film database does — a 32-minute episode is
+roughly 5,000 spoken words against a one-paragraph synopsis — so the rules should
+land harder here than where they were written. **How much of the archive the
+rules alone can tag is a measurable number and nobody has measured it.** Do that
+before anything else; it may make most of the AI question moot, and it costs an
+afternoon and no money.
+
+**2 — AI only for what the rules miss, as classification rather than
+generation.** Choosing from 34 known terms is a much easier task than inventing
+topics, and — the real argument — it is **verifiable**: any output not in the
+list of 34 is a bug that can be caught automatically. Free-form output can only
+be judged by a human reading it. It is also cheaper than the $4.35 costed below,
+because the response is a few tokens rather than prose.
+
+**3 — A human approves**, in the admin screen that four other features already
+need. Machine proposes, archivist disposes. This is ordinary cataloguing
+practice and the workflow the Library of Congress people in their organisation
+would expect to see.
+
+### Why it matters beyond this archive
+
+LHF runs at least three systems — this podcast archive, the Labor Arts & Culture
+Database, and Labor Landmarks (`labor-landmarks.supersoul.top`, referenced from
+the database's own UI). **If each invents its own topics they will never join
+up.** One vocabulary across all three means "everything on Mining" spans
+episodes, films, quotes, music and landmarks in one answer. Nothing else in this
+space does that.
+
+It is also the cheap ask. Tagging 200 episodes costs the client seven hours;
+approving 34 terms costs them one meeting. And approving a labor-history
+vocabulary is a contribution their **former Library of Congress historians** are
+uniquely placed to make — it spends their expertise rather than their afternoons.
+
+### Be precise about the LCSH claim
+
+`server/tags.ts` describes its taxonomy as *"informed by Library of Congress
+labor subject headings, Tamiment/Wagner Labor Archives, and the Labor Film
+Database."* That is honest, and it is **not** the same as being LCSH. Real LCSH
+is `Strikes and lockouts` with the URI
+`http://id.loc.gov/authorities/subjects/sh85128472`; the canonical term here is
+`Strikes & Lockouts`.
+
+**In a room with actual LC people, claiming the stronger version will be
+noticed.** Say "informed by", which is true and still impressive.
+
+The gap is also an opportunity worth putting on the table: **mapping each of the
+34 terms to its real `id.loc.gov` URI is a one-time job of 34 lookups**, and it
+is what would make this data genuinely citable and interoperable in a library
+context. Display name stays `Mining`; the authority URI rides alongside it. That
+is the version an archivist can hand to another institution.
+
+### If it is ever built: two mechanics
+
+1. **Copy the vocabulary; do not fetch it live.** The API sends
+   `access-control-allow-origin: https://labor-database.supersoul.top`, so a
+   browser on this origin cannot read it regardless — but the better reason is
+   that an authority list which can change without warning is not controlled.
+   Vendor the 34 terms with a recorded source and version, and treat an update as
+   a deliberate act. That is how libraries handle authority files, and it
+   respects this project's stdlib-only, no-dependency rule.
+2. **Subjects and names are different axes, and both should exist.** The 232 tags
+   this archive already has are *entities* — people, bands, museums, books,
+   lifted from producer hyperlinks — which correspond to name authorities
+   (≈LCNAF). The 34 are *subjects* (≈LCSH). They are not rivals and libraries
+   deliberately carry both. **But "tag" now has three claimants in this product**
+   — entities, subjects, and the personal clip labels in
+   `docs/clip-library.md`. That naming needs resolving before any of it ships;
+   see that document's open questions.
+
+### What to actually ask the client
+
+1. Do you want the archive classified by topic at all?
+2. If so — **should it use the same vocabulary as the Labor Arts & Culture
+   Database**, so the two can eventually be searched together?
+3. Would your Library of Congress people review and approve the 34 terms, and
+   should we map them to real LCSH authority URIs while they are looking?
+4. Only then: rules, AI, or hand — which is a much smaller question once 1–3 are
+   answered.
+
+---
+
 ## What an AI layer could do
 
 Roughly in order of value-per-pound. Only the first is built.
@@ -50,6 +180,9 @@ catalogue rather than a pile of strings:
   model returns "unions", "labor unions" and "unionization" as three separate
   topics. The pass carries a ~50-term labor-history taxonomy it must prefer,
   and may coin at most two new terms per episode when nothing fits.
+  **That taxonomy is a placeholder written for this file, and it should be
+  replaced** — see [A shared vocabulary](#a-shared-vocabulary--the-option-worth-raising-first)
+  below. LHF already owns a better one, in production, on six thousand records.
 - **Raw output is kept.** Every response is stored verbatim. Changing the
   *prompt* means paying again; changing how the output is *parsed* is free and
   takes a second. That matters over a decade of archive.

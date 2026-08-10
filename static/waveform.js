@@ -271,7 +271,7 @@ export function drawWave(canvas, peaks, {
   ctx.clearRect(0, 0, cssW, cssH);
 
   const c = {
-    wave: "#6d6961", waveSel: "#d8503a",
+    wave: "#837f75", waveSel: "#d8503a",
     // The RMS body sits inside the peak envelope, so it needs to read as the
     // same material at a different weight rather than as a second thing.
     body: "#8f8a80", bodySel: "#e8705c",
@@ -402,7 +402,7 @@ export function drawRuler(canvas, { from, to, colors = {} } = {}) {
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
   ctx.clearRect(0, 0, cssW, cssH);
 
-  const c = { tick: "#6d6961", text: "#6d6961", ...colors };
+  const c = { tick: "#837f75", text: "#837f75", ...colors };
   const span = Math.max(1e-6, to - from);
   // ~78px per label leaves room for "12:30.5" plus breathing space.
   const step = niceTick(span, Math.max(2, Math.floor(cssW / 78)));

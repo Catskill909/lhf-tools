@@ -119,8 +119,45 @@ down to a fraction of a second on one edge.
 
 ![The clip editor — the passage selected on the waveform, in and out points, audition and snap controls, and the MP3 download](screenshots/audio-edit-modal.png)
 
+**It remembers the clips you make.** Finding a moment in 143 hours is the hard
+part, and it used to be work you did again every time — cut a clip, and the only
+record you ever found it was a file in a downloads folder.
+
+Now **＋ Add to library** in the editor saves it. You get a short dialogue to
+name it and add **labels** — *promo*, *intro*, *out-cue*, whatever suits how you
+work — and it saves **without closing the editor**, so you can nudge a handle and
+keep a second version of the same quote when you can't decide between two
+endings.
+
+**Clips** at the top of the page opens the list:
+
+- **Hear one without opening the editor** — press play and a scrubber appears on
+  that row; click along it to move within the clip
+- **Rename** by clicking the title, **re-open** it to adjust the edit, or
+  **download** it again from the arrow on the row
+- **Filter by label.** The ones you use most sit across the top; pick two and you
+  get only the clips carrying both
+- **Grouped by when you saved them** — today, yesterday, last week
+- **Nothing is deleted without a ten-second undo**
+
+**Download all** packs the lot into one zip, and asks you to name it and add a
+note first. The note goes inside as a text file next to a list of every clip with
+its show, date, times and labels — so a folder found next March still explains
+itself. If you've filtered by a label, the button says **Download these 3**
+instead, and the file is named `-filtered`, so a partial bag can't be mistaken
+for the whole library.
+
+One thing to know, and it's in the dialogue too: **saved clips live in your
+browser, on that computer.** Nothing is uploaded. They work with no internet,
+they're yours alone, and they don't follow you to another machine — clearing
+your browsing data removes them. The audio is never at risk, only the record of
+what you found, and a downloaded MP3 is a normal file that outlives all of it.
+See **Where things are kept** below.
+
 **Tags** — 232 people, bands, museums and books, taken from the links in your
 own show notes rather than guessed. Click one to see every episode featuring it.
+(These are different from the **labels** on your clips: tags come from your show
+notes and are the same for everyone; labels are yours.)
 
 **Export** — a spreadsheet of the archive, with links back to each episode, its
 transcript and the audio. You choose how much: **this search** gives you exactly
@@ -202,6 +239,44 @@ from it, though, and they're worth knowing now rather than in a year:
 
 ---
 
+## Where things are kept
+
+Short section, but it decides what's shareable and what isn't, so it's worth
+being plain about.
+
+**The archive itself is on the server.** The 200 episodes, the transcripts, the
+tags, the search — one copy, the same for all of you, wherever you open it from.
+That's the part being backed up.
+
+**Some things live in your own browser**, not on the server:
+
+| | |
+|---|---|
+| Light or dark | Rebuilt in one click if lost |
+| A cache of waveforms you've opened, so a 30-minute show downloads once | Rebuilt automatically |
+| **Your saved clips and their labels** | **Not rebuilt — this is the one to know about** |
+
+The first two look after themselves. **Saved clips are the only thing here you
+can actually lose**: they're on that computer, in that browser, and clearing your
+browsing data takes them. Not the audio — that lives on your podcast host and
+isn't going anywhere — but the record of which moments you'd found and what you
+called them.
+
+If a list of clips ever matters enough that losing it would hurt, download them
+as a zip; that file is yours and outlives everything.
+
+**A clip you download is a file on your computer**, like any other download. It
+isn't stored in the site and never was.
+
+**Right now, nothing you do here is visible to anyone else** — because there's
+nowhere for it to go. The site can *read* the archive and nothing more; it
+cannot write anything back. That's deliberate, and it's why there's no login:
+everything it shows is already published, so there's nothing to lock down.
+
+That one fact is what the next section keeps running into.
+
+---
+
 ## Where it could go
 
 Everything above was built by reading what's already published — the feed, the
@@ -209,8 +284,30 @@ show notes, the transcripts, the links you write yourself. **That approach has
 now gone about as far as it can.** Nothing in the archive uses AI, and nothing
 in it needs to.
 
-The remaining items split into two kinds: things that are just more work, and
-one that's a decision.
+The remaining items split into two kinds: one that's a decision, and things
+that are simply more work.
+
+### The thing four features have in common
+
+If you'd want the clips list to be **shared between you**, or to follow you to a
+new laptop, that's a different piece of work — and it turns out to be the *same*
+piece of work as three other things on this list:
+
+| If you wanted… | It needs |
+|---|---|
+| To see each other's saved clips | The site to be able to save things, and a login |
+| Clips that follow you to another computer | The same |
+| Topics, full guest lists, segment boundaries | The same, plus the reading pass below |
+| An admin screen — staff notes, fixing a wrong tag, marking a re-air | The same |
+
+All four are waiting on one decision: **whether this site should be able to
+write things down, and be locked behind a login when it does.** Today it can
+only read, which is why it needs no password and why there's nothing here to
+break.
+
+It isn't a big job. It's just a decision worth making once, on purpose, rather
+than arriving at sideways — so it's on this list rather than buried in the
+technical notes.
 
 ### The decision: topics, and the rest of the reading
 
@@ -257,13 +354,75 @@ None of it is decided, none of it is running, and it's all worth a conversation
 rather than an email — the six things above differ a lot in usefulness and
 hardly at all in price.
 
+### A thought before any of that: use the tag list you already have
+
+There's a question hiding underneath "topics", and it's worth settling first
+because it changes the answer: **what should the topics actually be called?**
+
+Left to itself, anything reading 200 episodes will produce *unions*, *labor
+unions* and *unionization* as three separate topics, and a list like that is
+worse than no list — you can't browse it and you can't trust a count.
+
+**You've already solved this elsewhere.** The Labor Arts & Culture Database uses
+a fixed list of **34 topics in three groups** — Theme, Industry, and Social
+Dimension — and it's already sorted roughly **6,000 films, quotes, songs and
+history records** with it:
+
+| Group | Some of the terms |
+|---|---|
+| **Theme** | Strikes & Lockouts · Organizing · Collective Bargaining · Child Labor · Labor Culture & Arts |
+| **Industry** | Mining · Steel & Manufacturing · Textiles & Garment · Maritime & Dockworkers · Domestic Workers |
+| **Social Dimension** | Civil Rights & Race · Women & Gender · Immigration · Working Class |
+
+**The suggestion is simply: use the same 34 here.** Two things follow from it.
+
+**One search could eventually cover everything you have.** Ask for *Mining* and
+get the podcast episodes, the films, the quotes, the songs and the history
+entries together. If this archive invents its own topic names instead, the two
+collections never join up — and joining them later is much harder than starting
+that way.
+
+**It's the cheap version of the job.** Tagging 200 episodes by hand is about
+seven hours of somebody's time, and then two more episodes every week, forever.
+Agreeing a list of 34 terms is one meeting. And agreeing a labor-history
+vocabulary is exactly the thing the **former Library of Congress people in your
+group** are qualified to do — it uses their expertise instead of their
+afternoons.
+
+**How the tagging itself would work**, roughly, and most of it isn't AI:
+
+1. **Pattern matching first, which costs nothing and uses no AI.** The other
+   database already contains around 145 word patterns — *picket*, *walkout*,
+   *card check*, *shop steward* and so on — that map straight onto those 34
+   topics. Run those over 880,000 words of transcript and a good share of the
+   archive tags itself, for free, the same way every time. Nobody has measured
+   how much yet; that's an afternoon's work and worth doing before spending
+   anything.
+2. **AI only for what's left**, and only ever *choosing from the 34* rather than
+   inventing its own. That's a much smaller and safer job — if it returns
+   anything that isn't on the list, that's a fault we can catch automatically,
+   which is not true of free-form topics.
+3. **You approve.** Nothing gets written into the catalogue without a person
+   saying yes, in the admin screen mentioned below.
+
+**One point of accuracy, because it matters to your LC people.** That list of 34
+is *informed by* Library of Congress labor subject headings — it isn't literally
+them. The real headings are formal records with permanent reference numbers.
+Linking each of your 34 to its official Library of Congress record is a small
+one-time job, and it's what would make your catalogue properly citable and
+shareable with other institutions. Worth deciding while the historians are
+looking at the list anyway.
+
+None of this is built and none of it is decided. It's here because it's a
+better starting point than the question it replaces.
+
 ### The rest
 
-1. **An admin screen.** Needed before any of the above, and honestly needed
-   anyway. Something behind a login where you can start a job and see what it
-   did — and, separately from AI, add a staff note, fix a wrong tag, or mark an
-   episode as already re-aired. The archive can already store all three; there's
-   just no way for a person to enter them.
+1. **An admin screen** — the login from the table above, given a face. Somewhere
+   to start a job and see what it did, and, quite separately from AI, to add a
+   staff note, fix a wrong tag, or mark an episode as already re-aired. The
+   archive can already store all three; there's just no way for a person to
+   enter them.
 2. **The rest of the archive** — everything older than the feed reaches.
 3. **The search box** on laborheritage.org.
 4. **Producer tools**, if they'd help: a "not aired since" list for scheduling,

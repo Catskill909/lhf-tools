@@ -652,7 +652,11 @@ def app_version():
     Stat first and hash only when something moved: an unchanged fingerprint
     costs three stat calls, which is what this endpoint mostly does.
     """
-    names = ("index.html", "mp3cut.js", "waveform.js")
+    # Every front-end file the browser holds, or the prompt lies by omission.
+    # zip.js was missing here from the day it was added: ship a fix to the
+    # archive packager alone and no open tab would ever be told. Adding a
+    # module means adding it to this tuple — there is nothing that derives it.
+    names = ("index.html", "mp3cut.js", "waveform.js", "zip.js", "clips.js")
     stamps = []
     for name in names:
         try:

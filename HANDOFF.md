@@ -152,6 +152,26 @@ decision, and an admin screen to run it from. See `docs/ai-layer.md`.
 - Audio streams from Podbean's CDN direct to the browser; peaks are cached in
   IndexedDB so an episode is only ever downloaded once
 
+**Clip library** *(built 9 August 2026 — `docs/clip-library.md`)*
+- **`＋ Add to library`** in the editor opens a **save dialogue**: the span, an
+  editable title, and **labels**. It saves **without closing the editor**, which
+  is the whole point — pulling three quotes from one episode was three round
+  trips. Nudge a handle and save again for a second version of the same quote.
+- **Labels** are free text, many-to-many, derived (no registry). `promo` folds
+  into an existing `Promo`. They persist across saves in a session.
+  **"Labels", not "tags"** — `Tags` already means the 232 hyperlinked entities.
+- The **Clips** counter in the masthead opens the list: play in place with a
+  **scrubber on the live row**, rename inline, download a single clip from a row
+  icon, `⋯` for Edit/Remove, ten-second undo, date grouping, a filter box past
+  six clips, and a **top-labels bar** (six most used, `+n more`, two labels AND).
+- **Download all** packs them into one zip — stored, not deflated, so the bytes
+  stay bit-identical — with a dialogue to name the file and add a note. The note
+  and a full listing go in as `clips.txt`. Filtered, the button says *"Download
+  these 3"* and the file is named `-filtered`.
+- **Stored in `localStorage` only.** Versioned; a wrong version reads as a miss.
+  Every surface that writes says so, once, quietly. This is the first data in
+  this application a user can actually lose — see **What lives in the browser**.
+
 **Sharing**
 - Every search is reflected in the address bar — filters, tag, sort and all —
   so a result set can be sent to a colleague as a link
@@ -305,7 +325,8 @@ run it from.
 | `docs/client-guide.md` | **Send this one.** Feature + usage guide for LHF, with screenshot slots. Every figure verified against the database. |
 | `docs/audio-editor-spec.md` | Browser-side clip editor: the **export** design (frame copy, bitrate probing) and its verification. **Built.** The editing *surface* it describes has since been rebuilt — see the dev doc below. |
 | `docs/audio-editor-dev.md` | Audit of the editing *surface* + phased plan. **Phases 1–4 built and verified; Phase 6 open.** Opens with a status summary. Read before touching the editor UI. |
-| `docs/clip-library.md` | Design for saving clips. **Not built.** Deliberately narrow — local storage, no folders — with the cut features and the reasons for cutting them recorded. |
+| `docs/clip-library.md` | Saving clips. **✅ Built 9 Aug 2026** — design, then an **As built** section recording the four places the code diverged and why. Its **What lives where** section is the canonical local-vs-server boundary and the source for the client guide's plain-language version. |
+| `static/clips.js` | The saved-clip store: `list / add / update / remove / restore` plus label derivation and date grouping. **The only file that knows clips live in `localStorage`** — that seam is what makes a server move one file rather than a hunt. Keys on the audio URL, never the episode row id. |
 | `backup.py` | Consistent snapshot of the archive, stdlib only. Verifies what it wrote and exits non-zero if it cannot. See **Backups** below — this matters more every week now. |
 | `ingest/enrich.py` | Deterministic enrichment, **no AI**. Re-airs + linked entities. Safe to re-run. |
 | `ingest/extract.py` | The one AI step: topics, guests, interviewers. Written, tested, **never run**. Not in `refresh.py` — needs a key and costs money. `--dry-run` and `--rebuild` need neither. |
@@ -406,6 +427,21 @@ project most depends on. Schema already handles the hybrid via
    nice-to-haves, and that is the same shell `docs/ai-layer.md` is blocked on.
    **Their answer is expected soon; capture it here when it arrives.**
 
+6. **Should topics use the vocabulary LHF already owns?** Raised 9 August 2026.
+   The Labor Arts & Culture Database
+   (<https://labor-database.supersoul.top>) carries **34 canonical tags in three
+   facets**, already classifying ~5,954 entries, plus 145 regex auto-tagging
+   rules. Adopting it here would let one search eventually cover episodes,
+   films, quotes, songs and landmarks — and it turns "topics" from a seven-hour
+   tagging job into a one-meeting approval, which is the form their former
+   Library of Congress historians can actually help with.
+
+   **Nothing built, nothing decided.** The full consideration — including the
+   measurable first step that needs no AI and no money, and the care needed
+   around the "informed by LCSH" claim — is `docs/ai-layer.md` → *A shared
+   vocabulary*. The plain-language version for the client is in
+   `docs/client-guide.md`.
+
 Nothing is blocked on these. They're slow-moving; the interface work continues
 regardless — **except that backups should not wait for thread 5.** The archive
 is already accumulating episodes the feed no longer serves, whatever the client
@@ -452,6 +488,29 @@ both feeds vanished tomorrow, everything searchable still works.
 
 Audio deliberately isn't stored — ~12–24 GB, and streaming from their CDN is
 free and fast. Worth revisiting only if clip export gets built.
+
+#### What lives in the browser instead — verified 9 August 2026
+
+Worth knowing exactly, because the clip library adds to this list and
+`docs/client-guide.md` now makes a promise to the client about it. **The app
+persists exactly two things client-side today:**
+
+| What | Where | Lost if cleared? |
+|---|---|---|
+| Light / dark choice | `localStorage["lhf-theme"]` | One click to redo |
+| Waveform peaks | IndexedDB `lhf-peaks`, keyed on audio URL, `v: 2` | One 30–105 MB re-download |
+| **Saved clips + labels** | `localStorage["lhf-clips"]`, `v: 1` — `static/clips.js` | **Gone. Not derived from anything.** |
+
+The first two are derived and rebuild themselves. The update-prompt dismissal is
+*not* persisted at all — `hushedVersion` is an ordinary variable, forgotten on
+reload, so "remembered per build" means for the life of the tab.
+
+**Saved clips are the first client-side data in this application that is not
+rebuildable.** Hence: every surface that writes them says so once, the empty
+state says it before there is anything to lose, and Download stays the primary
+action in the editor because a downloaded MP3 is the copy that outlives the
+browser. `docs/clip-library.md` → *What lives where* carries the full boundary,
+including which features would need a server and why they are all one decision.
 
 ### 2. Timed updates — ✅ built and running in production
 
@@ -602,6 +661,7 @@ the same place.
 node tests/test-waveform.mjs        # pure: peak reduction + snap-to-silence
 node tests/test-update-prompt.mjs   # pure: the new-version reload prompt
 node tests/test-zip.mjs             # pure: the archive packager
+node tests/test-clips.mjs           # pure: the saved-clip store + labels
 node tests/verify-clips.mjs         # live: needs the server running + network
 ```
 
@@ -746,7 +806,10 @@ it shows a dismissible bar offering a reload. Three deliberate choices:
 
 `node tests/test-update-prompt.mjs` covers the quiet cases: dismissal is
 remembered per build, a further deploy may ask again, a failed request neither
-throws nor prompts.
+throws nor prompts. **"Remembered" means for the life of the tab** — it is an
+in-memory variable, not storage, so a reload asks again. That is the right
+trade for a prompt that only fires on a real change, but don't read it as
+persistence.
 
 If a fix still seems not to have landed, check for a stale page before checking
 the code — and `git log -S'some string from the screen'` will date it exactly.
