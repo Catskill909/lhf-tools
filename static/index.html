@@ -44,6 +44,16 @@
        Behind a title that same 0.42 is a slab. So washes get their own token,
        tuned as a surface: ~11 L* off the stock in both themes. */
     --wash:       rgba(239,236,228,0.11);
+    /* The encore flag. On the dark ground a saturated gold *is* the flag: it
+       sits 19 L* above the metadata beside it and a whole hue away, so an
+       outline is enough and it needs nothing behind it. */
+    --encore-bg:    transparent;
+    --encore-ink:   #d8a94a;
+    /* Gold used as small text, and the ground under a re-air notice. On the
+       dark stock gold is *lighter* than the copy around it, so it advances on
+       its own and needs no help. */
+    --gold-text:    #d8a94a;
+    --gold-wash:    transparent;
   }
   /* Light stock sits low on purpose. A raised panel needs somewhere to go, and
      off a near-white ground there is nowhere: it collides with #fff and the
@@ -88,8 +98,23 @@
     /* 0.15, not --rule's 0.42. Both are "the faint one"; only one of them is
        a surface. */
     --wash:       rgba(27,26,23,0.15);
-  }
-  @media (prefers-color-scheme: light) {
+    /* Gold on paper has to be dark to stay legible, and dark is what every
+       other word in that row already is: the old outline was 40 ΔE from the
+       metadata but only 6 L*, all of it hue. At 0.63rem, letterspaced, hue
+       does not carry — lightness does, which is why it read as more dark text.
+       So it inverts into a printed stamp, the same idiom the pressed filter
+       chips use in spot red. The client asked for encores to be identifiable;
+       that is worth the ink. */
+    --encore-bg:    #7c5b10;
+    --encore-ink:   #ebe6d9;
+    /* On paper the same gold is *lighter* than the copy it sits in — L* 41
+       against 25 — so as a label it recedes, which is exactly what "washed
+       out" describes. It has to go darker than the body text to read as
+       emphasis rather than as something fading. That leaves it barely
+       distinguishable as gold, so the gold identity moves to the ground and
+       the rule down the side, where an area of it can be seen. */
+    --gold-text:    #3e2b05;
+    --gold-wash:    rgba(124,91,16,0.22);
     /* Must match :root[data-theme="light"] above, value for value. */
     :root:not([data-theme="dark"]) {
       --paper:      #ebe6d9;
@@ -110,6 +135,10 @@
       --on-weight:  600;
       --field:      #56514a;
       --wash:       rgba(27,26,23,0.15);
+      --encore-bg:    #7c5b10;
+      --encore-ink:   #ebe6d9;
+      --gold-text:    #3e2b05;
+      --gold-wash:    rgba(124,91,16,0.22);
     }
   }
 
@@ -473,7 +502,9 @@
     border: 1px solid currentColor; border-radius: 2px;
     padding: 0.02rem 0.36rem; font-size: 0.63rem; letter-spacing: 0.07em;
   }
-  .badge.encore { color: var(--gold); }
+  /* The border is currentColor, so --encore-ink draws the edge and the letters
+     both. Dark resolves these to the bare gold it always had. */
+  .badge.encore { color: var(--encore-ink); background: var(--encore-bg); }
 
   .row .excerpt {
     margin: 0; font-size: 0.895rem; color: var(--ink-2);
@@ -555,15 +586,19 @@
   .tx-open:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
 
   /* Re-air notice — the "have we run this already" answer, stated inline. */
+  /* The ground is what carries this on paper. Dark resolves --gold-wash to
+     transparent and the notice is exactly the bare rule it always was. */
   .reair {
     margin: 0.5rem 0 0;
-    padding: 0.4rem 0 0.4rem 0.65rem;
+    padding: 0.4rem 0.65rem;
+    background: var(--gold-wash);
+    border-radius: 0 2px 2px 0;
     border-left: 2px solid var(--gold);
     font-size: 0.775rem; color: var(--ink-2);
     display: flex; flex-wrap: wrap; gap: 0.15rem 0.5rem; align-items: baseline;
   }
   .reair .lead {
-    color: var(--gold); text-transform: uppercase;
+    color: var(--gold-text); text-transform: uppercase;
     letter-spacing: 0.08em; font-size: 0.66rem; font-weight: 600;
   }
   .reair .when { font-variant-numeric: tabular-nums; }
@@ -1868,7 +1903,9 @@
     font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
     font-size: 0.7rem; color: var(--ink-3); font-variant-numeric: tabular-nums;
   }
-  .lib-status.warn { color: var(--gold); }
+  /* Same reason as .reair .lead — gold as small text is lighter than the copy
+     around it on paper, so it reads as fading rather than as a warning. */
+  .lib-status.warn { color: var(--gold-text); }
 
   /* Said once, quietly, where the belief is formed — not as a banner. */
   .lib-where {

@@ -107,6 +107,25 @@ function lstar(rgb) {
   return y > 0.008856 ? 116 * Math.cbrt(y) - 16 : 903.3 * y;
 }
 
+/** CIELAB, D65. */
+function lab([r, g, b]) {
+  const [R, G, B] = [srgb(r), srgb(g), srgb(b)];
+  const X = (0.4124 * R + 0.3576 * G + 0.1805 * B) / 0.95047;
+  const Yn = 0.2126 * R + 0.7152 * G + 0.0722 * B;
+  const Z = (0.0193 * R + 0.1192 * G + 0.9505 * B) / 1.08883;
+  const f = v => v > 0.008856 ? Math.cbrt(v) : 7.787 * v + 16 / 116;
+  return [116 * f(Yn) - 16, 500 * (f(X) - f(Yn)), 200 * (f(Yn) - f(Z))];
+}
+
+/** Perceptual distance. Lightness alone is not enough: the encore badge on
+ *  the dark ground is only 19 L* off the metadata beside it and is impossible
+ *  to miss, because it is also a completely different hue. A measure that
+ *  cannot see that would reject a treatment which demonstrably works. */
+function deltaE(a, b) {
+  const [l1, a1, b1] = lab(a), [l2, a2, b2] = lab(b);
+  return Math.hypot(l1 - l2, a1 - a2, b1 - b2);
+}
+
 const themes = [
   { name: "dark ", block: DARK },
   { name: "light", block: LIGHT_ATTR },
@@ -143,7 +162,7 @@ check("the two light blocks agree value for value",
 console.log("\nlegibility against the stock");
 
 const TEXT_FLOOR = { "--ink": 7, "--ink-2": 4.5, "--ink-3": 4.5, "--spot-ink": 4.5,
-                     "--field": 4.5 };
+                     "--field": 4.5, "--gold-text": 4.5 };
 for (const t of themes) {
   for (const [token, floor] of Object.entries(TEXT_FLOOR)) {
     const r = contrast(flat(t, token), parse(ground(t)));
@@ -194,7 +213,27 @@ console.log("\nselected vs resting");
    regression section proved, on the first run, by passing when it should have
    failed. */
 const EMPHASIS_MIN = { text: 20, edge: 12, fill: 12 };
-const EMPHASIS_BALANCE = 0.6; // weakest theme, as a fraction of the strongest
+
+/* Perceptual distance alone is not enough either, and the encore badge is why.
+   As shipped it was 40 ΔE from the metadata around it and still invisible,
+   because effectively all of that was hue: 6 L* of lightness. At 0.63rem,
+   uppercase and letterspaced, hue does not carry — the glance is luminance
+   first, and a badge that differs only in colour reads as more dark text.
+   So a channel has to move in lightness as well, and text — thin strokes,
+   small — is held to more of it than a filled block or an edge. */
+const LIGHTNESS_MIN = { text: 12, edge: 8, fill: 8 };
+
+/* Every theme has to clear its floor with room to spare, rather than scraping
+   it. This replaced a rule comparing the two themes to each other, which was
+   wrong in a way worth recording: the two grounds do not have equal room. A
+   saturated gold on near-black is 52 units from the metadata beside it and
+   nothing on paper can answer that, because gold on paper has to be dark to
+   stay legible. Light answered instead by carrying the badge on two channels
+   at once — its colour and a ground behind it — and the old rule, which took
+   only the strongest single channel, then failed light for it. A margin above
+   an absolute floor says the useful part ("do not ship something that only
+   just clears") without pretending the two themes are the same problem. */
+const EMPHASIS_MARGIN = 1.25;
 
 /* Each state a user has to be able to *see*, as the pair of tokens that
    carries it. A theme may answer on any channel it likes — the ink of the
@@ -208,6 +247,12 @@ const STATES = [
   { name: "the transcript line being played",
     rest: { text: "--field" },
     on:   { text: "--ink" } },
+  /* Not a state the user toggles — a flag they have to spot, judged against
+     the metadata it sits among. The client asked for encores to be
+     identifiable, which makes this a requirement rather than a nicety. */
+  { name: "the encore badge among the metadata",
+    rest: { text: "--ink-3",    fill: "--paper" },
+    on:   { text: "--encore-ink", fill: "--encore-bg" } },
 ];
 
 /** How far apart the resting and active forms look, per channel. A state is
@@ -217,37 +262,78 @@ function emphasis(t, state) {
   for (const channel of ["text", "edge", "fill"]) {
     const a = state.rest[channel], b = state.on[channel];
     if (!a || !b) continue;
-    gaps[channel] = Math.abs(lstar(flat(t, a)) - lstar(flat(t, b)));
+    const [x, y] = [flat(t, a), flat(t, b)];
+    gaps[channel] = { de: deltaE(x, y), dl: Math.abs(lstar(x) - lstar(y)) };
   }
+  /* A channel carries the state only if it moves on both measures, and its
+     score is the weaker of the two — so hue without lightness cannot pass by
+     leaning on ΔE, which is exactly how the encore badge shipped. */
   let carried = null, score = 0;
-  for (const [channel, gap] of Object.entries(gaps)) {
-    if (gap / EMPHASIS_MIN[channel] > score) {
-      score = gap / EMPHASIS_MIN[channel];
-      carried = channel;
-    }
+  for (const [channel, g] of Object.entries(gaps)) {
+    const s = Math.min(g.de / EMPHASIS_MIN[channel], g.dl / LIGHTNESS_MIN[channel]);
+    if (s > score) { score = s; carried = channel; }
   }
   return { gaps, carried, score };
 }
 
-const detail = e => Object.entries(e.gaps).map(([k, v]) =>
-  `${k} ${v.toFixed(1)}/${EMPHASIS_MIN[k]}`).join(" ");
+const detail = e => Object.entries(e.gaps).map(([k, g]) =>
+  `${k} ${g.de.toFixed(1)}/${EMPHASIS_MIN[k]}ΔE ${g.dl.toFixed(1)}/${LIGHTNESS_MIN[k]}L*`).join("  ");
 
 for (const state of STATES) {
-  const seen = [];
   for (const t of themes) {
     const e = emphasis(t, state);
-    seen.push(e.score);
-    check(`${t.name}  ${state.name} reads as active`, e.score >= 1,
-          `${detail(e)} L*` + (e.carried ? `, carried by the ${e.carried}` : ""));
+    check(`${t.name}  ${state.name} reads as active`, e.score >= EMPHASIS_MARGIN,
+          `${detail(e)} — ${e.score.toFixed(2)}x its floor` +
+          (e.carried ? `, carried by the ${e.carried}` : ""));
   }
-  check("       neither theme is the poor relation",
-        Math.min(...seen) >= EMPHASIS_BALANCE * Math.max(...seen),
-        `${Math.min(...seen).toFixed(2)}x vs ${Math.max(...seen).toFixed(2)}x its floor`);
 }
 
 check("weight is declared per theme, not assumed",
       Number(value(LIGHT_ATTR, "--on-weight")) >= Number(value(DARK, "--on-weight")),
       `dark ${value(DARK, "--on-weight")}, light ${value(LIGHT_ATTR, "--on-weight")}`);
+
+/* The encore badge inverts on paper — cream lettering on a gold ground — so
+   its legibility is no longer a question about the stock it sits on. */
+for (const t of themes) {
+  const on = parse(value(t.block, "--encore-bg")) [3] === 0 ? parse(ground(t))
+                                                         : flat(t, "--encore-bg");
+  const r = contrast(flat(t, "--encore-ink"), on);
+  check(`${t.name}  the encore lettering is legible on its own ground`, r >= 4.5,
+        `${r.toFixed(2)}:1`);
+}
+
+/* ---------- 4b. emphasis has a direction ---------- */
+/* Distance says nothing about which way. "RAN 3 TIMES" was set in --gold,
+   which on paper sits 16 L* *toward* the stock from the copy it labels — a
+   long way from it, and reading as something fading rather than something
+   stressed. On the dark ground the identical token sits 8 L* *away* from the
+   ground, so it advances. Same colour, opposite jobs.
+   A label may therefore never lie closer to its own ground than the copy it
+   is emphasising. This is a separate law from the floors above on purpose:
+   those judge a state change, and forcing a label through them would mean
+   loosening numbers that are doing real work elsewhere. */
+
+console.log("\nemphasis points away from the stock");
+
+const DIRECTION_MIN = 4; // L* further out than the copy, so "equal" cannot pass
+const out = (t, token) => Math.abs(lstar(parse(ground(t))) - lstar(flat(t, token)));
+/** How much further from the ground the re-air lead sits than its own copy. */
+const lead = t => out(t, "--gold-text") - out(t, "--ink-2");
+
+for (const t of themes) {
+  check(`${t.name}  the re-air lead is stressed, not fading`, lead(t) >= DIRECTION_MIN,
+        `${lead(t).toFixed(1)} L* further from the stock than the copy, floor ${DIRECTION_MIN}`);
+}
+
+/* Dark carries the notice with the gold rule alone; paper needs a ground under
+   it. Either is fine — a ground that is present but too faint to see is not. */
+for (const t of themes) {
+  const w = value(t.block, "--gold-wash");
+  const d = out(t, "--gold-wash");
+  check(`${t.name}  the re-air ground is absent or real, never nearly-there`,
+        parse(w)[3] === 0 || d >= 8,
+        parse(w)[3] === 0 ? "none — carried by the rule" : `${d.toFixed(1)} L* off the stock`);
+}
 
 /* ---------- 5. hairline tokens are not surfaces ---------- */
 /* --rule and --rule-hard carry an alpha chosen so that a 1px line prints, and
@@ -321,11 +407,28 @@ check("and the same field on the dark ground is not",
       emphasis(themes[0], STATES[1]).score >= 1,
       `${detail(emphasis(themes[0], STATES[1]))} L*`);
 
+/* Bug five: "RAN 3 TIMES", set in --gold — emphasis pointing the wrong way. */
+const leadAsShipped = new Map(LIGHT_ATTR);
+leadAsShipped.set("--gold-text", LIGHT_ATTR.get("--gold"));
+check("the old re-air lead is rejected on paper",
+      lead({ block: leadAsShipped }) < 0,
+      `${lead({ block: leadAsShipped }).toFixed(1)} L* — toward the stock, not away`);
+check("and the same lead on the dark ground is not", lead(themes[0]) >= DIRECTION_MIN,
+      `${lead(themes[0]).toFixed(1)} L* further out than the copy`);
+
 /* Bug three: the clip title's hover, which filled the whole title box with
    --rule — 0.11 white on the dark ground, 0.42 black on paper. */
 const asShippedCss = css.replace(
   /(\.cliprow \.cr-title:hover \{[^{}]*background:\s*var\()--wash(\))/,
   "$1--rule$2");
+/* Bug four: the encore badge, an outline in --gold with nothing behind it. */
+const badgeAsShipped = new Map(LIGHT_ATTR);
+badgeAsShipped.set("--encore-ink", LIGHT_ATTR.get("--gold"));
+badgeAsShipped.set("--encore-bg", "transparent");
+const bug4 = emphasis({ block: badgeAsShipped }, STATES[2]);
+check("the old encore badge is rejected on paper", bug4.score < EMPHASIS_MARGIN,
+      `${detail(bug4)} ΔE, ${bug4.score.toFixed(2)}x its floor`);
+
 const bug3 = hairlineFills(asShippedCss);
 check("the old clip-title hover is caught", bug3.length === 1,
       bug3.join(" | ") || "not caught — the substitution missed, so this proves nothing");

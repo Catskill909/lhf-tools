@@ -96,6 +96,23 @@ and it is the single most common way these documents mislead their reader.
   a rule stated in contrast ratio alone passes every bug this class has
   produced. Its floors are per channel and calibrated against real failures —
   text needs a wider gap than an edge, because it has to be *found*.
+- **Emphasis has a direction, and gold points the wrong way on paper.**
+  `--gold` is *lighter* than the copy around it, which on the dark ground means
+  it advances and on paper means it recedes — the same token doing opposite
+  jobs. "RAN 3 TIMES" sat 16 L* toward the stock from its own copy, which is
+  what "washed out" always turns out to mean. A label may never lie closer to
+  its ground than the copy it emphasises. Gold as small text is `--gold-text`
+  (deep bronze on paper), and the gold *identity* moves to the rule and
+  `--gold-wash` behind the notice, where an area of it can actually be seen.
+- **Hue does not carry at small sizes — lightness does.** The encore badge
+  shipped as a gold outline that measured 40 ΔE from the metadata beside it and
+  was still invisible on paper, because only 6 L* of that was lightness. At
+  0.63rem, uppercase and letterspaced, the glance is luminance first. On the
+  dark ground the same gold is also 19 L* brighter than its neighbours, which
+  is why it works there and only there. The badge is now `--gold-bg` /
+  `--gold-ink`: an outline in dark, an inverted stamp on paper. The test scores
+  every channel on ΔE **and** L*, and takes the weaker — so a colour that moves
+  in hue alone cannot pass.
 - **`--rule` and `--rule-hard` are hairlines, never surfaces.** Their alpha is
   set so a 1px line prints, which on the light stock means 0.42 against dark's
   0.11 — so the same token behind a line of text is a whisper in one theme and
