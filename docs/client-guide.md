@@ -135,6 +135,9 @@ endings.
   that row; click along it to move within the clip
 - **Rename** by clicking the title, **re-open** it to adjust the edit, or
   **download** it again from the arrow on the row
+- **Copy link** from the **⋯** menu gives you a web address that opens the
+  editor on exactly that passage — send it to someone instead of describing
+  where to look
 - **Filter by label.** The ones you use most sit across the top; pick two and you
   get only the clips carrying both
 - **Grouped by when you saved them** — today, yesterday, last week
@@ -189,7 +192,9 @@ It's worth knowing what that file is, because it's more than a download:
   backup, and a year later nothing else would tell you which one you had.
 
 Audio isn't inside it — only links to it. All 143 hours would be 8–12 GB, which
-is a download rather than a file.
+is a download rather than a file. That's worth holding alongside the
+**100-episode limit** section above: this package preserves everything *except*
+the recordings.
 
 **Links** — the address bar always matches what you're looking at, so any search
 can be pasted to a colleague, or pointed at a single moment. That's also how a
@@ -217,25 +222,56 @@ Just type — results narrow as you go. Beyond that:
 **The transcripts are machine-made** — good enough to find things, but names
 take some damage. Fine for searching, not for quoting.
 
-**The feed only gives out the most recent 100 episodes per show**, so this
-covers roughly the last two years — back to September 2024. Older episodes need
-pulling from the Podbean back-end.
+**The archive is backed up.** The server takes snapshots and full backups on a
+two-week rotation, and the archive package below is a third copy you can hold
+yourself, independent of this software entirely.
 
-**And both shows are now sitting at exactly that limit.** Which means that from
-the next episode each of you publishes, the oldest one drops out of the feed.
-The archive keeps it — it doesn't forget anything it has already read — but
-after that point *this* becomes the only place it can be reached from, because
-the feed no longer offers it.
+---
 
-Nothing is lost today, and nothing needs deciding this week. Two things follow
-from it, though, and they're worth knowing now rather than in a year:
+## About the 100-episode limit
 
-- **The archive is worth backing up**, and there's now a tool that does it. It
-  used to be rebuildable from the feeds in two minutes; that stops being true
-  from here on.
-- **The older backlog gets no easier to reach.** Everything before September
-  2024 is already only in the Podbean back-end. If you want it in here, that's
-  a one-time job whenever you're ready.
+This is the one thing on this page worth reading twice, and it's a question for
+you rather than a problem with the archive.
+
+**Podbean carries the most recent 100 episodes per show.** Both shows are now
+sitting at exactly that number. So from the next episode each of you publishes,
+the oldest one drops off the end.
+
+**What the archive keeps, permanently:** the episode, its description, its full
+transcript, every timestamped line, the tags, the re-air detection, and any
+clips you've marked. None of that depends on Podbean once we've read it. Search
+keeps working. The words stay findable.
+
+**What the archive doesn't hold: the recordings.** Audio streams from Podbean
+straight to your browser — we store the address, not the file. That has been the
+right arrangement, and it's why the whole thing is small enough to email. But if
+an episode leaves Podbean and the file goes with it, then in here that episode
+becomes readable and searchable but **no longer playable**, and clips can't be
+cut from it.
+
+### The question
+
+**Do you keep your own copies of the finished episodes?**
+
+If you do — masters, Descript projects, a drive somewhere — then this is
+housekeeping. The archive keeps everything it already has, and re-pointing it at
+your copies is straightforward whenever it matters.
+
+If you don't, and Podbean has been the only copy, then that's worth knowing
+soon, because it changes what this software should be doing. We would want to
+start keeping the audio here as well as the catalogue — technically simple, but
+a real change in what the archive is, and one worth deciding on purpose.
+
+Two related things while you're asking Podbean:
+
+- **Does anything survive an episode being removed** — the file, the transcript,
+  any AI work you've paid for? Worth knowing exactly, rather than assuming.
+- **The older backlog.** Everything before September 2024 was already out of
+  reach of the feed. If you want it in here, it's a one-time job through
+  Podbean's back-end, and it gets no easier with time.
+
+Nothing here needs doing this week. The first question is the one that decides
+the rest.
 
 ---
 
@@ -256,14 +292,19 @@ That's the part being backed up.
 | A cache of waveforms you've opened, so a 30-minute show downloads once | Rebuilt automatically |
 | **Your saved clips and their labels** | **Not rebuilt — this is the one to know about** |
 
-The first two look after themselves. **Saved clips are the only thing here you
-can actually lose**: they're on that computer, in that browser, and clearing your
-browsing data takes them. Not the audio — that lives on your podcast host and
-isn't going anywhere — but the record of which moments you'd found and what you
-called them.
+The first two look after themselves. **Saved clips are the only thing in the
+browser you can actually lose**: they're on that computer, and clearing your
+browsing data takes them — not the audio, but the record of which moments you'd
+found and what you called them.
 
 If a list of clips ever matters enough that losing it would hurt, download them
-as a zip; that file is yours and outlives everything.
+as a zip; that file is yours and outlives everything. Same for a clip you've
+downloaded — that's a normal file on your computer.
+
+**The audio is a separate question, and it's the one below.** Everything the
+archive plays, and everything the clip editor cuts from, streams from Podbean —
+we hold the catalogue and the words, not the recordings. That's been the right
+arrangement while Podbean is holding them. See **About the 100-episode limit**.
 
 **A clip you download is a file on your computer**, like any other download. It
 isn't stored in the site and never was.
@@ -284,8 +325,9 @@ show notes, the transcripts, the links you write yourself. **That approach has
 now gone about as far as it can.** Nothing in the archive uses AI, and nothing
 in it needs to.
 
-The remaining items split into two kinds: one that's a decision, and things
-that are simply more work.
+The remaining items split into three kinds: **one question only you can answer**
+(the recordings — see **About the 100-episode limit** above, and it's the one
+that ranks first), one decision about AI, and things that are simply more work.
 
 ### The thing four features have in common
 
