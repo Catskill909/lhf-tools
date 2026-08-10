@@ -117,7 +117,8 @@ marking that episode's own silence. The gaps between words are visible, so you
 can see the pause you're cutting into rather than guessing at it, and zoom right
 down to a fraction of a second on one edge.
 
-![The clip editor — the passage selected on the waveform, in and out points, audition and snap controls, and the MP3 download](screenshots/audio-edit-modal.png)
+<img src="screenshots/audio-edit-modal.png" width="820"
+     alt="The clip editor — the passage selected on the waveform, in and out points, audition and snap controls, and the MP3 download">
 
 **It remembers the clips you make.** Finding a moment in 143 hours is the hard
 part, and it used to be work you did again every time — cut a clip, and the only
@@ -142,6 +143,9 @@ endings.
   get only the clips carrying both
 - **Grouped by when you saved them** — today, yesterday, last week
 - **Nothing is deleted without a ten-second undo**
+
+<img src="screenshots/clips.png" width="560"
+     alt="The Clips list — two saved clips with labels, the filter and label bar, and Download all">
 
 **Download all** packs the lot into one zip, and asks you to name it and add a
 note first. The note goes inside as a text file next to a list of every clip with
