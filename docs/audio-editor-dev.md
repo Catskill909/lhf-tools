@@ -15,7 +15,7 @@ and were verified; Phase 5's tests were written alongside them rather than after
 | [3 — Detail peaks](#phase-3--detail-peaks---built) | 10 ms resolution: you can see the silences, and Snap lands *in* them. Zoom past the selection. | ✅ built |
 | [4 — Marking and navigation](#phase-4--marking-and-navigation---built) | `I`/`O` mark at the playhead, `[`/`]` jump between pauses, Fit. | ✅ built |
 | [5 — Verification](#phase-5--verification) | 49 pure checks in `tests/test-waveform.mjs`, plus browser suites. | ✅ done, alongside |
-| [6 — Momentary-action feedback](#phase-6--show-that-a-momentary-action-is-momentary-not-started) | Audition and Snap would show they are running. | ⬜ **not started** |
+| [6 — Momentary-action feedback](#phase-6--show-that-a-momentary-action-is-momentary) | Audition and Snap show they ran. | ✅ built |
 
 **Three defects were found by using the editor, after their phases shipped** —
 [Repeat and three others](#audit-of-phases-12-before-starting-phase-3),
@@ -23,18 +23,32 @@ and were verified; Phase 5's tests were written alongside them rather than after
 and [the redundant lead-in button](#found-in-use-with-2s-lead-in-and-audition-in-were-the-same-button).
 All are fixed. All were the same bug shape — see *The recurring bug class* below.
 
-### Up next, in the order I would do it
+### Up next
 
-1. **Stable clip identity** — specified as Phase A in `docs/clip-library.md`, not
-   here. A **live latent defect**: `?ep=123&from=&to=` share links key on a row
-   id that ingest can reassign, so a link can silently open the wrong episode.
-   Independent of everything else, small, and the thing that ages worst.
-2. **[Phase 6](#phase-6--show-that-a-momentary-action-is-momentary-not-started)** —
-   an afternoon, fully specced, came from live use.
-3. **The clip library** (`docs/clip-library.md`, Phase B) — but two questions for
-   the client come first: is the library one producer's or the newsroom's, and is
-   losing it to a browser storage clear acceptable? The answer decides whether
-   this application ever needs user accounts.
+**All three items that stood here on 9 August 2026 are done.**
+
+1. ~~**Stable clip identity**~~ ✅ — `?ep=` links now carry `g=`, the first eight
+   hex of `sha1(guid)`. The server resolves the id, compares, and believes the
+   fingerprint when they disagree. Links without `g` behave exactly as before.
+   Building it turned up that **nothing ever wrote such a link** — the capability
+   was documented with no button — so **Copy link** was added to the clip
+   library's row menu, which is the natural home now that clips are saved.
+2. ~~**Phase 6**~~ ✅ — see below.
+3. ~~**The clip library**~~ ✅ **built** — `docs/clip-library.md` is now design
+   plus an **As built** section. The two client questions were answered by the
+   client directly: browser storage for v1, and shared storage is a v2 decision
+   that this build deliberately does not pre-empt.
+
+**What is actually next** is no longer in this document:
+
+- **The shared topic vocabulary** — `docs/ai-layer.md` → *A shared vocabulary*,
+  with a ready-to-send draft at `docs/ask-vocabulary.md`. The cheapest first
+  step needs no AI, no key and no money: measure how far the 145 existing regex
+  rules get against 882,346 words of transcript.
+- **Titles from the transcript** — the one clip-library idea that was designed
+  and not built. `docs/clip-library.md` → divergence 5.
+- **No automated coverage of the library's interface.** Two of the three bugs
+  found on build day were found by hand, not by a test.
 
 ### Facts you will need before touching anything
 
@@ -714,9 +728,10 @@ the actual editor remain the better detector for that class.
 
 ---
 
-## Phase 6 — Show that a momentary action is momentary (not started)
+## Phase 6 — Show that a momentary action is momentary
 
-Reported from live use, 9 August 2026.
+Reported from live use, 9 August 2026. **Built the same day** — see
+[As built](#as-built-6) at the end of this section.
 
 **The problem.** Audition in / Audition out play a fixed two seconds and stop on
 their own. Nothing on screen says that is what will happen, and nothing marks
@@ -751,6 +766,39 @@ behaviour in one press: this button plays a segment and returns. No text needed.
   `.on` while `#tPlay` reads "Pause", then assert `.on` is gone once it reads
   "Play" again. Poll for the condition rather than sleeping — fixed sleeps
   against the CDN produced several false failures during Phases 1–4.
+
+<a id="as-built-6"></a>
+
+### As built
+
+Landed as specified, with one thing the plan did not foresee.
+
+**`clearToolLight()` is scoped to `.clip-tools`, not to `.tool`.** Repeat is also
+a `.tool` and *also* uses `.on` — but its `.on` means a toggle that stays on. An
+unscoped clear would have switched Repeat off as a side effect of a two-second
+audition, which is precisely the control Repeat exists to survive. The note above
+said to reuse `.tool.on` so that "lit" means one thing; it does, but the two
+lifetimes are different and only the momentary one is cleared.
+
+**The originating control is recorded by `playRange`, not by the click handler**,
+exactly as the plan insisted — `clip.playSrc`, set alongside `playFrom`/`playTo`.
+Handlers pass `{ src: e.currentTarget }` and nothing else. Every other caller
+(the transport, the overview click, a drag, a resume) passes no `src`, so the
+light clears by default rather than needing to be turned off.
+
+**One clear covers every exit** because they all run through `setPlaying`:
+natural end, stop, pause, and a different control taking over. `closeClip` clears
+separately — the buttons outlive the modal in the DOM, so a light left on would
+greet the next episode.
+
+**Snap flashes for 420 ms** rather than lighting, since it plays nothing and has
+no run to represent. Making Snap *audible* was raised in the notes above and
+deliberately not done: it changes what the button does, which is a different
+decision from telling you it happened.
+
+**Not covered by a test.** This is DOM state during real playback, so it needs a
+browser — the same reason the Phase 1–4 suites are not committed. The check to
+run by hand is the one in the notes above.
 
 ## Brainstorm — features for LHF and the labor podcast network
 

@@ -333,10 +333,28 @@ empty can hand the same number to a different episode.
 *cut a clip from the wrong audio while it all looked correct*. The fix was to key
 on the audio URL, which identifies the recording rather than its row.
 
-**The existing share link still has this bug.** `?ep=123&from=522&to=549`
-([`static/index.html:3577`](../static/index.html#L3577)) is fine while the volume
-survives and wrong the moment it does not — a link emailed in March opens a
-different episode at the same timecode, silently.
+> **✅ Fixed 9 August 2026.** Links now carry `g=` — the first eight hex of
+> `sha1(guid)`. `/api/episode/<id>` resolves the id, compares, and **believes the
+> fingerprint when the two disagree**, falling back to a scan for the matching
+> episode. Links without `g` resolve by id exactly as they always did. The raw
+> guid is never exposed; only the truncated hash.
+>
+> Building it surfaced something the doc had not noticed: **nothing in the app
+> ever wrote such a link.** `?ep=` was read but never generated, so it was a
+> documented capability with no button — hardening it alone would have hardened
+> something nobody could reach. **Copy link** now sits in the clip row's `⋯`
+> menu, which is its natural home now that clips are saved.
+>
+> One nicety worth keeping: Copy link checks the episode the id returns against
+> the **audio URL stored on the clip** before publishing its hash. If they
+> disagree the id has drifted since the clip was saved, and it says so rather
+> than handing over a link that opens the wrong show — the one outcome the whole
+> token exists to prevent.
+
+**The bug, as it stood** (kept because it is the clearest statement of the
+class): `?ep=123&from=522&to=549` was fine while the volume survived and wrong
+the moment it did not — a link emailed in March opens a different episode at the
+same timecode, silently.
 
 **The library does not inherit it**, provided decision 4 above is followed. The
 clip object already carries `url`

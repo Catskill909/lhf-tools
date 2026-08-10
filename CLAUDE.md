@@ -42,8 +42,10 @@ without knowing them.
 - **Episode ids are not stable.** `INTEGER PRIMARY KEY` assigned in ingest
   order, so rebuilding from an empty volume can give a number to a different
   episode. Peaks cached under `ep-<id>` once served a returning visitor another
-  show's waveform. **Key on `guid` or the audio URL.** The `?ep=` share link
-  still has this bug; see `docs/clip-library.md`.
+  show's waveform. **Key on `guid` or the audio URL.** Both known instances are
+  fixed — the peaks cache keys on the audio URL, and `?ep=` links carry
+  `g=sha1(guid)[:8]`, which the server believes over the id. **Anything new that
+  names an episode by row id is a third instance**, so don't.
 - **`waveform.js` hardcodes a dark palette** that the light theme never
   overrides. Anything new drawn on a canvas must be passed explicit colours or
   it will be invisible in one theme. This has caused a real defect once.

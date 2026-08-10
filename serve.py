@@ -29,6 +29,23 @@ DB_PATH = os.environ.get("DATABASE_PATH", os.path.join(ROOT, "data", "lhf.sqlite
 STATIC = os.path.join(ROOT, "static")
 
 
+EPISODE_SQL = """SELECT e.id, e.title, e.published_at, e.duration_sec,
+                        e.audio_url, e.episode_url, e.guid, s.name AS show_name
+                 FROM episodes e JOIN shows s ON s.id = e.show_id"""
+
+
+def guid_hash(guid):
+    """Short, stable fingerprint of an episode's feed id.
+
+    Eight hex characters — 32 bits. Enough that a collision across a few
+    hundred episodes is not going to happen, and short enough that a shared
+    link stays readable. This is an integrity check on a link, not a secret:
+    it answers "is row 123 still the episode this link was made for", so a
+    truncated hash is the right tool and sha1 is a fine one.
+    """
+    return hashlib.sha1((guid or "").encode("utf-8")).hexdigest()[:8]
+
+
 def connect():
     conn = sqlite3.connect(DB_PATH)
     conn.row_factory = sqlite3.Row
@@ -853,20 +870,42 @@ class Handler(BaseHTTPRequestHandler):
 
         # One episode, for shared moment links (?ep=&from=&to=) that open the
         # clip editor without running a search first.
+        # `?g=` is an integrity token, not a security one.
+        #
+        # Episode ids are INTEGER PRIMARY KEY assigned in ingest order, so
+        # rebuilding the database from an empty volume can hand the same number
+        # to a different episode. A `?ep=123&from=&to=` link emailed in March
+        # would then open a different show at the same timecode, silently — the
+        # same class of mistake as the `ep-<id>` peaks cache that once served a
+        # returning visitor another show's waveform.
+        #
+        # So a link also carries the first 8 hex of sha1(guid). Resolve the id,
+        # compare; on a mismatch the id has drifted and the hash is believed
+        # instead. Read-only, one branch, and an old link without `g` behaves
+        # exactly as it always did.
         m = re.fullmatch(r"/api/episode/(\d+)", path)
         if m:
+            want = (one("g") or "").lower()
             conn = connect()
             try:
-                row = conn.execute(
-                    """SELECT e.id, e.title, e.published_at, e.duration_sec,
-                              e.audio_url, e.episode_url, s.name AS show_name
-                       FROM episodes e JOIN shows s ON s.id = e.show_id
-                       WHERE e.id = ?""", (int(m.group(1)),)).fetchone()
+                row = conn.execute(EPISODE_SQL + " WHERE e.id = ?",
+                                   (int(m.group(1)),)).fetchone()
+                if want and (not row or guid_hash(row["guid"]) != want):
+                    # The id no longer names the episode the link was made for.
+                    # Find the recording itself.
+                    for cand in conn.execute(EPISODE_SQL):
+                        if guid_hash(cand["guid"]) == want:
+                            row = cand
+                            break
+                    else:
+                        row = None
             finally:
                 conn.close()
             if not row:
                 return self._send(404, json.dumps({"error": "no such episode"}))
-            return self._send(200, json.dumps(dict(row)))
+            out = {k: row[k] for k in row.keys() if k != "guid"}
+            out["guid_hash"] = guid_hash(row["guid"])
+            return self._send(200, json.dumps(out))
 
         # The transcript modal's data: every line with its timing, plus
         # server-side highlighting for whatever query opened it.

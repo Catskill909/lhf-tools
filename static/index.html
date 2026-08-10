@@ -2683,7 +2683,8 @@
           a scrubber appears on that row while it plays, and you can click along
           it to move within the clip. Click a title to rename it. The
           <b>download arrow</b> saves that one clip as an MP3;
-          <b>⋯</b> holds <i>Edit in editor</i> and <i>Remove</i>.</p>
+          <b>⋯</b> holds <i>Edit in editor</i>, <i>Copy link</i> and
+          <i>Remove</i>.</p>
         <p class="lede">Removing something gives you ten seconds to undo it.
           Clips are grouped by when you saved them — today, yesterday, last
           week.</p>
@@ -2716,8 +2717,12 @@
         <h3>Sharing what you found</h3>
         <p class="lede">The address bar always reflects what you're looking at,
           so any search can be copied and sent to someone — filters, sort order
-          and all. A link can also point at a single moment, opening the editor
-          on it.</p>
+          and all.</p>
+        <p class="lede">A link can also point at <b>a single moment</b>. In your
+          Clips list, <b>⋯ → Copy link</b> gives you one that opens the editor
+          on exactly that passage. It carries a fingerprint of the episode
+          alongside its number, so it keeps pointing at the right show even if
+          the archive is ever rebuilt.</p>
       </section>
 
       <section class="help-sec">
@@ -4037,6 +4042,9 @@ async function openClip(ep, fromSec, toSec) {
     // which is why the editor had six play buttons and no way to stop.
     playhead: fromSec, playing: false, loop: false,
     playFrom: null, playTo: null, follow: false,
+    // Which control started the current playback, so a momentary action can
+    // show it is running. Set by playRange, never by a click handler.
+    playSrc: null,
   };
   setPlaying(false);
   setLoop(false);
@@ -4110,6 +4118,9 @@ function closeClip() {
   clipModal.hidden = true;
   hideLoad();
   clip = null;
+  // Closing mid-audition is an exit like any other, and the buttons outlive
+  // the modal in the DOM — a light left on would greet the next episode.
+  clearToolLight();
   // The library sits underneath and may have been edited from — a clip saved
   // while the editor was on top must not leave a stale list behind it.
   if (libOpen()) libRender();
@@ -4254,11 +4265,45 @@ function clipAudio() {
   return clip.audio;
 }
 
+/* Phase 6 — show that a momentary action is momentary.
+ *
+ * Audition in/out play a fixed two seconds and stop on their own. Nothing said
+ * so, and nothing marked that it was happening, so the silence afterwards read
+ * as ambiguous: did it finish, did it fail, did I mis-click? Lighting the
+ * button while its own playback runs teaches the behaviour in one press.
+ *
+ * Scoped to `.clip-tools` deliberately: #tLoop is also a `.tool` and its `.on`
+ * means a toggle that stays on. Clearing indiscriminately would switch Repeat
+ * off as a side effect of a two-second audition.
+ *
+ * The originating control is recorded by playRange, not by the click handlers.
+ * Capturing it at press time is the shape that has already produced three bugs
+ * in this file — see "The recurring bug class" in docs/audio-editor-dev.md.
+ */
+function clearToolLight() {
+  document.querySelectorAll(".clip-tools .tool.on")
+    .forEach(b => b.classList.remove("on"));
+}
+
 function setPlaying(on) {
   if (clip) clip.playing = on;
   const b = $("#tPlay");
   b.textContent = on ? "❚❚" : "▶";
   b.setAttribute("aria-label", on ? "Pause" : "Play");
+  // Every exit runs through here — natural end, stop, pause, and a different
+  // control taking over — so one clear covers all of them. A button left lit
+  // after the audio stops is worse than no indicator at all.
+  clearToolLight();
+  if (on && clip && clip.playSrc) clip.playSrc.classList.add("on");
+}
+
+/* Snap moves a cut point and plays nothing, so it has no run to light. A brief
+ * flash of the same highlight makes the two families read alike: something
+ * happened, it is over, the mark moved. */
+function flashTool(el) {
+  if (!el) return;
+  el.classList.add("on");
+  setTimeout(() => el.classList.remove("on"), 420);
 }
 
 function setLoop(on) {
@@ -4288,7 +4333,7 @@ function setLoop(on) {
    Three bugs of this exact shape shipped from this file (Repeat, Play after
    moving the lead handle, and that lead-in). Anything the transport remembers
    across a press has to say whether a later edit invalidates it. */
-function playRange(from, to, { follow = false } = {}) {
+function playRange(from, to, { follow = false, src = null } = {}) {
   if (!clip) return;
   const a = clipAudio();
   cancelAnimationFrame(clip.raf);         // a second call replaces the loop
@@ -4296,6 +4341,9 @@ function playRange(from, to, { follow = false } = {}) {
   clip.playTo = to;
   clip.follow = follow;
   clip.playhead = from;
+  // Which control started this. Recorded here rather than in the handler, so
+  // it cannot go stale against a playback that has since been replaced.
+  clip.playSrc = src;
 
   const begin = () => {
     if (!clip || clip.audio !== a) return;
@@ -4421,19 +4469,23 @@ $("#waveZoom").addEventListener("wheel", e => {
 $("#tPlay").addEventListener("click", togglePlay);
 $("#tStop").addEventListener("click", stopPlay);
 $("#tLoop").addEventListener("click", () => clip && setLoop(!clip.loop));
-$("#audIn").addEventListener("click", () => playRange(Math.max(0, clip.in - 2), clip.in + 2));
-$("#audOut").addEventListener("click", () => playRange(Math.max(0, clip.out - 2), clip.out + 2));
-$("#snapIn").addEventListener("click", () => {
+$("#audIn").addEventListener("click", e =>
+  playRange(Math.max(0, clip.in - 2), clip.in + 2, { src: e.currentTarget }));
+$("#audOut").addEventListener("click", e =>
+  playRange(Math.max(0, clip.out - 2), clip.out + 2, { src: e.currentTarget }));
+$("#snapIn").addEventListener("click", e => {
   clip.anchor = "in";
   clip.in = Math.min(snapToSilence(clip.detail, clip.duration, clip.in), clip.out - 0.2);
   selectionEdited("in");
   recentre();
+  flashTool(e.currentTarget);
 });
-$("#snapOut").addEventListener("click", () => {
+$("#snapOut").addEventListener("click", e => {
   clip.anchor = "out";
   clip.out = Math.max(snapToSilence(clip.detail, clip.duration, clip.out), clip.in + 0.2);
   selectionEdited("out");
   recentre();
+  flashTool(e.currentTarget);
 });
 
 $("#clipGo").addEventListener("click", async () => {
@@ -4818,16 +4870,24 @@ function readURL() {
   return p;
 }
 
-/* ?ep=123&from=522&to=549 opens that episode's clip editor directly, so a
-   moment can be shared as a link rather than described in an email. */
+/* ?ep=123&g=2245e4af&from=522&to=549 opens that episode's clip editor directly,
+   so a moment can be shared as a link rather than described in an email.
+
+   `g` is the integrity token — see the note on /api/episode in serve.py. The
+   row id alone is not a safe name for an episode, because ingest can reassign
+   it, so the link carries a fingerprint of the feed guid as well and the server
+   believes the fingerprint when the two disagree. Links made before this
+   existed have no `g` and resolve by id exactly as they used to. */
 async function openFromURL(p) {
   if (p.has("help")) openHelp();          // so the guide can be linked to directly
   const id = p.get("ep");
   if (!id) return;
   const from = parseFloat(p.get("from")), to = parseFloat(p.get("to"));
   if (!isFinite(from) || !isFinite(to)) return;
+  const g = p.get("g");
   try {
-    const ep = await (await fetch("/api/episode/" + encodeURIComponent(id))).json();
+    const ep = await (await fetch("/api/episode/" + encodeURIComponent(id)
+      + (g ? "?g=" + encodeURIComponent(g) : ""))).json();
     if (ep && ep.audio_url) openClip(ep, from, to);
   } catch { /* a bad link shouldn't break the page */ }
 }
@@ -5044,6 +5104,7 @@ function libRender() {
       </div>` : ""}
       <div class="cr-menu" hidden>
         <button type="button" data-act="edit">Edit in editor</button>
+        <button type="button" data-act="link">Copy link</button>
         <button type="button" class="danger" data-act="remove">Remove</button>
       </div>
     </div>`;
@@ -5283,6 +5344,7 @@ $("#libList").addEventListener("click", e => {
   // range request is still in flight starts a duplicate download.
   if (act === "download") return libDownload(c, actEl.classList.contains("cr-dl") ? actEl : null);
   if (act === "edit")     return libEdit(c);
+  if (act === "link")     return libCopyLink(c);
 });
 
 document.addEventListener("click", e => {
@@ -5521,6 +5583,39 @@ async function libZipAll() {
   }
 }
 
+
+/* Copy a link to this moment.
+ *
+ * The link needs the episode's guid fingerprint, and the only thing we hold is
+ * a row id — which is exactly the value that cannot be trusted. So we ask the
+ * server for that id and check the audio URL it comes back with against the one
+ * saved on the clip. The audio URL identifies the recording; if the two agree,
+ * the id still names the right episode and its hash is safe to publish.
+ *
+ * If they disagree the id has drifted since the clip was saved, and rather than
+ * hand over a link that opens the wrong show we say so. This is the one case
+ * the whole `g` token exists to prevent, so it must not be papered over here.
+ */
+async function libCopyLink(c) {
+  libStrip.say("Building the link…", null);
+  try {
+    const ep = await (await fetch("/api/episode/" + encodeURIComponent(c.epId))).json();
+    if (!ep || !ep.audio_url) throw new Error("that episode is no longer in the archive");
+    if (ep.audio_url !== c.url) {
+      libStrip.say("Can't link this one — the episode moved in the archive.", null, true);
+      return;
+    }
+    const u = new URL(location.pathname, location.origin);
+    u.searchParams.set("ep", ep.id);
+    if (ep.guid_hash) u.searchParams.set("g", ep.guid_hash);
+    u.searchParams.set("from", c.in.toFixed(2));
+    u.searchParams.set("to", c.out.toFixed(2));
+    await navigator.clipboard.writeText(u.toString());
+    libStrip.say("Link copied.", null);
+  } catch (e) {
+    libStrip.say("Couldn't copy that link: " + e.message, null, true);
+  }
+}
 
 /* Re-open a saved clip in the editor. openClip wants an episode row; a saved
    clip carries everything it needs except duration, which openClip recovers

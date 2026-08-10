@@ -175,7 +175,10 @@ decision, and an admin screen to run it from. See `docs/ai-layer.md`.
 **Sharing**
 - Every search is reflected in the address bar — filters, tag, sort and all —
   so a result set can be sent to a colleague as a link
-- `?ep=123&from=522&to=549` opens the clip editor on a single moment
+- `?ep=123&g=2245e4af&from=522&to=549` opens the clip editor on a single
+  moment. `g` is the first 8 hex of `sha1(guid)` — ids are reassignable, so
+  the server compares and believes the fingerprint. **Copy link** on a clip
+  row builds it; older links without `g` still resolve by id.
 - `?help` opens the guide directly, for linking someone to the instructions
 - `?q=` is the **public integration point**: laborheritage.org can put a search
   box on its own page and link straight in, with no API work
@@ -341,6 +344,7 @@ run it from.
 | `docs/lhf-podcast-spec.html` | **Client-facing** planning memo (shared with them). Tier ladder, no cost-of-work talk. |
 | `docs/build-plan.html` | **Internal** build plan. Google setup walkthrough, VPS sizing, phases, risks. |
 | `docs/reply-descript.md` | The short email reply about Descript transcripts (sent). |
+| `docs/ask-vocabulary.md` | **Draft, not sent.** Asks LHF whether the podcast archive should share the Labor Arts & Culture Database's 34-term topic vocabulary. Reasoning lives in `docs/ai-layer.md`. |
 | `docs/transcripts-plan.md` | **Phased plan for transcripts.** Read before touching this area. |
 
 Both `docs/*.html` are also published as artifacts — same URLs update in place
