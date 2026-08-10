@@ -209,6 +209,42 @@ are getting.** `describeScope()` already produces that summary line and
 
 Sort order carries over to both — an unfiltered export still has a useful order.
 
+**A choice between two identical files is not a choice.** With nothing filtered,
+"This search" and "Everything" are the same 200 rows, presented as two options
+with the same number beside them — which makes the reader hunt for a difference
+that is not there. Since August 2026 the radio group appears only when something
+is actually filtering. Otherwise it is not shown at all, and the subhead carries
+the whole answer: *All 200 episodes — the whole archive.*
+
+Not a disabled control, and not one option shown pre-selected: both read as a
+chooser that won't respond. The count still appears, because the size of the
+file is never implied — it just moves to the only line left.
+
+The scope is read from `currentQuery()` rather than from a second list of the
+filter fields — anything but `sort` in that query means the view is narrower
+than the archive. A separate list would have gone stale the first time a filter
+was added, and the failure would have been a *filtered* export claiming to be
+complete.
+
+That last part fixed a real defect rather than only removing a redundant
+control. `complete` was `exportScope === "all"`, and the scope reset to `"view"`
+on every open — so an unfiltered archive package downloaded as
+`lhf-archive-…-filtered.zip` with a README announcing it held "only part of the
+archive: the whole archive". It is now `exportIsComplete()`, which is true when
+the scope is "all" *or* nothing is filtering. The clip library's zip never had
+this bug: it derives `filtered` by comparing row counts, which is the same
+answer computed the safe way.
+
+**And hiding the group did not hide it.** `.scope-list` sets `display: grid`,
+which beats the browser's own `[hidden] { display: none }`, so the first attempt
+shipped a dialogue that had correctly decided not to offer a choice and then
+drew it anyway. The stylesheet now carries one global
+`[hidden] { display: none !important; }` rather than the per-component companion
+rule this codebase had been adding by hand sixteen times; `tests/test-hidden.mjs`
+stops that rule being deleted as redundant. The same defect was live in the clip
+library — `.lib-tools` is `display: flex`, and its "fewer than six clips is
+furniture" rule had never once taken effect.
+
 ### 2. Explain by showing
 
 The dialogue currently *describes* what you will get in a paragraph. The

@@ -121,6 +121,15 @@ and it is the single most common way these documents mislead their reader.
   L* off the stock in both themes. `test-palette.mjs` enforces this
   structurally: a rule token may fill a box only if that box declares a
   `height` of 4px or less.
+- **`el.hidden = true` loses to any class that sets `display`.** The browser's
+  `[hidden]` rule is a user-agent rule, so `display: flex` on the component
+  beats it and the element stays fully visible while JS reports it hidden. It
+  shipped twice — the export dialogue drew a scope choice it had just decided
+  not to offer, and the clip library's tools row ignored its own "fewer than
+  six clips" rule. One global `[hidden] { display: none !important; }` now
+  covers everything; `tests/test-hidden.mjs` exists to stop it being deleted as
+  redundant. The per-component `.foo[hidden]` rules further down the stylesheet
+  predate it — **don't add more of them.**
 - **The peaks cache is versioned (`v: 2`).** Change the format without bumping
   it and returning users get old data read as new — a silently wrong waveform.
 - **`schema.sql` is all `CREATE TABLE IF NOT EXISTS`**, so it does nothing to a
@@ -150,6 +159,7 @@ node tests/test-update-prompt.mjs   # pure: the new-version reload prompt
 node tests/test-zip.mjs             # pure: the archive packager
 node tests/test-clips.mjs           # pure: the saved-clip store + labels
 node tests/test-palette.mjs         # pure: both themes' colour laws, in L*
+node tests/test-hidden.mjs          # pure: `hidden` actually hides
 node tests/verify-clips.mjs 8000    # live: needs the server running + network
 ```
 

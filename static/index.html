@@ -167,6 +167,14 @@
 
   .wrap { max-width: 1000px; margin: 0 auto; padding: 0 1.5rem; }
 
+  /* `el.hidden = true` must actually hide. Any class that sets `display` beats
+     the browser's own [hidden] rule, so an element styled `display: grid` and
+     then hidden stays on screen — which shipped once, as an export dialogue
+     showing a choice it had just decided not to offer. The per-component
+     `.foo[hidden]` rules further down predate this line and are now redundant;
+     this is the one that makes the attribute reliable everywhere. */
+  [hidden] { display: none !important; }
+
   /* ------------------------------------------------------- masthead */
   .masthead {
     border-bottom: 3px solid var(--ink);
@@ -2322,7 +2330,7 @@
     <div class="modal-head">
       <div>
         <h2 class="display" id="exportTitle">Export</h2>
-        <p>What you're looking at, or the whole archive — your choice.</p>
+        <p id="exportSub">What you're looking at, or the whole archive — your choice.</p>
       </div>
       <button id="exportClose" aria-label="Close">&times;</button>
     </div>
@@ -2332,8 +2340,13 @@
            the right default. But it made the whole archive unreachable without
            first clearing every filter, and — worse — a file quietly containing
            78 of 200 episodes is a mistake found much later. Both counts are
-           always visible, so the choice cannot be made without being seen. -->
-      <div class="scope-list" role="radiogroup" aria-label="What to export">
+           always visible, so the choice cannot be made without being seen.
+
+           With nothing filtered both options are the same 200 rows, and two
+           identical counts read as a difference the reader has to hunt for.
+           The group is then hidden outright and the count moves to the
+           subhead — one statement, no chooser. -->
+      <div class="scope-list" id="scopeList" role="radiogroup" aria-label="What to export">
         <button class="scope" role="radio" data-scope="view" aria-checked="true">
           <span class="dot"></span>
           <span class="scope-txt">
@@ -2909,8 +2922,8 @@
         <p class="lede">Transcripts and timestamps are each a tick box, so you
           can take just the catalogue if that's all you need.</p>
         <p class="lede"><b>The filename says what it is.</b> Export with
-          <b>Everything</b> selected and you get
-          <code>…-complete.zip</code>; export a filtered view and you get
+          <b>Everything</b> selected — or with nothing filtered at all — and you
+          get <code>…-complete.zip</code>; export a filtered view and you get
           <code>…-filtered.zip</code>, with a warning inside the README. A
           partial export is a perfectly good dataset, but it isn't a backup —
           and a year later nothing else would tell you which one you were
@@ -3628,10 +3641,24 @@ function describeScope() {
   return bits.filter(Boolean).join(" · ") || "the whole archive";
 }
 
+/* Is the view actually narrower than the archive? Read off the query the
+   export itself sends — anything but the sort narrows it — rather than a third
+   list of the filter fields, which would go stale the first time a filter is
+   added and quietly claim a filtered export was complete. */
+function hasFilters() {
+  for (const k of currentQuery().keys()) if (k !== "sort") return true;
+  return false;
+}
+
 /* Which rows go in the file: the current result set, or the whole archive.
-   Reset to "view" on every open — a scope silently remembered from last time
-   is exactly the surprise this control exists to prevent. */
+   Reset on every open — a scope silently remembered from last time is exactly
+   the surprise this control exists to prevent. */
 let exportScope = "view";
+
+/* Whether the file about to be written is the entire archive. Not simply
+   `exportScope === "all"`: with no filters, "this search" *is* everything, and
+   the package's filename and README both hang on this answer. */
+const exportIsComplete = () => exportScope === "all" || !hasFilters();
 
 function exportParams() {
   // "Everything" keeps only the sort: an unfiltered file still benefits from
@@ -3645,11 +3672,19 @@ function exportParams() {
 }
 
 function paintScope() {
+  const choice = hasFilters();
+  const all = (CORPUS.episodes || 0).toLocaleString();
+  $("#scopeList").hidden = !choice;
   document.querySelectorAll(".scope").forEach(b =>
     b.setAttribute("aria-checked", String(b.dataset.scope === exportScope)));
   $("#scopeViewN").textContent = lastTotal.toLocaleString();
   $("#scopeViewWhat").textContent = lastScope;
-  $("#scopeAllN").textContent = (CORPUS.episodes || 0).toLocaleString();
+  $("#scopeAllN").textContent = all;
+  // With no chooser, the subhead carries the count — the size of the file is
+  // never implied, even when there is only one file it could be.
+  $("#exportSub").textContent = choice
+    ? "What you're looking at, or the whole archive — your choice."
+    : `All ${all} episodes — the whole archive.`;
 }
 
 /* The row-based formats and the package explain themselves differently: one
@@ -3787,7 +3822,7 @@ The only thing it does not carry is the audio itself, which remains at the
 }
 
 async function buildPackage(done) {
-  const complete = exportScope === "all";
+  const complete = exportIsComplete();
   const p = exportParams();
   const wantTx = $("#pkgTx").checked;
   const wantPass = $("#pkgPass").checked;
@@ -3870,7 +3905,10 @@ async function buildPackage(done) {
 
 function openExport() {
   exportFocus = document.activeElement;
-  exportScope = "view";
+  // With no filters the radio group is hidden, so "view" would leave an
+  // invisible scope deciding the package's filename. Start where the one
+  // remaining option points.
+  exportScope = hasFilters() ? "view" : "all";
   paintScope();
   paintFormat();
   $("#whatsIn").open = false;
@@ -3915,7 +3953,7 @@ $("#whatsIn").addEventListener("toggle", () => {
 $("#exportGo").addEventListener("click", async () => {
   const p = exportParams();
   const done = $("#exportDone");
-  const n = exportScope === "all" ? (CORPUS.episodes || 0) : lastTotal;
+  const n = exportIsComplete() ? (CORPUS.episodes || 0) : lastTotal;
 
   if (exportFmt === "zip") {
     const btn = $("#exportGo");
