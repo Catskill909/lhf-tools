@@ -5059,10 +5059,60 @@ const DL_ICON    = `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v1
  * A clip is a range of an MP3 already on the CDN, so this is currentTime = in
  * and stop at out. Its own audio element rather than the page player's: the
  * library can be open over a result list, and hijacking that player would
- * leave the page's transport showing something it isn't playing. */
+ * leave the page's transport showing something it isn't playing.
+ *
+ * ONE element, reused, with its handlers attached ONCE.
+ *
+ * The first version built a fresh Audio per clip and tore the old one down with
+ * `src = ""`. An empty src makes the element fire `error`, the dead element's
+ * listener was still attached, and it ran *after* the new clip had started —
+ * calling stop on audio it did not own and printing "Couldn't reach that
+ * audio." over a clip that was fine. Clicking straight from one clip to the
+ * next, which is the normal way to browse, was the one thing that broke.
+ *
+ * That is the shape this project keeps hitting: something superseded still
+ * talking to current state. `openClip` solved it with an ownership check
+ * (`clip !== me`). Here the stronger form is available — with a single element
+ * and a single set of handlers there is no stale listener that *could* fire, so
+ * the bug is structurally absent rather than guarded against.
+ *
+ * `libNow` is what the element is supposed to be playing. Clearing it first in
+ * libStopAudio is what tells the handlers a teardown was deliberate.
+ */
+let libNow = null;   // { id, in, out } — the clip the element is serving
+let libSrc = null;   // what we last assigned, since a.src returns it resolved
+
+function libAudioEl() {
+  if (libAudio) return libAudio;
+  const a = new Audio();
+  a.preload = "none";
+
+  a.addEventListener("timeupdate", () => {
+    const n = libNow;
+    if (!n) return;
+    if (a.currentTime >= n.out) { libStopAudio(); libRender(); return; }
+    libPaintScrub(n, a.currentTime);
+  });
+  a.addEventListener("ended", () => { libStopAudio(); libRender(); });
+  a.addEventListener("error", () => {
+    // No current clip means we tore it down on purpose. Only a failure while
+    // something is meant to be playing is worth telling anyone about.
+    if (!libNow) return;
+    libStopAudio(); libRender();
+    libStrip.say("Couldn't reach that audio.", null, true);
+  });
+
+  libAudio = a;
+  return a;
+}
+
 function libStopAudio() {
-  if (libAudio) { libAudio.pause(); libAudio.src = ""; libAudio = null; }
+  // Cleared before pausing, so any event the pause provokes reads as intended.
+  libNow = null;
   libPlayingId = null;
+  // Deliberately NOT clearing src: that is what fired the phantom error, and
+  // keeping it means replaying the same episode costs no second download.
+  if (libAudio) libAudio.pause();
 }
 
 /* The scrubber is written straight into the DOM rather than re-rendered.
@@ -5080,27 +5130,41 @@ function libPaintScrub(c, t) {
 
 function libPlay(c) {
   if (libPlayingId === c.id) { libStopAudio(); libRender(); return; }
-  // Starting a second clip removes the first one's scrubber, because the
-  // element only ever exists on the row that is actually playing.
-  libStopAudio();
-  const a = new Audio(c.url);
-  a.preload = "none";
-  libAudio = a;
+
+  const a = libAudioEl();
+  libNow = { id: c.id, in: c.in, out: c.out };
   libPlayingId = c.id;
-  a.addEventListener("timeupdate", () => {
-    if (a.currentTime >= c.out) { libStopAudio(); libRender(); return; }
-    libPaintScrub(c, a.currentTime);
-  });
-  a.addEventListener("ended", () => { libStopAudio(); libRender(); });
-  a.addEventListener("error", () => {
-    libStopAudio(); libRender();
-    libStrip.say("Couldn't reach that audio.", null, true);
-  });
-  a.currentTime = c.in;
-  // Some browsers ignore currentTime before metadata arrives; set it again.
-  a.addEventListener("loadedmetadata", () => { a.currentTime = c.in; }, { once: true });
-  a.play().catch(() => { libStopAudio(); libRender(); });
+  // Paint before touching the network. Browsing clips means clicking down a
+  // list, and a button that waits on a range request before it changes reads
+  // as broken. The scrubber moves to this row now; audio catches up.
   libRender();
+
+  // Two clips from the same episode share a source, so switching between them
+  // is a seek with nothing to fetch — which is most of why this now feels
+  // instant. Only a different episode pays for a load.
+  if (libSrc !== c.url) {
+    libSrc = c.url;
+    a.src = c.url;
+  }
+
+  const seek = () => {
+    if (!libNow || libNow.id !== c.id) return;   // superseded while we waited
+    try { a.currentTime = c.in; } catch { /* seek before seekable — loadedmetadata retries */ }
+  };
+  if (a.readyState >= 1) seek();
+  a.addEventListener("loadedmetadata", seek, { once: true });
+
+  a.play().then(() => {
+    if (!libNow || libNow.id !== c.id) return;
+    if (Math.abs(a.currentTime - c.in) > 1) seek();   // some browsers ignore an early seek
+  }).catch(err => {
+    // A play() interrupted by the next clip's load rejects with AbortError.
+    // That is this feature working, not failing.
+    if (err && err.name === "AbortError") return;
+    if (!libNow || libNow.id !== c.id) return;
+    libStopAudio(); libRender();
+    libStrip.say("Couldn't play that clip.", null, true);
+  });
 }
 
 /* Seeking is clamped to the clip, not the episode: the rail represents the

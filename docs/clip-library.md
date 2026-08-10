@@ -648,6 +648,45 @@ missing.
    bails when a dialogue is open above it **and** whenever focus is in an
    `input`, `textarea` or contenteditable.
 
+### Found in use: clicking straight from one clip to the next
+
+Reported the same day, from actually browsing the library. Press play on a
+second clip while a first is playing and **nothing happened**, with *"Couldn't
+reach that audio"* in the status strip — over a clip that was perfectly fine.
+
+**The cause.** Teardown did `libAudio.src = ""` to stop the download. An empty
+`src` makes the element fire **`error`**, the dead element's listener was still
+attached, and it ran *after* `libPlay` had installed the replacement — so it
+called stop on audio it no longer owned, re-rendered, and printed a network
+failure that had not happened. The one gesture it broke was clicking down a
+list, which is the normal way to browse.
+
+**The shape is the one this project keeps hitting** — something superseded still
+talking to current state. `openClip` guards it with an ownership check
+(`clip !== me`). Here the stronger form was available: **one audio element,
+handlers attached once, and a `libNow` descriptor saying what it should be
+playing.** With a single element there is no stale listener that *could* fire,
+so the bug is structurally absent rather than defended against. `libStopAudio`
+clears `libNow` first, which is how a handler tells a deliberate teardown from a
+real failure.
+
+Two things fell out of the rewrite:
+
+- **Switching is now instant within an episode.** Two clips from the same show
+  share a source, so moving between them is a seek with nothing to fetch. Only a
+  different episode pays for a load.
+- **The row repaints before the network is touched.** A play button that waits
+  on a range request before it changes reads as broken.
+
+Also: `play()` interrupted by the next clip's load rejects with `AbortError`.
+That is the feature working, and it is now ignored rather than reported.
+
+**No pure test covers this.** It is audio-element event ordering, which needs a
+browser — the same reason `verify-clips.mjs` lives apart from `tests/`. The
+check to run by hand, and the one to rebuild if the browser suites are ever
+recreated: **start clip A, click clip B while A is playing, and assert B plays
+with no message in the strip.**
+
 ### One design flaw the build exposed
 
 The masthead buttons were styled by **three copies of the same rule, keyed by
