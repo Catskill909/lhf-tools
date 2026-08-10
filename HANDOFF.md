@@ -19,11 +19,14 @@ on purpose and easily mistaken for a backlog. See *How to report work here* in
 
 ### 🔥 DO — something bad happens if ignored
 
-1. **Take a backup of the Coolify volume.** Both shows are at Podbean's
-   100-episode cap, so the database already holds episodes the feed no longer
-   serves. **If the volume is lost, those are gone for good** — they cannot be
-   re-fetched. `backup.py` is written and verified; what is missing is one copy
-   in one safe place. Command under **Backups** below. Five minutes.
+*Nothing outstanding.*
+
+**Backups are handled** — confirmed by Paul, 9 August 2026: the VPS takes
+snapshots *and* full backups on a two-week retention, and the archive package
+export is a third, app-independent copy. Earlier drafts of this file listed
+"somewhere to keep the backups" as an open task; **that was stale and is
+resolved.** The `backup.py` tooling below is still the right way to pull a
+verified snapshot by hand.
 
 ### 🐞 FIX — broken, reproducible, not urgent
 
@@ -267,11 +270,10 @@ Exposes" must be 8000**; it defaults to 3000.
 - The 55 episodes with no feed transcript (~$9.52 via Google STT)
 - One broken transcript link on Podbean's side ("MLK in Memphis" 404s);
   `python3 ingest/transcripts.py --retry` will pick it up if they fix it
-- **Somewhere to keep the backups.** `backup.py` exists and pulls a verified
-  snapshot with `--stdout`, so the tooling is done — what is missing is a
-  decision about where the copies live and how often they are taken. This is
-  no longer optional: both shows are at the feed cap, so the volume is becoming
-  the only reachable copy of anything that rotates out. See **Backups**.
+- ~~**Somewhere to keep the backups.**~~ ✅ **Resolved** — confirmed 9 August
+  2026: the VPS runs snapshots plus full backups on a two-week retention, and
+  the archive package is an app-independent third copy. `backup.py` remains the
+  way to pull a verified snapshot by hand; see **Backups**.
 - Failure notification on the refresh loop (it logs to stderr; nobody watches
   stderr). A silently broken updater is how this rots, and the symptom — an
   archive that quietly stops growing — is one nobody notices for months.
