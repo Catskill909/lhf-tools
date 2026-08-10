@@ -27,35 +27,46 @@
     --gold:       #d8a94a;
     --focus:      #ff7a5f;
   }
+  /* Light stock sits low on purpose. A raised panel needs somewhere to go, and
+     off a near-white ground there is nowhere: it collides with #fff and the
+     whole page flattens into one bright field. So the ground is a real paper
+     tone and --paper-2 is the off-white above it, never white. */
+  /* Border alphas are much higher here than in the dark palette above, and
+     that is not a mismatch. Measured, the two themes' hairlines land on the
+     same contrast ratio (~1.3:1 at --rule, ~1.9:1 at --rule-hard) — both
+     under the 3:1 a UI boundary needs. On a dark ground a faint hairline
+     reads as deliberate; on paper the identical ratio reads as unprinted.
+     So light pays for its edges: --rule ~2:1, --rule-hard 3:1. */
   :root[data-theme="light"] {
-    --paper:      #f6f3ec;
-    --paper-2:    #fffdf8;
+    --paper:      #ebe6d9;
+    --paper-2:    #f7f4ed;
     --ink:        #1b1a17;
-    --ink-2:      #5f5a50;
-    --ink-3:      #746f66;
-    --rule:       rgba(27,26,23,0.13);
-    --rule-hard:  rgba(27,26,23,0.28);
+    --ink-2:      #3f3b33;
+    --ink-3:      #56514a;
+    --rule:       rgba(27,26,23,0.42);
+    --rule-hard:  rgba(27,26,23,0.62);
     --spot:       #b8331d;
     --spot-soft:  rgba(184,51,29,0.10);
     --spot-tint:  rgba(184,51,29,0.05);
     --spot-ink:   #9c2b17;
-    --gold:       #8a6512;
+    --gold:       #7c5b10;
     --focus:      #b8331d;
   }
   @media (prefers-color-scheme: light) {
+    /* Must match :root[data-theme="light"] above, value for value. */
     :root:not([data-theme="dark"]) {
-      --paper:      #f6f3ec;
-      --paper-2:    #fffdf8;
+      --paper:      #ebe6d9;
+      --paper-2:    #f7f4ed;
       --ink:        #1b1a17;
-      --ink-2:      #5f5a50;
-      --ink-3:      #746f66;
-      --rule:       rgba(27,26,23,0.13);
-      --rule-hard:  rgba(27,26,23,0.28);
+      --ink-2:      #3f3b33;
+      --ink-3:      #56514a;
+      --rule:       rgba(27,26,23,0.42);
+      --rule-hard:  rgba(27,26,23,0.62);
       --spot:       #b8331d;
       --spot-soft:  rgba(184,51,29,0.10);
       --spot-tint:  rgba(184,51,29,0.05);
       --spot-ink:   #9c2b17;
-      --gold:       #8a6512;
+      --gold:       #7c5b10;
       --focus:      #b8331d;
     }
   }
@@ -132,12 +143,20 @@
      One class, so the next one can't. Hovers stay per-button below: the two
      that open a dialogue go spot; Theme, which only changes appearance, does
      not claim that weight. */
+  /* These are the menu. They were a hairline --ink-3 edge around 0.7rem
+     letterspaced type — no fill, no weight — which read as a caption rather
+     than a control, and on the light stock sat at the edge of legible. A
+     surface to sit on, an --ink-2 edge and a heavier label make them press-
+     able. Tokens only, deliberately: the light-specific rules further down
+     this file key on [data-theme="light"] and so never reach a visitor whose
+     OS is light and who never touched the theme toggle. */
   .mast-btn {
     display: inline-flex; align-items: center; gap: 0.42rem;
-    background: none; border: 1px solid var(--ink-3); color: var(--ink);
+    background: var(--paper-2); border: 1px solid var(--ink-2); color: var(--ink);
     border-radius: 2px; cursor: pointer; font: inherit;
-    font-size: 0.7rem; letter-spacing: 0.08em; text-transform: uppercase;
-    padding: 0.3rem 0.6rem;
+    font-size: 0.72rem; font-weight: 600;
+    letter-spacing: 0.08em; text-transform: uppercase;
+    padding: 0.32rem 0.65rem;
   }
   .mast-btn:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
   /* Theme only changes appearance, so it lifts its edge rather than claiming
