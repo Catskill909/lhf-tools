@@ -117,8 +117,7 @@ marking that episode's own silence. The gaps between words are visible, so you
 can see the pause you're cutting into rather than guessing at it, and zoom right
 down to a fraction of a second on one edge.
 
-<img src="screenshots/audio-edit-modal.png" width="820"
-     alt="The clip editor — the passage selected on the waveform, in and out points, audition and snap controls, and the MP3 download">
+![The clip editor — the passage selected on the waveform, in and out points, audition and snap controls, and the MP3 download](screenshots/audio-edit-modal.png)
 
 **It remembers the clips you make.** Finding a moment in 143 hours is the hard
 part, and it used to be work you did again every time — cut a clip, and the only
