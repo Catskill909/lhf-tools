@@ -6,6 +6,36 @@ Feature-complete for everything achievable without AI.
 **Client:** Labor Heritage Foundation — Harold Phillips (producer), Chris Garlock
 and Elise Bryant (hosts), Patrick Dixon.
 
+---
+
+## What actually needs doing
+
+**Two things. Everything else in this file is either done, or waiting on the
+client, or a note for later.** This box exists because the rest of these
+documents record reasoning rather than tasks, and read end-to-end they look like
+a backlog. They aren't one.
+
+1. **Take a backup.** Both shows are at Podbean's 100-episode cap, so the
+   database already holds episodes the feed no longer serves. If the Coolify
+   volume is lost, those are gone for good. `backup.py` is written and verified;
+   what's missing is one copy in one safe place. The command is under
+   **Backups** below. This is the only item with a real downside.
+
+2. **Send `docs/ask-vocabulary.md`.** A drafted email asking whether the podcast
+   archive should share the Labor Arts & Culture Database's topic vocabulary.
+   Their answer unlocks topics, guests, interviewers and the admin screen — all
+   built or designed, all blocked on that one conversation.
+
+**Not tasks, however they read elsewhere:**
+
+- *No automated tests for the clip library's interface* — a known property, not
+  a defect. Worth half a day only if a UI bug ever actually ships.
+- *Clip titles don't come from the transcript* — designed, not built. Small,
+  optional, nobody has asked.
+- Everything in a **Brainstorm** or **Parked** section — ideas, not commitments.
+
+---
+
 **Two things a new reader should know before anything else:**
 1. **The archive is no longer disposable.** Both shows sit at Podbean's
    100-episode feed cap, so the database is becoming the only reachable copy of
