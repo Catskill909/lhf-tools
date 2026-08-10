@@ -10,29 +10,46 @@ and Elise Bryant (hosts), Patrick Dixon.
 
 ## What actually needs doing
 
-**Two things. Everything else in this file is either done, or waiting on the
-client, or a note for later.** This box exists because the rest of these
-documents record reasoning rather than tasks, and read end-to-end they look like
-a backlog. They aren't one.
+**If it is not in this box, it is not a task.** Everything else in these
+documents is reasoning — parked ideas, rejected options, trade-offs — recorded
+on purpose and easily mistaken for a backlog. See *How to report work here* in
+`CLAUDE.md` for the four buckets and why they are kept apart.
 
-1. **Take a backup.** Both shows are at Podbean's 100-episode cap, so the
-   database already holds episodes the feed no longer serves. If the Coolify
-   volume is lost, those are gone for good. `backup.py` is written and verified;
-   what's missing is one copy in one safe place. The command is under
-   **Backups** below. This is the only item with a real downside.
+**Last reviewed: 9 August 2026.**
 
-2. **Send `docs/ask-vocabulary.md`.** A drafted email asking whether the podcast
-   archive should share the Labor Arts & Culture Database's topic vocabulary.
-   Their answer unlocks topics, guests, interviewers and the admin screen — all
-   built or designed, all blocked on that one conversation.
+### 🔥 DO — something bad happens if ignored
 
-**Not tasks, however they read elsewhere:**
+1. **Take a backup of the Coolify volume.** Both shows are at Podbean's
+   100-episode cap, so the database already holds episodes the feed no longer
+   serves. **If the volume is lost, those are gone for good** — they cannot be
+   re-fetched. `backup.py` is written and verified; what is missing is one copy
+   in one safe place. Command under **Backups** below. Five minutes.
 
-- *No automated tests for the clip library's interface* — a known property, not
-  a defect. Worth half a day only if a UI bug ever actually ships.
-- *Clip titles don't come from the transcript* — designed, not built. Small,
-  optional, nobody has asked.
-- Everything in a **Brainstorm** or **Parked** section — ideas, not commitments.
+### 🐞 FIX — broken, reproducible, not urgent
+
+*Nothing outstanding.*
+
+### ❓ ASK — blocked on someone else
+
+1. **Send `docs/ask-vocabulary.md`** — drafted, not sent. Asks whether this
+   archive should share the Labor Arts & Culture Database's 34-term topic
+   vocabulary. Their answer unlocks **topics, guests, interviewers and the admin
+   screen** — all built or designed, all waiting on this one reply.
+2. **The five open threads below** (Descript formats, speaker names, how far the
+   projects go back, Podbean credentials, what happens to episodes that fall off
+   the feed). Slow-moving; nothing is blocked on them.
+
+### 💭 NOTE — nobody has to do anything
+
+Here so they are not mistaken for the lists above.
+
+- **No automated tests cover the clip library's interface.** A known property,
+  not a defect — the logic underneath has 41 checks and the export path is
+  proven. Worth half a day only if a UI bug actually ships and annoys someone.
+- **Clip titles don't come from the transcript.** Designed, not built; see
+  `docs/clip-library.md` divergence 5. Nobody has asked for it.
+- **Everything under a *Brainstorm*, *Parked* or *Where it could go* heading**
+  anywhere in these documents. Ideas, not commitments.
 
 ---
 

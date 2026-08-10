@@ -11,6 +11,38 @@ without knowing them.
 > constraints and traps, which change slowly. Feature status belongs in
 > `HANDOFF.md`.
 
+## How to report work here
+
+**These documents record reasoning, not tasks.** That is deliberate and worth
+keeping — it is what makes them useful to someone arriving cold. It also means
+that read end to end they look like a backlog of a hundred unfinished things.
+They are not one. Parked ideas, rejected options, known trade-offs and
+brainstorm seeds all sit in the same prose as real work.
+
+So everything actionable goes in exactly **four buckets**, and nowhere else:
+
+| | Means | Test for it |
+|---|---|---|
+| 🔥 **DO** | Something bad happens if it is ignored | Name the downside. If you can't, it isn't a DO. |
+| 🐞 **FIX** | Genuinely broken, reproducible, not urgent | You can describe the steps to see it fail. |
+| ❓ **ASK** | Blocked on someone else's decision | No amount of work here unblocks it. |
+| 💭 **NOTE** | Observation, idea, trade-off | **Never a task.** Nobody has to do anything. |
+
+**The rule that does the actual work: a NOTE must never appear in a list with
+the other three.** Mixing them is what makes a finished project feel unfinished,
+and it is the single most common way these documents mislead their reader.
+
+- **One place holds the actionable ones:** the box at the top of `HANDOFF.md`.
+  If it is not in that box, it is not a task. Everything else in these documents
+  is thinking.
+- **When reporting to the user**, lead with 🔥, then 🐞, then ❓. NOTEs go last,
+  in their own section, marked as requiring nothing. **Do not tack caveats onto
+  the end of good news** — "done, but worth knowing…" makes completed work read
+  as incomplete. Say it is done, then start a separate section.
+- **A gap is not a task.** "No automated tests for X" and "feature Y was
+  designed but not built" are NOTEs. They become FIXes only when something
+  actually breaks, and DOs only when there is a downside to name.
+
 ## Hard constraints
 
 - **Stdlib only. No pip, no venv, no build step, no lockfile.** The image is the
