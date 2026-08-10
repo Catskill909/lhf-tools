@@ -6,13 +6,15 @@ library, save and download dialogues in `static/index.html`, covered by
 discussion that cut it down, extended with labels and a
 [What lives where](#what-lives-where) section, then built — all the same day.
 
-**What shipped differs from this design in four places**, each recorded at
+**What shipped differs from this design in five places**, each recorded at
 [As built](#as-built) rather than by editing the design silently:
 
 1. **"Labels", not "tags"** — the word collided twice over.
 2. **Labelling moved into a save dialogue.** Inline in the editor was invisible.
 3. **A download icon on every row**, not a line in the `⋯` menu.
 4. **Zip export shipped in v1**, with a naming dialogue. It was parked here.
+5. **Titles do not come from the transcript** — the one design idea that did
+   *not* get built. The biggest gap between this document and the product.
 
 **Companion to**
 `docs/audio-editor-dev.md`, which lists "clip bin", "run sheet", "named clips as
@@ -47,15 +49,17 @@ is **finding and extracting** the moment. The library's job is **not losing it**
 - **`＋ Add to library`** in the clip editor footer, which **does not close the
   modal**
 - **A counter in the header** — `Clips 3` — opening the list
-- **Rows** carrying the spoken words as the title, show · date, in–out, length
+- **Rows** carrying ~~the spoken words~~ **the episode title** (divergence 5),
+  show · date, in–out, length
 - **Play in place**, without a trip through the editor
 - **Re-open in the editor**, **download**, **remove with a ten-second undo**
 - **Automatic grouping by date** — Today, Yesterday, Last week
 - **A filter box**, because this is a search application and a list without one
   would be odd here
-- **Tags, and a top-tags bar** — added to v1 on 9 August 2026 at the client's
-  request. See [Tags](#tags--added-to-v1) for what that changed and what it
-  replaced.
+- **Labels, and a top-labels bar** — added to v1 on 9 August 2026 at the
+  client's request. Argued below as **[Tags](#tags--added-to-v1)**, which is
+  what they were called during the design; **they shipped as Labels**
+  (divergence 1). Everything in that section holds — read *tag* as *label*.
 
 ### Not in v1
 
@@ -101,6 +105,12 @@ clip I saved last month". That day is legible; it has not arrived.
 > because the reuse case that motivates one is already served.
 
 ## Tags — added to v1
+
+> **They shipped as "Labels".** This section is kept in the words it was argued
+> in; the rename is divergence 1 in [As built](#1-labels-not-tags--the-collision-was-worse-than-recorded),
+> and every design decision below is unchanged by it. Read *tag* as *label*
+> throughout — except where it names the 232 producer-hyperlinked entities,
+> which kept the word.
 
 Requested by the client on 9 August 2026, after seeing the flat list. Building
 it, because the reasoning above already concluded that *if* filing arrived this
@@ -226,7 +236,7 @@ version in `docs/client-guide.md`, and the two must agree.
 | Episodes, transcripts, search index | Server (`lhf.sqlite` on the `lhf-data` volume) | **No longer** — both shows are at the feed cap. See `HANDOFF.md` → Backups. |
 | Light / dark choice | This browser — `localStorage["lhf-theme"]` | Trivially; it is one click. |
 | Waveform peaks | This browser — IndexedDB `lhf-peaks`, keyed on audio URL, `v: 2` | Yes, at the cost of one 30–105 MB download. |
-| **Saved clips and their tags** | **This browser — `localStorage`** | **No.** This is the new one, and the only client-side data that is not derived from something else. |
+| **Saved clips and their labels** | **This browser — `localStorage`** | **No.** This is the new one, and the only client-side data that is not derived from something else. |
 
 **Verified 9 August 2026** by reading the source, because a client-facing claim
 about where their work is kept should not be written from memory: the app
@@ -415,12 +425,12 @@ TAGS   [All 6]  [Promo 4]  [Interview 2]  [Intro 2]  [Music 1]  [Atmos 1]  +1 mo
     [Promo ×] [Marches ×] [＋ tag]
 ```
 
-- **The title defaults to the words.** Where the episode has a transcript — 144
-  do, with millisecond `segments` — the text at the in-point *is* the best name a
-  clip can have, and it is a string slice. Episodes without one fall back to
-  `Show — 12:03–12:31`, **set in italic** so a generated label never passes for
-  something that was said. The title is editable inline, because the automatic
-  one will sometimes start mid-word.
+- **The title.** *Designed* to default to the spoken words at the in-point —
+  144 episodes carry millisecond `segments`, so the text there is the best name
+  a clip can have and it is a string slice. **This was not built** — see
+  [As built](#5-titles-do-not-come-from-the-transcript). Shipped clips default
+  to the **episode** title, offered editable in the save dialogue and renameable
+  inline afterwards.
 - **Play is in place.** A clip is a range of an MP3 already streaming from the
   CDN, so playing one is `currentTime = in` and stop at `out`, using the page's
   existing player. Do not open the editor to hear something.
@@ -648,6 +658,35 @@ missing.
    bails when a dialogue is open above it **and** whenever focus is in an
    `input`, `textarea` or contenteditable.
 
+### 5. Titles do not come from the transcript
+
+**The design's headline idea, and it was not built.** "The title defaults to the
+words" was the argument for why a saved clip is a catalogue entry rather than a
+file — and shipped clips are titled with the **episode** title instead.
+
+Found by auditing the code against this document at the end of the session, not
+while writing it. Recorded here because the doc claimed it for a few hours and
+that is exactly the rot this repo keeps warning about.
+
+**What shipped is defensible**: the save dialogue puts the title in front of you
+with the field focused nearby, and it is renameable inline afterwards, so a clip
+is named by a person who knows what it is. But the default is weak — every clip
+from one episode arrives with the same name until you change it.
+
+**To build it later:** the segment containing `clip.in` is one lookup against
+data the app already serves at `/episode/<id>/transcript`. Two things to get
+right, both already reasoned through above and still true:
+
+- Fall back to `Show — 12:03–12:31` for the 56 episodes with no transcript, and
+  **mark a generated title visually** so it never passes for something someone
+  said. A `generated` flag, an italic rule and a render branch were all built
+  for this and then **removed as dead code** when the feature wasn't — the same
+  call this project made with the lead-in button's orphaned `"end"` state, for
+  the same reason: state with no caller sends the next reader hunting.
+- Machine transcripts mangle names, so an auto-title can be wrong in an
+  embarrassing way. `docs/ai-layer.md` lists **name repair** as a dependency the
+  moment titles come from transcripts.
+
 ### Found in use: clicking straight from one clip to the next
 
 Reported the same day, from actually browsing the library. Press play on a
@@ -686,6 +725,23 @@ browser — the same reason `verify-clips.mjs` lives apart from `tests/`. The
 check to run by hand, and the one to rebuild if the browser suites are ever
 recreated: **start clip A, click clip B while A is playing, and assert B plays
 with no message in the strip.**
+
+### Found by audit: a stale list behind the editor
+
+Not reported — found by reading the code against this document at the end of
+the session. Open the library, press **Edit in editor** on a row, save a variant,
+close the editor: the library is still there underneath, and **its list had not
+been re-rendered**, so the clip just saved was missing from it until the dialogue
+was reopened.
+
+The library deliberately sits *under* the editor so that closing the editor
+returns you to the list you were reading. That decision is what created the
+window: a surface left visible behind another must be refreshed when the one on
+top changes shared state. `closeClip()` and the save handler both do it now.
+
+**Worth generalising for the next stacked dialogue**: the stacking rule in
+[Where it lives](#where-it-lives) makes the layer underneath *visible*, which
+silently makes it a second view of the same data.
 
 ### One design flaw the build exposed
 

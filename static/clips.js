@@ -15,7 +15,7 @@ const KEY = "lhf-clips";
 const V = 1;
 
 /* A stored record:
- *   { id, url, epId, title, generated, show, date, in, out, createdAt, labels[] }
+ *   { id, url, epId, title, show, date, in, out, createdAt, labels[] }
  * ~150 bytes plus labels. A thousand clips is under 200 KB against
  * localStorage's ~5 MB, which is why this isn't in IndexedDB.
  */
@@ -68,7 +68,6 @@ export function add(rec) {
     url: rec.url,
     epId: rec.epId ?? null,
     title: rec.title || "",
-    generated: !!rec.generated,
     show: rec.show || "",
     date: rec.date || "",
     in: rec.in,
