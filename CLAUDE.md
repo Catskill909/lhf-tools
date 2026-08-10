@@ -81,6 +81,29 @@ and it is the single most common way these documents mislead their reader.
 - **`waveform.js` hardcodes a dark palette** that the light theme never
   overrides. Anything new drawn on a canvas must be passed explicit colours or
   it will be invisible in one theme. This has caused a real defect once.
+- **"Make it darker" does nothing on the light stock, and that is not a bug in
+  the request.** `--ink-3`, `--ink-2` and `--ink` are 9 and 16 L* apart but all
+  of them sit 57+ L* below the paper, so on light they all read as "a dark
+  line" and stepping between them is invisible. On the dark ground the same
+  three are spread 53 → 64 → 93 L*, which is why the identical change is
+  obvious there. **Emphasis on paper is ink coverage — a surface, a full-ink
+  edge, weight — not a darker hairline.** In running text, where you cannot go
+  blacker than black, the answer inverts again: **the field recedes** rather
+  than the current line rising. Both per-theme answers live in the palette —
+  `--on-bg` / `--on-edge` / `--on-weight` for controls, `--field` for a body of
+  text with one line current — so use those rather than deciding it at the call
+  site. `tests/test-palette.mjs` enforces it, in L* rather than contrast ratio:
+  a rule stated in contrast ratio alone passes every bug this class has
+  produced. Its floors are per channel and calibrated against real failures —
+  text needs a wider gap than an edge, because it has to be *found*.
+- **`--rule` and `--rule-hard` are hairlines, never surfaces.** Their alpha is
+  set so a 1px line prints, which on the light stock means 0.42 against dark's
+  0.11 — so the same token behind a line of text is a whisper in one theme and
+  a grey slab in the other. It shipped once, on the clip title's hover. Use
+  **`--wash`** for a tint over an area; it is tuned as a surface and lands ~11
+  L* off the stock in both themes. `test-palette.mjs` enforces this
+  structurally: a rule token may fill a box only if that box declares a
+  `height` of 4px or less.
 - **The peaks cache is versioned (`v: 2`).** Change the format without bumping
   it and returning users get old data read as new — a silently wrong waveform.
 - **`schema.sql` is all `CREATE TABLE IF NOT EXISTS`**, so it does nothing to a
@@ -109,6 +132,7 @@ node tests/test-waveform.mjs        # pure: peaks, snap-to-silence, rulers
 node tests/test-update-prompt.mjs   # pure: the new-version reload prompt
 node tests/test-zip.mjs             # pure: the archive packager
 node tests/test-clips.mjs           # pure: the saved-clip store + labels
+node tests/test-palette.mjs         # pure: both themes' colour laws, in L*
 node tests/verify-clips.mjs 8000    # live: needs the server running + network
 ```
 

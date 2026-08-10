@@ -26,6 +26,24 @@
     --spot-ink:   #ff7a5f;
     --gold:       #d8a94a;
     --focus:      #ff7a5f;
+    /* How a control says "on" without taking the spot fill. On a dark ground
+       that is luminance: the resting chip's edge is a 1.9:1 whisper, so a
+       4.5:1 edge is unmissable and needs no surface behind it. The light
+       palette answers these three differently, and that is the whole point —
+       see the note there. */
+    --on-bg:      transparent;
+    --on-edge:    #837f75;
+    --on-weight:  400;
+    /* The resting line in a body of text where one line is current — the
+       transcript. Dark can raise the current line to --ink and be done, a
+       29.7 L* jump off this value. */
+    --field:      #a09a8c;
+    /* A tint over an *area* — a hover behind a line of text, not a hairline.
+       The distinction matters because --rule's alpha is chosen so a 1px line
+       prints, and the light palette has to raise it to 0.42 to manage that.
+       Behind a title that same 0.42 is a slab. So washes get their own token,
+       tuned as a surface: ~11 L* off the stock in both themes. */
+    --wash:       rgba(239,236,228,0.11);
   }
   /* Light stock sits low on purpose. A raised panel needs somewhere to go, and
      off a near-white ground there is nowhere: it collides with #fff and the
@@ -51,6 +69,25 @@
     --spot-ink:   #9c2b17;
     --gold:       #7c5b10;
     --focus:      #b8331d;
+    /* The same three, answered the way paper answers them. Luminance is not
+       available here: --ink-3, --ink-2 and --ink are 9, 15 and 25 L* apart
+       from each other but all of them are 57+ L* below the stock, so every one
+       of them reads as "a dark line" and stepping between them is invisible.
+       Emphasis on paper is ink coverage. So "on" gets a surface it can sit
+       raised on, the full-ink edge, and weight. */
+    --on-bg:      #f7f4ed;
+    --on-edge:    #1b1a17;
+    --on-weight:  600;
+    /* Here the current line cannot be raised — it is already ink on paper, and
+       from --ink-2 that is a 15.8 L* move between two things that both read as
+       black. So the field recedes instead, which is what a printed page does:
+       the current line stays --ink and everything around it steps back to
+       --ink-3. 25.5 L* of separation, and at 6.31:1 the resting line is a
+       shade *more* legible than the dark theme's resting line is at 6.46:1. */
+    --field:      #56514a;
+    /* 0.15, not --rule's 0.42. Both are "the faint one"; only one of them is
+       a surface. */
+    --wash:       rgba(27,26,23,0.15);
   }
   @media (prefers-color-scheme: light) {
     /* Must match :root[data-theme="light"] above, value for value. */
@@ -68,6 +105,11 @@
       --spot-ink:   #9c2b17;
       --gold:       #7c5b10;
       --focus:      #b8331d;
+      --on-bg:      #f7f4ed;
+      --on-edge:    #1b1a17;
+      --on-weight:  600;
+      --field:      #56514a;
+      --wash:       rgba(27,26,23,0.15);
     }
   }
 
@@ -284,11 +326,23 @@
      attention — quieter border, and it only goes solid when nothing else
      in the group is chosen. */
   .chip.all { border-style: dashed; }
+  /* Selected used to be signalled by stepping the border up the ink ramp:
+     --rule-hard to --ink-3. That works on a dark ground, where the resting
+     chip's edge is a 1.9:1 whisper and the step to 4.5:1 is unmissable. It
+     cannot work on paper. There the light ramp is compressed at the top —
+     --ink-3 6.3:1, --ink-2 8.9:1, --ink 14:1 all read as "a dark line" — and
+     the resting chip already sits at 4.5:1, so there is nowhere darker to go
+     that anyone can see. Emphasis on paper is ink coverage, not a darker
+     hairline, which is why every other pressed chip takes a solid fill.
+     So the answer has to differ per theme, which is why it lives in the
+     palette as --on-* rather than being decided here. Dark keeps exactly the
+     edge it always had; light gets the surface. */
   .chip.all[aria-pressed="true"] {
-    background: none;
+    background: var(--on-bg);
     border-style: solid;
-    border-color: var(--ink-3);
+    border-color: var(--on-edge);
     color: var(--ink);
+    font-weight: var(--on-weight);
   }
   .chip.all[aria-pressed="true"] .n { opacity: 0.5; }
 
@@ -311,14 +365,23 @@
      state); the skin stays in the letterpress system rather than importing
      a different design language mid-page. */
   .sort { position: relative; }
+  /* Sort is a menu opener, and the comment on #toTop already calls it one of
+     the Help / Theme family — so it carries their edge and fill rather than a
+     boundary hairline. On paper a --rule-hard edge here read as a table rule
+     someone had drawn round the words, not as a control. */
   #sortBtn {
-    background: none; border: 1px solid var(--rule-hard); color: var(--ink-2);
+    background: var(--paper-2); border: 1px solid var(--ink-2); color: var(--ink);
     border-radius: 2px; cursor: pointer; font: inherit;
-    font-size: 0.72rem; letter-spacing: 0.06em; text-transform: uppercase;
+    font-size: 0.72rem; font-weight: 600;
+    letter-spacing: 0.06em; text-transform: uppercase;
     padding: 0.22rem 0.55rem;
     display: inline-flex; align-items: center; gap: 0.4rem; white-space: nowrap;
   }
-  #sortBtn:hover { color: var(--ink); border-color: var(--ink-3); }
+  /* Hover lifts to --ink like #themeToggle. It used to drop to --ink-3, which
+     on paper is *fainter* than the button's own --ink-2 edge — hovering made
+     the control recede. Invisible in dark, where --ink-3 is the brighter of
+     the two; the light stock inverts that ordering. */
+  #sortBtn:hover { color: var(--ink); border-color: var(--ink); }
   #sortBtn:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
   #sortBtn .cur { color: var(--ink); }
   #sortBtn .caret { font-size: 0.62rem; opacity: 0.7; transition: transform .12s; }
@@ -725,7 +788,9 @@
   .tx-line {
     display: flex; gap: 0.7rem; align-items: baseline;
     margin: 0 0 0.5rem; font-size: 0.88rem; line-height: 1.62;
-    color: var(--ink-2); scroll-margin: 5rem;
+    /* Not --ink-2: how far the field has to step back so .playing reads as
+       current is a per-theme answer. See --field in the palette. */
+    color: var(--field); scroll-margin: 5rem;
     /* Transparent by default so marking the passage costs no layout shift. */
     border-left: 2px solid transparent;
     padding-left: 0.62rem; margin-left: -0.62rem;
@@ -1616,7 +1681,10 @@
     padding: 0.05rem 0.2rem; margin-left: -0.2rem;
     overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
   }
-  .cliprow .cr-title:hover { background: var(--rule); }
+  /* --wash, not --rule. This was --rule, which is 0.11 white on the dark
+     ground and a barely-there hover, and 0.42 black on paper — a grey slab
+     across the title with the text still trying to be read on top of it. */
+  .cliprow .cr-title:hover { background: var(--wash); }
   .cliprow .cr-title:focus {
     outline: 2px solid var(--focus); outline-offset: 1px;
     background: var(--paper-2); white-space: normal;
