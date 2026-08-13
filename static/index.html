@@ -6251,8 +6251,14 @@ function addDraftLabel(raw) {
   renderSaveLabels();
 }
 
-function openSave() {
+/* How the save dialogue was opened, which decides where the keyboard goes when
+   it closes. A real pointer activation reports a click count in `detail`; Space
+   or Enter on a focused button reports 0. */
+let saveByPointer = false;
+
+function openSave(e) {
   if (!clip) return;
+  saveByPointer = !!e && e.detail > 0;
   const len = clip.out - clip.in;
   $("#saveWhat").textContent = `${clip.show} · ${(clip.date || "").slice(0, 10)}`;
   $("#saveSpan").textContent = `${fmt(clip.in)} – ${fmt(clip.out)}  ·  ${len.toFixed(1)}s`;
@@ -6267,7 +6273,18 @@ function openSave() {
 
 function closeSave() {
   saveModal.hidden = true;
-  if (clipOpen()) $("#clipSave").focus();
+  if (!clipOpen()) return;
+  /* Handing the focus back to the button that opened this is the right thing
+     for a keyboard user — they were tabbing, and they carry on from where they
+     were. It is the wrong thing after a mouse press: nothing then says the user
+     is *standing on* "＋ Add to library", and that button sits in
+     `.modal-actions`, which is exempt from the editor's Space binding. So the
+     next Space reopened this dialogue instead of playing — the bug that closed
+     the whole editor, one control along. The exemption only ever held for a
+     control the user's own Tab or click put them on, and focus restoration is
+     neither. */
+  if (saveByPointer) focusAfterPress();
+  else $("#clipSave").focus();
 }
 
 $("#clipSave").addEventListener("click", openSave);

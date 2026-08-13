@@ -142,7 +142,13 @@ and it is the single most common way these documents mislead their reader.
   the dialogue) and that also cancels the focus move a click would have made.
   Opening focus now goes to the dialogue itself via `focusDialog`, and a
   surface that prevents the default calls `focusAfterPress`. **Only a control
-  the user's own Tab or click landed on may be exempted from a global key.**
+  the user's own Tab or click landed on may be exempted from a global key —
+  and focus *restoration* is neither.** `closeSave` handed the keyboard back to
+  "＋ Add to library", which is inside the exempt `.modal-actions`, so backing
+  out of the save dialogue and pressing Space reopened it instead of playing.
+  Restoring there is still right for someone who tabbed, so the discriminator
+  is `event.detail`: a pointer activation reports a click count, Space or Enter
+  on a focused button reports 0.
   Help, the transcript and the library had the same opening focus, where Space
   is the ordinary way to scroll a page of text — all four are fixed, and
   `tests/test-keyboard.mjs` enforces both rules against every dialogue and

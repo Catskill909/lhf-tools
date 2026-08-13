@@ -127,7 +127,64 @@ if (spaceGuard) {
         named ? `guard exempts ${named.join(", ")}: ${spaceGuard.trim()}` : "");
 }
 
-/* ---------- 4. a prevented default owes the focus move ---------- */
+/** The markup of the <div> opening at `from`, nested divs included. */
+function blockAt(src, from) {
+  const start = src.indexOf(">", from) + 1;
+  let i = start, depth = 1;
+  const tag = /<\/?div\b/g;
+  tag.lastIndex = start;
+  for (let m; (m = tag.exec(src)); ) {
+    depth += m[0][1] === "/" ? -1 : 1;
+    if (depth === 0) return src.slice(start, m.index);
+    i = m.index;
+  }
+  return src.slice(start, i);
+}
+
+/* ---------- 4. nothing hands focus to an exempted control ---------- */
+
+/* The exemption is only ever true of a control the user's own Tab or click put
+   them on. Focus *restoration* is neither: `closeSave` handed the keyboard back
+   to "＋ Add to library", which is inside `.modal-actions`, so the next Space
+   reopened the save dialogue instead of playing — the reported bug one control
+   along. Restoring to it is still right for a keyboard user, so the rule is not
+   "never focus it" but "never focus it unconditionally".
+   The exempt controls are read out of the guard and the markup, so a button
+   added to the action row is covered without anyone remembering to add it. */
+if (spaceGuard) {
+  const clipMarkup = (() => {
+    const i = html.indexOf('id="clipModal"');
+    const j = html.indexOf('class="backdrop"', i + 1);
+    return html.slice(i, j < 0 ? html.length : j);
+  })();
+  const exemptIds = new Set();
+  for (const cls of spaceGuard.match(/\.[\w-]+/g) || []) {
+    const open = new RegExp(`<div class="${cls.slice(1)}"[^>]*>`).exec(clipMarkup);
+    if (!open) continue;
+    /* Depth-counted, not a non-greedy `</div>`: the action row holds a nested
+       status div, and the lazy match stopped at *its* close — so the first
+       draft of this check read four ids that were never the point and passed
+       while the bug it was written for sat two lines below them. */
+    for (const m of blockAt(clipMarkup, open.index).matchAll(/id="([\w-]+)"/g)) exemptIds.add(m[1]);
+  }
+  check("the exempt controls were identified", exemptIds.size > 0,
+        exemptIds.size ? [...exemptIds].join(", ") : "no ids found in the exempted markup");
+
+  const unguarded = [];
+  for (const id of exemptIds) {
+    for (const m of js.matchAll(new RegExp(`\\$\\(\\s*["']#${id}["']\\s*\\)\\.focus\\(\\)`, "g"))) {
+      /* The discriminator has to be in view of the call — `detail` on the
+         activating event, or the flag derived from it. */
+      const near = js.slice(Math.max(0, m.index - 400), m.index);
+      if (!/\bdetail\b|ByPointer\b/.test(near)) unguarded.push(`${id} @ index.html:${lineOf(m.index)}`);
+    }
+  }
+  check("no unconditional focus onto a Space-exempt control", unguarded.length === 0,
+        unguarded.length ? `${unguarded.join(", ")} — restore there only when the ` +
+          `user arrived by keyboard (e.detail === 0)` : "");
+}
+
+/* ---------- 5. a prevented default owes the focus move ---------- */
 
 /** The body of the block starting at the `{` at or after `from`. */
 function bodyAt(src, from) {
