@@ -142,14 +142,21 @@ and it is the single most common way these documents mislead their reader.
 
 ## The recurring bug class
 
-**State captured at press time, then invalidated by a later edit.** Three
+**State captured at press time, then invalidated by a later edit.** Four have
 shipped from the audio editor alone — Repeat, play-after-moving-the-lead-handle,
-and the 2s lead-in — and the third was only found by deliberately sweeping for
-the shape.
+the 2s lead-in, and `[` / `]` moving the playhead while leaving the resume range
+behind it. Two of the four were found only by deliberately sweeping for the
+shape, which is the argument for sweeping.
+
+**Every hand-driven playhead move now goes through `movePlayhead`**, which
+carries the range along via `resumeRange` in `waveform.js`. A new control that
+moves the playhead must use it rather than assigning `clip.playhead` — that
+assignment is what the fourth instance looked like.
 
 Anything the transport remembers needs a test that **changes the selection
 underneath it**. A test that only exercises the static case will pass and prove
-nothing.
+nothing — the shipped `[` / `]` bug passes any test that moves the playhead
+*inside* the selection, because the stale range was usually the selection.
 
 ## Tests
 

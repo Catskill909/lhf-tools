@@ -98,18 +98,39 @@ the filename carries the show, date and timecode.
 The editor is built around listening, because that's how an edit is actually
 judged:
 
-- **Play, pause and stop**, with a timeline above each waveform so you always
-  know where you are. <kbd>Space</kbd> plays and pauses from anywhere.
+- **Play and pause**, with a timeline above each waveform so you always know
+  where you are. <kbd>Space</kbd> plays and pauses from anywhere.
+- **Back to the start** — the skip-back button beside Play returns to the
+  beginning of your selection and brings the view with it, so it's also the way
+  back if you've wandered off listening somewhere else in the episode.
 - **Repeat** keeps the selection going round while you move the handles, so you
   hear each adjustment come back without stopping and starting.
 - **Click anywhere on the top waveform** to listen from that point — for
   finding a moment when you don't yet know where it is.
-- **Audition in** and **Audition out** play two seconds either side of a single
-  cut, because an edit is judged one edge at a time.
+- **Hear the start** and **Hear the end** play the clip's own first and last
+  three seconds. Neither ever plays outside your selection, so what you hear is
+  what the listener gets — whether it opens mid-word, whether it stops
+  mid-sentence.
 - **Mark as you listen** — press <kbd>I</kbd> where the clip should start and
   <kbd>O</kbd> where it should end, and the point lands exactly where you heard
   it. <kbd>[</kbd> and <kbd>]</kbd> jump the cursor between the pauses in
   speech, which is usually the fastest way to the edge you want.
+
+Setting the two ends, in whichever way suits what you're doing:
+
+- **Drag across the lower waveform** to select — both ends in one movement,
+  rather than moving two handles in turn. Drag in either direction.
+- **Click the lower waveform** to put the cursor exactly where you clicked,
+  without starting playback, then press <kbd>I</kbd> or <kbd>O</kbd>.
+- **Drag the red handles** to adjust either end afterwards, or nudge a selected
+  one with the **arrow keys** — 0.1 second a press, a full second with
+  <kbd>Shift</kbd>. With no handle selected the arrows walk the cursor along by
+  the same steps.
+- **Undo** with <kbd>⌘</kbd><kbd>Z</kbd> if a drag or a mistimed key loses a
+  selection you wanted. It's one step back, and pressing it again puts your
+  selection forward again.
+- Press <kbd>?</kbd> at any point for the full list of keys, without leaving the
+  editor.
 
 **The lower waveform is drawn in detail** — solid through the middle for how
 loud a moment really is, outlined for how far it peaked, with two faint lines
@@ -117,7 +138,7 @@ marking that episode's own silence. The gaps between words are visible, so you
 can see the pause you're cutting into rather than guessing at it, and zoom right
 down to a fraction of a second on one edge.
 
-![The clip editor — the passage selected on the waveform, in and out points, audition and snap controls, and the MP3 download](screenshots/audio-edit-modal.png)
+![The clip editor — the passage selected on the waveform, in and out points, the controls for hearing the start and end of the clip and snapping a cut to silence, and the MP3 download](screenshots/audio-edit-modal.png)
 
 **It remembers the clips you make.** Finding a moment in 143 hours is the hard
 part, and it used to be work you did again every time — cut a clip, and the only

@@ -1384,9 +1384,19 @@
      that picks their spacing. Without it the zoom control read "6.0s" and
      nothing on screen said where in the episode that was. */
   .ruler { display: block; width: 100%; height: 15px; margin-bottom: 1px; }
-  /* The episode ruler seeks like the waveform beneath it; the zoom ruler is a
-     readout only, so only one of them offers a pointer. */
-  #rulerAll { cursor: crosshair; }
+  /* The timelines invite a click; the waveforms under them take aim.
+     Both strips seek, and both used to under-sell it — the zoom ruler had no
+     cursor rule at all and hovered as a plain arrow, and crosshair was tried on
+     the pair and was worse. Crosshair means "position something precisely",
+     which is right on a waveform and actively discouraging on a timeline: the
+     job there is to tell someone who has not realised it yet that the strip
+     can be clicked at all, and `pointer` is the one cursor everybody already
+     reads as an invitation.
+
+     So the split is by intent rather than by surface: `pointer` on the two
+     rulers to say *click here to go there*, `crosshair` on the two waveforms
+     where the work is precise. */
+  #rulerAll, #rulerZoom { cursor: pointer; }
 
   .wave-box {
     position: relative; overflow: hidden; background: var(--paper-2);
@@ -1473,21 +1483,37 @@
     display: flex; align-items: center; gap: 0.5rem;
     margin: -0.4rem 0 0.9rem;
   }
+  /* A surface, not just a ring. `background: none` with a --rule-hard border
+     left this as a hairline circle around the page: on the dark ground that
+     token is 0.22 alpha, so the button read as a floating glyph on black rather
+     than as something pressable. Play escaped the problem only because it fills
+     with --spot. --wash is the token tuned to be seen as an *area* in both
+     themes — --rule-hard stays where it belongs, on the 1px edge. */
+  /* 38 / 44px rather than the old 30 / 34. These are the two controls pressed
+     most often in the editor and they were the smallest things in it. 44px is
+     the touch minimum every platform guideline agrees on, so Play now meets it
+     outright and skip-back is close; the row costs about 10px of height, which
+     the modal has. A full pass over touch targets is a separate job — this is
+     the transport, not the audit. */
   .tport {
-    width: 30px; height: 30px; border-radius: 50%; padding: 0;
+    width: 38px; height: 38px; border-radius: 50%; padding: 0;
     display: grid; place-items: center;
-    background: none; border: 1px solid var(--rule-hard);
-    color: var(--ink); font: inherit; font-size: 0.72rem; line-height: 1;
+    background: var(--wash); border: 1px solid var(--rule-hard);
+    color: var(--ink); font: inherit; font-size: 0.82rem; line-height: 1;
     cursor: pointer;
     transition: background 0.14s ease, color 0.14s ease, border-color 0.14s ease;
   }
   .tport:hover:not(:disabled) { border-color: var(--ink-3); }
+  /* Drawn icons rather than font glyphs, so they stay crisp at 14px. `block`
+     kills the inline-baseline gap that would otherwise sit the icon low in a
+     grid-centred button. */
+  .tport svg { display: block; }
   .tport:disabled { opacity: 0.35; cursor: default; }
   .tport:focus-visible { outline: 2px solid var(--focus); outline-offset: 1px; }
   /* Play/pause is the control you reach for without looking, so it's the one
      thing here with weight. */
   .tport.main {
-    width: 34px; height: 34px; font-size: 0.82rem;
+    width: 44px; height: 44px; font-size: 0.95rem;
     background: var(--spot); border-color: var(--spot); color: #fff;
   }
   .tport.main:hover:not(:disabled) { filter: brightness(1.08); }
@@ -2112,7 +2138,25 @@
 
       <div class="transport">
         <button class="tport main" id="tPlay" aria-label="Play" title="Play / pause (Space)">▶</button>
-        <button class="tport" id="tStop" aria-label="Stop" title="Stop (back to the in-point)">■</button>
+        <!-- ■ was read as "halt", the media-player meaning, and the fact that
+             this also returns to the in-point went unfound — reported as "there
+             is no way back to the start of the selection" by someone who had
+             the button in front of them.
+
+             Drawn rather than typed. The ⏮ character was tried first and read as
+             fuzzy, small and unidentifiable: U+FE0E asks for text presentation
+             but the fallback font that answers has no real design for the glyph
+             at 11px, so it arrives as a scaled-down emoji bitmap. An SVG is
+             crisp at any size, the same everywhere, and can be given the weight
+             this button actually needs. currentColor keeps it on --ink, so it
+             follows the theme like the rest of the transport. -->
+        <button class="tport" id="tStop" aria-label="Back to the start of the selection"
+                title="Back to the start (0)">
+          <svg viewBox="0 0 16 16" width="17" height="17" aria-hidden="true" focusable="false">
+            <rect x="3" y="3.2" width="2.2" height="9.6" rx="1" fill="currentColor"/>
+            <path d="M13.2 3.4v9.2L6.4 8z" fill="currentColor"/>
+          </svg>
+        </button>
         <b id="tNow">0:00.00</b>
         <!-- "Loop" is music-studio vocabulary; this is a talk archive, and the
              job here is hearing one edge over and over while you nudge it.
@@ -2125,7 +2169,16 @@
       </div>
 
       <div class="wave-head">
-        <p class="wave-label">Selection — drag the handles to trim</p>
+        <!-- These two labels are the only place the gestures are advertised in
+             the interface itself, so each has to name the *primary* action
+             first. This one said only "drag the handles to trim", which was the
+             whole story until the surface itself became draggable — a new user
+             reading it would still build every selection the slow way, one
+             handle at a time, never learning the gesture that replaces it.
+             Click-to-place-the-cursor is deliberately left to the help: three
+             gestures is more than a label can carry, and it is the one you
+             reach for once you already know the view responds. -->
+        <p class="wave-label">Selection — drag to select, handles to trim</p>
         <div class="zoom-ctl">
           <button id="zoomOut" aria-label="Zoom out">&minus;</button>
           <span id="zoomLabel">6.0s</span>
@@ -2161,8 +2214,12 @@
            both would have been two controls for one job. What's left is the
            family that hears or moves a single edge. -->
       <div class="clip-tools">
-        <button class="tool" id="audIn">▶ Audition in</button>
-        <button class="tool" id="audOut">▶ Audition out</button>
+        <!-- "Audition in/out" described a straddle across a cut point. These
+             now play the clip's own first and last seconds and never leave the
+             selection, so the broadcast term would be describing behaviour the
+             buttons no longer have. Plain words, and they say which end. -->
+        <button class="tool" id="audIn">▶ Hear the start</button>
+        <button class="tool" id="audOut">▶ Hear the end</button>
         <button class="tool" id="snapIn">Snap in to silence</button>
         <button class="tool" id="snapOut">Snap out to silence</button>
       </div>
@@ -2712,7 +2769,19 @@
           <li><b>Click the top waveform</b> to listen from that point — for
             finding a moment when you don't yet know where it is. <b>Drag</b> it
             instead and the selection moves there, keeping its length.</li>
-          <li><b>Drag the red handles</b> to set the in and out points.</li>
+          <li><b>Click the lower waveform</b> to put the playhead exactly where
+            you clicked. It doesn't start playing — down here you're usually
+            placing a mark, so click the spot and press <kbd>I</kbd> or
+            <kbd>O</kbd>. If audio is already running it carries on from the new
+            point.</li>
+          <li><b>Drag across the lower waveform</b> to select — both marks in
+            one movement, rather than moving two handles in turn. Drag in either
+            direction; the point you started from is the edge that stays
+            put.</li>
+          <li><b>Drag the red handles</b> to adjust either edge afterwards.</li>
+          <li><b>Undo</b> with <kbd>⌘</kbd><kbd>Z</kbd> if a drag, a snap or a
+            mistimed <kbd>I</kbd> loses a selection you wanted. It's one step,
+            and pressing it again puts back what you undid.</li>
           <li><b>Zoom</b> with the &minus; and + buttons, or the scroll wheel
             over the lower waveform. The readout shows how much time you're
             looking at. While the whole selection fits it stays centred; zoom in
@@ -2726,7 +2795,10 @@
             <b>Snap</b> will put a cut.</li>
           <li><b>Arrow keys</b> nudge a selected handle by 0.1s — hold
             <kbd>Shift</kbd> for a full second. Dragging can't reliably land on
-            a word boundary; nudging can.</li>
+            a word boundary; nudging can. With no handle selected the same keys
+            move the <b>playhead</b> by the same steps, so you can walk up to an
+            edge by ear and press <kbd>I</kbd> or <kbd>O</kbd> when you're on
+            it.</li>
           <li><b>Mark as you listen.</b> Play, and when you hear the place a
             clip should begin press <kbd>I</kbd>; when you hear where it should
             end press <kbd>O</kbd>. The mark lands on the playhead, so you set a
@@ -2749,18 +2821,22 @@
           <li><b>Play</b> — exactly what will be downloaded. Press it again to
             pause where you are; <kbd>Space</kbd> does the same thing from
             anywhere in the editor.</li>
-          <li><b>Stop</b> returns to the in-point, where <b>pause</b> holds its
-            place — so you can stop, look, and carry on from the same spot.
-            <kbd>Home</kbd> also stops.</li>
+          <li><b>Back to the start</b> — the skip-back button beside Play. It
+            returns to the beginning of the selection and brings the view with
+            it, where <b>pause</b> holds its place, so you can stop, look, and
+            carry on from the same spot. It's also the way back if you've been
+            listening somewhere else in the episode. <kbd>0</kbd> does the same
+            from the keyboard — back to zero, the clip's zero being where it
+            starts. <kbd>Home</kbd> also works if your keyboard has one.</li>
           <li><b>Repeat</b> plays the selection over and over until you stop it,
             and it follows the handles as you move them — so you can drag an
             edge and hear the new version come round, rather than adjusting,
             pressing play, listening, and adjusting again.</li>
-          <li><b>Audition in</b> and <b>Audition out</b> — two seconds either
-            side of a single cut point, so you hear the approach to an edit and
-            what follows it. That's how you tell a cut is in the right place,
-            and it's why they're separate: an edit is judged one edge at a
-            time.</li>
+          <li><b>Hear the start</b> and <b>Hear the end</b> — the clip's own
+            first and last three seconds. Neither ever plays outside the
+            selection, so what you hear is what the listener gets: whether it
+            opens mid-word, whether it stops mid-sentence. On a clip shorter
+            than three seconds both simply play the whole thing.</li>
         </ul>
       </section>
 
@@ -2967,12 +3043,15 @@
           <p class="keys-lbl">In the audio editor</p>
           <div class="keys">
             <div><kbd>Space</kbd> play / pause</div>
-            <div><kbd>Home</kbd> stop, back to the in-point</div>
+            <div><kbd>0</kbd> or <kbd>Home</kbd> back to the start of the selection</div>
             <div><kbd>I</kbd> mark the in-point at the playhead</div>
             <div><kbd>O</kbd> mark the out-point</div>
             <div><kbd>[</kbd> <kbd>]</kbd> jump to the previous / next pause</div>
-            <div><kbd>←</kbd> <kbd>→</kbd> nudge a focused handle 0.1s</div>
-            <div><kbd>Shift</kbd> + <kbd>←</kbd> <kbd>→</kbd> nudge a full second</div>
+            <div><kbd>←</kbd> <kbd>→</kbd> move the playhead 0.1s</div>
+            <div><kbd>←</kbd> <kbd>→</kbd> nudge a focused handle instead</div>
+            <div><kbd>Shift</kbd> + <kbd>←</kbd> <kbd>→</kbd> a full second</div>
+            <div><kbd>⌘</kbd> <kbd>Z</kbd> undo the selection (again to redo)</div>
+            <div><kbd>?</kbd> this list, without leaving the editor</div>
             <div><kbd>Esc</kbd> close without downloading</div>
           </div>
         </div>
@@ -2999,7 +3078,8 @@
 
 <script type="module">
 import { cutClip, clipFilename, probeMp3 } from "./mp3cut.js";
-import { getPeaks, drawWave, drawRuler, snapToSilence, clipWindow, nextSilence } from "./waveform.js";
+import { getPeaks, drawWave, drawRuler, snapToSilence, clipWindow, nextSilence,
+         edgeWindow, viewForPlayhead, dragSelection, resumeRange } from "./waveform.js";
 import { makeZip, slug, toCsv } from "./zip.js";
 // Namespaced deliberately: every clip read or write in this file reads as
 // Clips.something, so the one place storage lives is impossible to miss.
@@ -4207,6 +4287,10 @@ async function openClip(ep, fromSec, toSec) {
     // Which control started the current playback, so a momentary action can
     // show it is running. Set by playRange, never by a click handler.
     playSrc: null,
+    // One step of selection undo, and the tag that coalesces a run of nudges
+    // into one step. Per-episode and in memory only — opening another clip
+    // starts again rather than offering to undo into the previous one.
+    undo: null, undoTag: null,
   };
   setPlaying(false);
   setLoop(false);
@@ -4299,6 +4383,7 @@ function dragHandle(el, which) {
   el.addEventListener("mousedown", e => {
     if (!clip) return;
     e.preventDefault();
+    markUndo();                       // once per drag, not once per frame
     clip.anchor = which;              // zoom follows the edge you're working on
     const box = $("#zoomBox");
     const z = clip.frozen = computeWindow();
@@ -4330,6 +4415,8 @@ function dragHandle(el, which) {
     else if (e.key === "ArrowRight") d = step;
     else return;
     e.preventDefault();
+    // Tagged, so a run of nudges undoes as the one movement it felt like.
+    markUndo("nudge-" + which);
     if (which === "in") clip.in = Math.max(0, Math.min(clip.in + d, clip.out - 0.2));
     else clip.out = Math.min(clip.duration || Infinity, Math.max(clip.out + d, clip.in + 0.2));
     selectionEdited(which);
@@ -4393,6 +4480,7 @@ $("#waveAll").addEventListener("mousedown", e => {
   const move = ev => {
     if (!clip || !clip.duration) return;
     if (!dragging && Math.abs(ev.clientX - x0) < DRAG_SLOP) return;
+    if (!dragging) markUndo();        // once per drag, not once per frame
     dragging = true;
     overviewSeek(ev.clientX);
   };
@@ -4407,6 +4495,135 @@ $("#waveAll").addEventListener("mousedown", e => {
   addEventListener("mousemove", move);
   addEventListener("mouseup", up);
 });
+
+/* Click the zoomed view to put the playhead there.
+ *
+ * This was the only surface in the editor you could not click, and it is the
+ * one the work happens on. I and O mark *at the playhead*, so without this the
+ * only ways to position a mark were to play and catch it going past, jump
+ * between silences with [ and ], or click the overview — where a pixel is over
+ * a second wide. There was no way to place the playhead precisely in the one
+ * view that has precision. Click, then I, now closes.
+ *
+ * A click deliberately does NOT play, which is where it parts company with the
+ * overview above. Up there a click is hunting for a moment and playing is the
+ * whole point; down here you are usually placing a mark, and audio starting up
+ * and running to the end of the episode every time you positioned one would be
+ * something to fight rather than use.
+ *
+ * A press that *travels* builds a selection instead — see below.
+ */
+function zoomTime(clientX) {
+  const r = $("#waveZoom").getBoundingClientRect();
+  const z = zoomWindow();
+  const t = z.from + ((clientX - r.left) / r.width) * (z.to - z.from);
+  return Math.max(0, Math.min(clip.duration || 0, t));
+}
+
+/* Move the playhead by hand — the one road for every control that does.
+ *
+ * Clicking the zoomed view, scrubbing with the arrows and jumping between
+ * pauses with [ and ] are the same operation, and each of them has to bring the
+ * *resume range* along with the playhead. togglePlay only starts from the
+ * playhead while the playhead still lies inside the range it remembers, so a
+ * control that moves one without the other leaves Space playing somewhere other
+ * than the place just chosen. That had already shipped in [ and ] — this file's
+ * signature bug, state set at one moment and invalidated at a later one, for the
+ * fifth time. One function so there is one place for it to be right.
+ */
+function movePlayhead(t) {
+  if (!clip) return;
+  t = Math.max(0, Math.min(clip.duration || 0, t));
+  clip.playhead = t;
+
+  if (!clip.playing) {
+    const r = resumeRange({ playhead: t, inSec: clip.in, outSec: clip.out });
+    clip.playFrom = r.from; clip.playTo = r.to; clip.follow = r.follow;
+    followPlayhead();
+    paintClip();
+    return;
+  }
+  // Something is playing, so this is "carry on from here". Whether the old
+  // bounds survive depends on whether the new point is still inside them —
+  // seeking into the selection you are repeating should keep repeating it, and
+  // seeking outside it cannot, because tickPlay would drag the playhead
+  // straight back to the range it just left.
+  const from = clip.follow === "sel" ? clip.in : clip.playFrom;
+  const to = clip.follow === "sel" ? clip.out : clip.playTo;
+  const end = to ?? clip.duration;
+  if (from != null && t >= from && t < end)
+    playRange(t, to, { follow: clip.follow, src: clip.playSrc });
+  else
+    playRange(t, null);           // open play, same as the overview's click
+}
+
+const zoomSeek = clientX => movePlayhead(zoomTime(clientX));
+
+/* Press and travel on the zoomed view to draw a selection.
+ *
+ * The gesture every editor has, and its absence was felt as extra work rather
+ * than a missing feature: a selection could only ever be *adjusted*, one handle
+ * at a time, so making a new one somewhere else meant dragging two handles
+ * across the view in turn. This sets both marks in one movement, which is fewer
+ * steps than what it replaces — it is the rare addition that makes the surface
+ * simpler rather than denser.
+ *
+ * Click and drag are told apart by distance travelled, the same DRAG_SLOP rule
+ * the overview uses. Hit-testing was rejected there for a reason that applies
+ * here too, and there is a second reason on this surface: a press that begins
+ * inside the existing selection is the *normal* way to start a new one, so any
+ * rule keyed on where the press landed would have to guess.
+ *
+ * The window is frozen for the duration, exactly as dragHandle does it: it is
+ * what the pointer position is being measured against, and letting it recentre
+ * on the selection being drawn would feed the drag's own movement back into the
+ * measurement.
+ */
+function zoomDrag(e) {
+  if (!clip || !clip.duration) return;
+  e.preventDefault();
+  const x0 = e.clientX;
+  let dragging = false, anchor = 0;
+
+  const move = ev => {
+    if (!clip || !clip.duration) return;
+    if (!dragging) {
+      if (Math.abs(ev.clientX - x0) < DRAG_SLOP) return;
+      dragging = true;
+      // Freeze *before* reading the anchor, so both ends of the drag are
+      // measured against the same window.
+      clip.frozen = computeWindow();
+      anchor = zoomTime(x0);
+      markUndo();                     // one gesture, one undo step
+    }
+    const sel = dragSelection({
+      anchor, at: zoomTime(ev.clientX), duration: clip.duration, minLen: 0.2,
+    });
+    clip.in = sel.inSec;
+    clip.out = sel.outSec;
+    // Follow the edge being drawn, so zooming in after a drag keeps the end you
+    // were watching on screen rather than jumping to the other one.
+    clip.anchor = zoomTime(ev.clientX) >= anchor ? "out" : "in";
+    selectionEdited("in");            // the start moved, so the resume point is stale
+    paintClip();
+  };
+  const up = ev => {
+    removeEventListener("mousemove", move);
+    removeEventListener("mouseup", up);
+    if (!clip) return;
+    if (!dragging) { zoomSeek(ev.clientX); return; }
+    clip.frozen = null;
+    recentre();
+  };
+  addEventListener("mousemove", move);
+  addEventListener("mouseup", up);
+}
+
+$("#waveZoom").addEventListener("mousedown", zoomDrag);
+/* Same reasoning as the overview's ruler: a timeline you can see is a timeline
+   you will click, and one that does nothing reads as a dead control. The ruler
+   takes the drag too — it is the same surface, a few pixels higher. */
+$("#rulerZoom").addEventListener("mousedown", zoomDrag);
 
 /* ---------- transport ----------
    Judging an edit means hearing the same three seconds ten times over, so the
@@ -4429,14 +4646,14 @@ function clipAudio() {
 
 /* Phase 6 — show that a momentary action is momentary.
  *
- * Audition in/out play a fixed two seconds and stop on their own. Nothing said
- * so, and nothing marked that it was happening, so the silence afterwards read
- * as ambiguous: did it finish, did it fail, did I mis-click? Lighting the
- * button while its own playback runs teaches the behaviour in one press.
+ * Hear the start / Hear the end play a few seconds and stop on their own.
+ * Nothing said so, and nothing marked that it was happening, so the silence
+ * afterwards read as ambiguous: did it finish, did it fail, did I mis-click?
+ * Lighting the button while its own playback runs teaches it in one press.
  *
  * Scoped to `.clip-tools` deliberately: #tLoop is also a `.tool` and its `.on`
  * means a toggle that stays on. Clearing indiscriminately would switch Repeat
- * off as a side effect of a two-second audition.
+ * off as a side effect of a three-second edge listen.
  *
  * The originating control is recorded by playRange, not by the click handlers.
  * Capturing it at press time is the shape that has already produced three bugs
@@ -4483,14 +4700,17 @@ function setLoop(on) {
    range you started with — precisely the moment you are trying to judge.
 
      "sel"  both ends follow — plain Play, the common case
-     false  neither — the auditions, which are deliberately fixed two-second
-            windows onto one edge and should not move under you
+     false  neither — Hear the start / Hear the end, which are a deliberately
+            fixed look at one end of the clip and should not move under you
 
    There was briefly an "end" state, for a "with 2s lead-in" button that started
    at a fixed run-up but ended at the selection. That button was removed: it
-   began at the same instant as Audition in, so the two were identical for their
-   first four seconds and indistinguishable on the short clips this tool is
-   mostly used for. Play plus the two auditions cover the same ground.
+   began at the same instant as the old Audition in, so the two were identical
+   for their first four seconds and indistinguishable on the short clips this
+   tool is mostly used for. The same flaw was later found in the two audition
+   buttons themselves — fixed ±2s windows overshoot both marks on a short
+   selection, so they played near-identical audio, most of it outside the clip.
+   Both ends are clamped to the selection now; see edgeWindow in waveform.js.
 
    Three bugs of this exact shape shipped from this file (Repeat, Play after
    moving the lead handle, and that lead-in). Anything the transport remembers
@@ -4551,8 +4771,26 @@ function tickPlay() {
       return;
     }
   }
+  followPlayhead();
   paintClip();
   clip.raf = requestAnimationFrame(tickPlay);
+}
+
+/* Bring the zoomed view to the playhead once the playhead has left it.
+ *
+ * Playing from an overview click used to leave the lower waveform frozen:
+ * playRange never touched clip.view, and drawWave draws no playhead outside the
+ * window, so clicking the overview at 30:00 with the selection at 1:11 played
+ * audio with no cursor anywhere and a motionless view.
+ *
+ * Skipped while a handle drag owns the window — clip.frozen is what the cursor
+ * position is being measured against, and moving it mid-drag would feed the
+ * view's own movement back into the measurement. */
+function followPlayhead() {
+  if (!clip || clip.frozen) return;
+  const z = zoomWindow();
+  const v = viewForPlayhead({ playhead: clip.playhead, from: z.from, to: z.to });
+  if (v != null) clip.view = v;
 }
 
 /* Pause holds the playhead; stop returns it to the in-point. Two different
@@ -4575,7 +4813,13 @@ function stopPlay() {
   clip.playFrom = clip.playTo = null;
   clip.follow = false;
   setPlaying(false);
-  paintClip();
+  // The view has to come back too, or "back to the start of the selection"
+  // returns the playhead to a spot that is still off screen — which is the
+  // complaint this button already failed once. Instant, not eased: after
+  // listening half an hour away, easing means watching the whole episode smear
+  // past. recentre paints.
+  clip.anchor = null;                 // frame the selection, not an edge
+  recentre(true);
 }
 
 /* Editing the selection can invalidate a paused position.
@@ -4598,6 +4842,46 @@ function selectionEdited(which) {
     clip.playFrom = clip.playTo = null;
     clip.follow = false;
   }
+}
+
+/* ---------- one step of undo ----------
+ *
+ * A minute of work on a selection could be destroyed by a stray drag, a
+ * mistimed I, or a Snap that moved the wrong way, with nothing to get it back.
+ * One step is the whole promise — this stores a single pair of numbers, not a
+ * history — but it covers the case that actually happens, which is one wrong
+ * move noticed immediately.
+ *
+ * Nothing here persists. That is deliberate: the browser stores exactly two
+ * things and both rebuild themselves, and an undo history would be the first
+ * thing in this application that could be lost without being reconstructable.
+ * It lives and dies with the open editor.
+ *
+ * `tag` coalesces a run of the same continuous action into one step. Ten arrow
+ * nudges are one gesture as far as the hand is concerned, so undoing them one
+ * keypress at a time would make undo useless exactly where a slip is likeliest.
+ * Discrete actions pass no tag and always take their own step.
+ */
+function markUndo(tag = null) {
+  if (!clip) return;
+  if (tag && tag === clip.undoTag) return;
+  clip.undoTag = tag;
+  clip.undo = { in: clip.in, out: clip.out };
+}
+
+/* The stored pair is swapped rather than consumed, so pressing undo a second
+   time puts it back. With only one step, an undo you didn't mean would
+   otherwise be the one action in the editor with no way out of it. */
+function undoSelection() {
+  if (!clip || !clip.undo) return;
+  const prev = clip.undo;
+  clip.undo = { in: clip.in, out: clip.out };
+  clip.undoTag = null;
+  clip.in = prev.in;
+  clip.out = prev.out;
+  clip.anchor = null;                 // frame the restored selection, not an edge
+  selectionEdited("in");
+  recentre();
 }
 
 function togglePlay() {
@@ -4631,11 +4915,23 @@ $("#waveZoom").addEventListener("wheel", e => {
 $("#tPlay").addEventListener("click", togglePlay);
 $("#tStop").addEventListener("click", stopPlay);
 $("#tLoop").addEventListener("click", () => clip && setLoop(!clip.loop));
-$("#audIn").addEventListener("click", e =>
-  playRange(Math.max(0, clip.in - 2), clip.in + 2, { src: e.currentTarget }));
-$("#audOut").addEventListener("click", e =>
-  playRange(Math.max(0, clip.out - 2), clip.out + 2, { src: e.currentTarget }));
+/* The clip's own first and last seconds. `follow: false` still applies — these
+   are a fixed look at one end, and a window that moved under you mid-listen
+   would defeat the comparison you pressed the button to make. The bounds are
+   computed at press time, which is safe here only because that is exactly what
+   these buttons mean; anything that should track the handles must not copy
+   this. See "The recurring bug class" in docs/audio-editor-dev.md. */
+const EDGE_SECS = 3;
+$("#audIn").addEventListener("click", e => {
+  const w = edgeWindow({ inSec: clip.in, outSec: clip.out, secs: EDGE_SECS, edge: "in" });
+  playRange(w.from, w.to, { src: e.currentTarget });
+});
+$("#audOut").addEventListener("click", e => {
+  const w = edgeWindow({ inSec: clip.in, outSec: clip.out, secs: EDGE_SECS, edge: "out" });
+  playRange(w.from, w.to, { src: e.currentTarget });
+});
 $("#snapIn").addEventListener("click", e => {
+  markUndo();                         // a snap can move the wrong way
   clip.anchor = "in";
   clip.in = Math.min(snapToSilence(clip.detail, clip.duration, clip.in), clip.out - 0.2);
   selectionEdited("in");
@@ -4643,6 +4939,7 @@ $("#snapIn").addEventListener("click", e => {
   flashTool(e.currentTarget);
 });
 $("#snapOut").addEventListener("click", e => {
+  markUndo();                         // a snap can move the wrong way
   clip.anchor = "out";
   clip.out = Math.max(snapToSilence(clip.detail, clip.duration, clip.out), clip.in + 0.2);
   selectionEdited("out");
@@ -4682,7 +4979,14 @@ addEventListener("keydown", e => {
   if (!clipOpen()) return;
   // A dialogue above the editor owns the keyboard while it is open, or Escape
   // closes the wrong thing and I/O/[/] fire at a form.
-  if (saveOpen()) return;
+  //
+  // Help counts, and was missed. `?` opens it from inside the editor — which is
+  // the point, since the shortcuts it lists are the editor's — and it paints on
+  // top by DOM order. But both Escape handlers were live at once, so one press
+  // closed the help *and* the editor under it, losing the selection. Space, I,
+  // O and the arrows were all still driving an editor the reader could not see
+  // while they read about them.
+  if (saveOpen() || helpOpen()) return;
   // And nothing here may fire while the user is typing. This is the general
   // form of a bug that already shipped once — Space on Download played audio
   // instead of downloading — and every text field added above the editor from
@@ -4706,7 +5010,40 @@ addEventListener("keydown", e => {
     togglePlay();
     return;
   }
-  if (e.key === "Home") { e.preventDefault(); stopPlay(); return; }
+  /* Back to the start of the selection. `Home` is the desktop convention and
+     stays, but Mac laptops have no Home key — it is fn + ← there, which is not
+     a shortcut anyone reaches for mid-edit, and spelling that out was the only
+     thing this button's tooltip had room to say.
+     `0` is the reachable one: no modifier, on every keyboard, and it reads as
+     back-to-zero, the clip's zero being its in-point. Modified presses are left
+     alone — ⌘0 is the browser's reset-zoom and swallowing it would be rude. */
+  if (e.key === "Home" ||
+      (e.key === "0" && !e.metaKey && !e.ctrlKey && !e.altKey)) {
+    e.preventDefault();
+    stopPlay();
+    return;
+  }
+
+  /* Undo the last change to the selection, and undo the undo. Checked before
+     the single-letter keys so a modified press never falls through to one. */
+  if ((e.key === "z" || e.key === "Z") && (e.metaKey || e.ctrlKey)) {
+    e.preventDefault();
+    undoSelection();
+    return;
+  }
+
+  /* Scrub the playhead when no handle has the focus.
+     The same 0.1s / 1s steps the handles use, because it is the same movement
+     applied to the cursor rather than to a mark — and having the two disagree
+     would make the smaller one feel broken. A focused handle has already
+     claimed the key and called preventDefault, so this defers to it rather than
+     both firing and moving twice. */
+  if ((e.key === "ArrowLeft" || e.key === "ArrowRight") && !e.defaultPrevented) {
+    e.preventDefault();
+    const step = e.shiftKey ? 1 : 0.1;
+    movePlayhead(clip.playhead + (e.key === "ArrowRight" ? step : -step));
+    return;
+  }
 
   /* Marking at the playhead. This is how every editor works and it is what the
      playhead was introduced for: listen until you hear the edge, press the key,
@@ -4714,6 +5051,7 @@ addEventListener("keydown", e => {
      the slow way round. */
   if (e.key === "i" || e.key === "I") {
     e.preventDefault();
+    markUndo();
     clip.in = Math.max(0, Math.min(clip.playhead, clip.out - 0.2));
     clip.anchor = "in";
     selectionEdited("in");
@@ -4722,6 +5060,7 @@ addEventListener("keydown", e => {
   }
   if (e.key === "o" || e.key === "O") {
     e.preventDefault();
+    markUndo();
     clip.out = Math.min(clip.duration || Infinity, Math.max(clip.playhead, clip.in + 0.2));
     clip.anchor = "out";
     selectionEdited("out");
@@ -4736,11 +5075,11 @@ addEventListener("keydown", e => {
     const t = nextSilence(clip.detailRms, clip.duration, clip.playhead,
                           e.key === "]" ? 1 : -1, clip.floor);
     if (t == null) return;             // no further gap — leave the mark alone
-    clip.playhead = t;
-    // Bring the view with it, or the playhead lands somewhere off screen and
-    // the keypress looks like it did nothing.
-    clip.view = t;
-    paintClip();
+    // Through movePlayhead, which brings the resume range and the view along.
+    // Setting clip.playhead directly here is how the fifth instance of this
+    // file's recurring bug shipped: the playhead jumped to the pause, the range
+    // it was measured against did not, and Space then played from elsewhere.
+    movePlayhead(t);
   }
 });
 // Not gated on peaks: the rulers and the handles are laid out in pixels too,

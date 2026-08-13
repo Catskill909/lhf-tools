@@ -172,9 +172,11 @@ decision, and an admin screen to run it from. See `docs/ai-layer.md`.
 - Two waveforms, each with its own **time ruler** — whole episode for context,
   zoomed selection for precision — with draggable in/out handles, arrow-key
   nudge (±0.1s, ±1s with Shift), and a live in / out / length readout
-- **A real transport** between the two waveforms: play/pause, stop, playhead
-  timecode, and **Repeat**, which keeps the selection going round *and follows
-  the handles as you move them*. `Space` plays/pauses, `Home` stops.
+- **A real transport** between the two waveforms: play/pause, back-to-start,
+  playhead timecode, and **Repeat**, which keeps the selection going round *and
+  follows the handles as you move them*. `Space` plays/pauses, `0` returns to
+  the start of the selection (`Home` too, where the keyboard has one — Mac
+  laptops do not, which is why the reachable binding is a digit).
 - **Click the overview to listen** from that point; drag it to move the
   selection, as before. The two are told apart by whether the pointer travels,
   because a short selection is only a pixel or two wide on that waveform.
@@ -186,10 +188,22 @@ decision, and an admin screen to run it from. See `docs/ai-layer.md`.
   peak outline, on a dB scale, and the episode's own measured silence floor
   drawn as a line — so pauses between words are visible and quiet audio is
   distinguishable from nothing.
-- **Audition in / audition out** (two seconds either side of a single cut) — an
-  edit is judged by ear, one edge at a time
+- **Hear the start / hear the end** — the clip's own first and last three
+  seconds, clamped to the selection at both ends, so neither ever plays material
+  the export does not contain. They replaced *Audition in / out*, which
+  straddled each mark by a fixed two seconds and therefore played past the
+  out-point and collapsed into each other on short clips
+- **Drag across the zoomed waveform to select** — both marks in one movement,
+  told apart from a click by distance travelled. Clicking it instead places the
+  playhead without starting playback, which is what `I` and `O` mark against
 - **Mark by ear**: `I` and `O` set in/out at the playhead; `[` and `]` jump the
-  playhead between the pauses in speech
+  playhead between the pauses in speech; the arrow keys walk it along by 0.1s
+  (1s with shift) when no handle holds focus
+- **One step of selection undo** on `⌘Z`, and pressing it again puts the
+  selection back. In memory only — it dies with the open editor, so it adds
+  nothing to the two things the browser persists
+- **Back to the start** (the skip-back button, or `0` / `Home`) returns the
+  playhead *and the view* to the beginning of the selection
 - **Snap to silence** puts a cut in the gap between words instead of through
   the middle of one. It reads the same 10ms tier, so it lands *in* the gap
   rather than on the half-second grid it used to be quantised to.

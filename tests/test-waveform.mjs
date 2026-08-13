@@ -10,7 +10,8 @@
 
 import {
   reducePeaks, snapToSilence, clipWindow, niceTick, tickLabel,
-  reduceRms, noiseFloor, nextSilence,
+  reduceRms, noiseFloor, nextSilence, edgeWindow, viewForPlayhead,
+  dragSelection, resumeRange,
 } from "../static/waveform.js";
 
 let failures = 0;
@@ -289,6 +290,222 @@ console.log("detail resolution");
   check("noise floor is not thrown by an all-silent signal",
         noiseFloor(new Float32Array(1000)) === 0);
   check("noise floor survives an empty array", noiseFloor(new Float32Array(0)) === 0);
+}
+
+/* ---------------------------------------------------------------- edgeWindow
+   The bug was a fixed ±2s window around a mark, which on any selection shorter
+   than the window played audio the clip does not contain — and made the two
+   buttons play nearly the same thing.
+
+   So the test is the invariant, not the arithmetic: swept across selection
+   lengths from far shorter than the window to far longer, at both edges, the
+   range must never leave the selection. Checking one 20-second selection would
+   pass on the broken version, which is how this shipped. */
+{
+  console.log("\nedgeWindow");
+  const SECS = 3;
+  let escaped = 0, collided = 0, worst = "";
+
+  for (const len of [0.2, 0.5, 1, 1.5, 2, 2.9, 3, 3.1, 4, 10, 60, 600]) {
+    for (const inSec of [0, 0.7, 12, 3600]) {
+      const outSec = inSec + len;
+      const a = edgeWindow({ inSec, outSec, secs: SECS, edge: "in" });
+      const b = edgeWindow({ inSec, outSec, secs: SECS, edge: "out" });
+      for (const w of [a, b]) {
+        if (w.from < inSec - 1e-9 || w.to > outSec + 1e-9) {
+          escaped++;
+          worst = `len ${len}s at ${inSec}s -> ${w.from.toFixed(2)}–${w.to.toFixed(2)}`;
+        }
+        if (w.to < w.from) escaped++;
+      }
+      // Once the selection is longer than the window the two ends must be
+      // telling you different things, or there is no reason for two buttons.
+      if (len > SECS * 2 && Math.abs(a.from - b.from) < 1e-9) collided++;
+    }
+  }
+  check("neither end ever plays outside the selection", escaped === 0, worst);
+  check("the two ends stay distinct on clips longer than the window",
+        collided === 0);
+
+  const long = edgeWindow({ inSec: 100, outSec: 160, secs: 3, edge: "in" });
+  check("start plays the clip's own first seconds",
+        long.from === 100 && long.to === 103, `${long.from}–${long.to}`);
+  const lastly = edgeWindow({ inSec: 100, outSec: 160, secs: 3, edge: "out" });
+  check("end plays the clip's own last seconds",
+        lastly.from === 157 && lastly.to === 160, `${lastly.from}–${lastly.to}`);
+
+  // A clip shorter than the window degrades to "play the whole thing" from
+  // either button — honest, where overshooting was not.
+  const tiny = { inSec: 40, outSec: 41.2, secs: 3 };
+  const ti = edgeWindow({ ...tiny, edge: "in" }), to = edgeWindow({ ...tiny, edge: "out" });
+  check("a clip shorter than the window plays whole from both ends",
+        ti.from === 40 && ti.to === 41.2 && to.from === 40 && to.to === 41.2);
+
+  // Reversed marks are not reachable through the UI, which enforces a minimum
+  // gap — but a helper that returns to < from would play nothing at all and
+  // look like a dead button, so it is pinned rather than left to chance.
+  const rev = edgeWindow({ inSec: 9, outSec: 4, secs: 3, edge: "in" });
+  check("survives reversed marks", rev.from === 4 && rev.to === 7);
+}
+
+/* ----------------------------------------------------------- viewForPlayhead
+   The bug was that nothing moved the view, so a playhead outside the window was
+   simply not drawn — audio running, lower waveform frozen. The test is the
+   round trip: take the returned centre, rebuild the window through the real
+   clipWindow, and require the playhead to actually be inside it. Asserting the
+   returned number alone would not have caught a centre that clamping then
+   pushed back off screen at the ends of the episode. */
+{
+  console.log("\nviewForPlayhead");
+  check("stays out of the way while the playhead is visible",
+        viewForPlayhead({ playhead: 50, from: 40, to: 60 }) === null);
+  check("and at the very edges of the window",
+        viewForPlayhead({ playhead: 40, from: 40, to: 60 }) === null &&
+        viewForPlayhead({ playhead: 60, from: 40, to: 60 }) === null);
+  check("does nothing without a playhead",
+        viewForPlayhead({ playhead: null, from: 0, to: 10 }) === null);
+
+  const DURATION = 3000, pad = 16;
+  let missed = 0, worst = "";
+  // Both directions, and both ends of the episode, where clipWindow clamps.
+  for (const playhead of [0, 0.5, 12, 900, 1800.25, DURATION - 0.5, DURATION]) {
+    for (const [inSec, outSec] of [[71, 94], [0, 4], [1500, 1530], [DURATION - 8, DURATION]]) {
+      const before = clipWindow({ inSec, outSec, pad, duration: DURATION });
+      const v = viewForPlayhead({ playhead, from: before.from, to: before.to });
+      if (v == null) continue;                  // already visible — nothing to do
+      const after = clipWindow({ inSec, outSec, pad, duration: DURATION, centre: v });
+      if (playhead < after.from - 1e-6 || playhead > after.to + 1e-6) {
+        missed++;
+        worst = `playhead ${playhead}s -> window ${after.from.toFixed(1)}–${after.to.toFixed(1)}`;
+      }
+    }
+  }
+  check("always brings the playhead into the window it returns", missed === 0, worst);
+
+  // Runway: landing the playhead a quarter in rather than centred is what keeps
+  // a forward play from re-centring every half window.
+  const v = viewForPlayhead({ playhead: 1000, from: 0, to: 40 });
+  const w = clipWindow({ inSec: 990, outSec: 1010, pad: 20, duration: DURATION, centre: v });
+  check("leaves most of the window ahead of a forward play",
+        1000 - w.from < (w.to - w.from) * 0.3,
+        `${(1000 - w.from).toFixed(1)}s behind of ${(w.to - w.from).toFixed(1)}s`);
+}
+
+/* -------------------------------------------------------------- dragSelection
+   The two things a hand-rolled `in = where I pressed, out = where I am` gets
+   wrong are dragging right-to-left and dragging a distance shorter than the
+   handles can be separated by. Both are swept rather than sampled, and the
+   episode's two ends are included because that is where the clamp folds back. */
+{
+  console.log("\ndragSelection");
+  const DUR = 600, MIN = 0.2;
+  let asym = 0, tooShort = 0, escaped = 0, worst = "";
+
+  const spans = [0, 0.001, 0.05, 0.2, 0.3, 1, 7, 120, 599, 600, 900];
+  const starts = [0, 0.05, 3, 299, 599.9, 600];
+  for (const anchor of starts) {
+    for (const span of spans) {
+      for (const dir of [1, -1]) {
+        const at = anchor + span * dir;
+        const s = dragSelection({ anchor, at, duration: DUR, minLen: MIN });
+
+        // Dragging away from a point and back to it across the same span must
+        // describe the same selection — but only once the span is wide enough
+        // to be a selection at all. Below the minimum the two are genuinely
+        // different gestures: the marks grow in the direction the hand moved,
+        // which is asserted separately below.
+        if (Math.abs(span) >= MIN) {
+          const mirror = dragSelection({ anchor: at, at: anchor, duration: DUR, minLen: MIN });
+          if (Math.abs(s.inSec - mirror.inSec) > 1e-9 ||
+              Math.abs(s.outSec - mirror.outSec) > 1e-9) asym++;
+        }
+
+        if (s.outSec - s.inSec < MIN - 1e-9) {
+          tooShort++;
+          if (!worst) worst = `anchor ${anchor} span ${span} dir ${dir} -> ${s.inSec}–${s.outSec}`;
+        }
+        if (s.inSec < -1e-9 || s.outSec > DUR + 1e-9 || s.outSec < s.inSec) escaped++;
+      }
+    }
+  }
+  check("dragging right-to-left gives the same selection as left-to-right", asym === 0);
+  check("never returns a selection shorter than the handles can be separated",
+        tooShort === 0, worst);
+  check("never leaves the episode", escaped === 0);
+
+  const plain = dragSelection({ anchor: 40, at: 52, duration: DUR });
+  check("an ordinary drag is just the span covered",
+        plain.inSec === 40 && plain.outSec === 52, `${plain.inSec}–${plain.outSec}`);
+  const back = dragSelection({ anchor: 52, at: 40, duration: DUR });
+  check("and the same drag backwards", back.inSec === 40 && back.outSec === 52);
+
+  // A tiny drag at the very end has no room to expand forwards, so it has to
+  // fold back off the end rather than run past it.
+  const end = dragSelection({ anchor: DUR, at: DUR, duration: DUR, minLen: MIN });
+  check("a drag at the very end folds back inside the episode",
+        end.outSec === DUR && Math.abs(end.inSec - (DUR - MIN)) < 1e-9,
+        `${end.inSec}–${end.outSec}`);
+  const start0 = dragSelection({ anchor: 0, at: 0, duration: DUR, minLen: MIN });
+  check("and one at the very start expands forwards",
+        start0.inSec === 0 && Math.abs(start0.outSec - MIN) < 1e-9);
+
+  // A drag too short to be a selection still has a direction, and the mark you
+  // pressed on should stay put while the other one moves away from it — press
+  // and flick right sets an in-point, flick left sets an out-point. Getting
+  // this backwards would make a short drag jump the selection behind the
+  // pointer, which reads as the editor fighting you.
+  const flickR = dragSelection({ anchor: 100, at: 100.02, duration: DUR, minLen: MIN });
+  check("a flick right keeps the press point as the in-point",
+        flickR.inSec === 100 && Math.abs(flickR.outSec - 100.2) < 1e-9,
+        `${flickR.inSec}–${flickR.outSec}`);
+  const flickL = dragSelection({ anchor: 100, at: 99.98, duration: DUR, minLen: MIN });
+  check("a flick left keeps the press point as the out-point",
+        flickL.outSec === 100 && Math.abs(flickL.inSec - 99.8) < 1e-9,
+        `${flickL.inSec}–${flickL.outSec}`);
+}
+
+/* ---------------------------------------------------------------- resumeRange
+   The bug this exists to stop is a playhead moved without the range it is
+   measured against: togglePlay then resumes from somewhere other than the place
+   just chosen. It had shipped in the [ / ] silence jump.
+
+   So the test is the property togglePlay actually depends on — the returned
+   range contains the playhead — asserted over playheads inside, outside, and
+   exactly on both marks. A test that only moved the playhead inside the
+   selection passes the broken version, since the stale range was usually the
+   selection. */
+{
+  console.log("\nresumeRange");
+  let missed = 0, worst = "";
+  const sel = [[71, 94], [0, 5], [300, 300.2], [1000, 2400]];
+  const heads = [0, 12, 70.999, 71, 82, 94, 94.001, 300.1, 1200, 5000];
+
+  for (const [inSec, outSec] of sel) {
+    for (const playhead of heads) {
+      const r = resumeRange({ playhead, inSec, outSec });
+      const end = r.to ?? Infinity;
+      if (playhead < r.from - 1e-9 || playhead > end + 1e-9) {
+        missed++;
+        worst = `head ${playhead} sel ${inSec}–${outSec} -> ${r.from}–${r.to}`;
+      }
+    }
+  }
+  check("the range always contains the playhead", missed === 0, worst);
+
+  const inside = resumeRange({ playhead: 82, inSec: 71, outSec: 94 });
+  check("inside the selection it stays bounded by the selection",
+        inside.from === 71 && inside.to === 94 && inside.follow === "sel");
+
+  const outside = resumeRange({ playhead: 300, inSec: 71, outSec: 94 });
+  check("outside it becomes an open play from the playhead",
+        outside.from === 300 && outside.to === null && outside.follow === false);
+
+  // Exactly on a mark counts as inside — a click that lands on the in-point
+  // should repeat the clip, not start an open play that happens to begin there.
+  for (const [h, label] of [[71, "in-point"], [94, "out-point"]]) {
+    const r = resumeRange({ playhead: h, inSec: 71, outSec: 94 });
+    check(`landing exactly on the ${label} counts as inside`, r.follow === "sel");
+  }
 }
 
 console.log(failures ? `\n${failures} failed` : "\nall passed");

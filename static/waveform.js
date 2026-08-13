@@ -501,6 +501,106 @@ export function clipWindow({ inSec, outSec, pad, duration, centre = null, anchor
   return { from, to: Math.max(from + 0.05, to) };
 }
 
+/**
+ * The range "hear the start" / "hear the end" should play.
+ *
+ * **Bounded by the selection at both ends, and that is the whole point.** These
+ * used to be fixed ±2s windows straddling a cut point, which meant Hear the end
+ * played two full seconds of episode *after* the clip stopped — material the
+ * listener will never get. The clip is a byte copy of what lies between the
+ * marks, so the question these buttons answer is "how does my clip open and
+ * close", not "what am I cutting off".
+ *
+ * The clamp is also what stops them collapsing into each other. A fixed window
+ * on a 1.5-second selection overshoots both marks, so both buttons played
+ * near-identical audio — exactly the flaw that got the "2s lead-in" button
+ * deleted, still present in the two buttons that stayed. Clamped, a selection
+ * shorter than `secs` degrades to "play the whole clip" from either button,
+ * which is honest rather than confusing.
+ *
+ * Pure, so the degenerate cases can be tested without a browser.
+ */
+export function edgeWindow({ inSec, outSec, secs = 3, edge = "in" }) {
+  const lo = Math.min(inSec, outSec), hi = Math.max(inSec, outSec);
+  return edge === "out"
+    ? { from: Math.max(hi - secs, lo), to: hi }
+    : { from: lo, to: Math.min(lo + secs, hi) };
+}
+
+/**
+ * Where to re-centre the zoomed view when the playhead has left it.
+ *
+ * Returns null while the playhead is visible — the common case is a selection
+ * that fits on screen, and moving the view every frame would make it jitter
+ * under audio it is already showing.
+ *
+ * When the playhead *has* escaped, this is not cosmetic. Clicking the overview
+ * at 30:00 while the selection sits at 1:11 played audio whose playhead was
+ * drawn nowhere: drawWave skips a playhead outside `[from, to]`, so the lower
+ * waveform sat motionless while the episode ran. Nothing was broken and nothing
+ * looked like it was working.
+ *
+ * The playhead lands a quarter of the way in rather than centred, so a forward
+ * play gets three quarters of a window of runway before the view has to move
+ * again — one jump per window instead of one per half.
+ */
+export function viewForPlayhead({ playhead, from, to }) {
+  if (playhead == null) return null;
+  if (playhead >= from && playhead <= to) return null;
+  return playhead + (to - from) * 0.25;
+}
+
+/**
+ * The selection a press-and-travel on the zoomed view describes.
+ *
+ * `anchor` is where the press landed and `at` is where the pointer is now, so
+ * either may be the larger — dragging right to left has to give the same
+ * selection as dragging left to right across the same span, which is the first
+ * thing a hand-rolled `in = down, out = up` gets wrong.
+ *
+ * `minLen` is the same 0.2s floor the handles enforce. Below it the marks would
+ * be closer together than a handle is wide, so the selection could be seen but
+ * not then grabbed. The expansion runs *away* from the direction of travel's
+ * origin, and folds back off the end of the episode when there is no room.
+ *
+ * Pure, so the reversal and the two ends can be tested without a browser.
+ */
+export function dragSelection({ anchor, at, duration, minLen = 0.2 }) {
+  const dur = duration || Math.max(anchor, at, minLen);
+  let lo = Math.max(0, Math.min(Math.min(anchor, at), dur));
+  let hi = Math.max(0, Math.min(Math.max(anchor, at), dur));
+  if (hi - lo < minLen) {
+    if (at >= anchor) hi = lo + minLen; else lo = hi - minLen;
+    if (hi > dur) { hi = dur; lo = dur - minLen; }
+    if (lo < 0) { lo = 0; hi = Math.min(dur, minLen); }
+  }
+  return { inSec: lo, outSec: hi };
+}
+
+/**
+ * The range playback should resume into after the playhead is moved by hand.
+ *
+ * **This is the fix for a bug class, not for one button.** togglePlay only
+ * resumes from the playhead while the playhead still lies inside the range it
+ * remembers; otherwise it falls back to playing the whole selection. So any
+ * control that moves the playhead without also moving that range leaves Space
+ * playing somewhere other than the place you just chose. It had shipped in the
+ * `[` / `]` silence jump, and clicking the zoomed view would have added a
+ * second instance had it not been routed through here.
+ *
+ * Inside the selection the range stays bounded by the selection, so a click
+ * inside a clip you are repeating keeps repeating it. Outside, there is no
+ * selection to be bounded by and it becomes an open play to the end.
+ *
+ * The invariant worth testing is that the returned range always contains the
+ * playhead — that is the property togglePlay depends on.
+ */
+export function resumeRange({ playhead, inSec, outSec }) {
+  return playhead >= inSec && playhead <= outSec
+    ? { from: inSec, to: outSec, follow: "sel" }
+    : { from: playhead, to: null, follow: false };
+}
+
 /* ------------------------------------------------- snap to silence */
 
 /**

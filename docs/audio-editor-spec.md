@@ -167,10 +167,10 @@ Keep wavesurfer as the fallback if the canvas work overruns.
 │  IN  8:42.31   OUT  9:15.80          LENGTH  33.5s          │
 │  ⟨ ⟩ nudge 0.1s     ⌥⟨ ⟩ snap to silence                    │
 │                                                             │
-│  ▶ Audition in   ▶ Audition out   Snap in   Snap out        │
-│  (superseded: play/pause, stop and Repeat now sit in a      │
-│   transport between the two waveforms, each of which has    │
-│   a time ruler — see docs/audio-editor-dev.md)              │
+│  ▶ Hear the start  ▶ Hear the end  Snap in  Snap out        │
+│  (superseded: play/pause, back-to-start and Repeat now      │
+│   sit in a transport between the two waveforms, each        │
+│   of which has a time ruler — see the dev doc)              │
 │                                                             │
 │                     [ Cancel ]  [ Download MP3 · 2.9 MB ]   │
 └─────────────────────────────────────────────────────────────┘
@@ -207,9 +207,17 @@ difference between "roughly there" and "on the word."
   seconds and indistinguishable on the short clips this tool is mostly used
   for. Play plus the two auditions cover the same ground. See
   `docs/audio-editor-dev.md`.
-- **Audition in / audition out** — two seconds either side of one cut point.
-  Edits are usually wrong at one edge, and checking that edge shouldn't mean
-  sitting through the whole clip.
+- ~~**Audition in / audition out** — two seconds either side of one cut point.~~
+  **Reversed.** Straddling the mark meant *Audition out* played two full seconds
+  of episode after the clip had stopped — material the listener never receives —
+  and the fixed window overshot both marks on any selection shorter than it, so
+  on a short promo the two buttons played nearly the same audio. That is the
+  same flaw the lead-in button was deleted for, left in place in the two buttons
+  that stayed. They are now **Hear the start / Hear the end**: the clip's own
+  first and last three seconds, clamped to the selection at both ends. Edits are
+  still usually wrong at one edge and checking one shouldn't mean sitting
+  through the whole clip — but what you hear is now what the listener gets. See
+  `docs/audio-editor-dev.md`.
 - **Length shown prominently.** These people fill broadcast slots. "How long is
   it" is the question, not "where does it end."
 - **Nudge ±0.1 s** by arrow key. Dragging can't hit a word boundary.

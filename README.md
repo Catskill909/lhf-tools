@@ -318,14 +318,16 @@ tags and 14 detected re-airs.
 - **Export** — CSV / TSV / JSON of the current result set, built for clean
   spreadsheet import (UTF-8 BOM, ISO dates, numeric durations, TRUE/FALSE)
 - **Clip extraction** — the scissors at the right of the player opens a
-  waveform editor on what you're listening to. Transport with play/pause, stop
-  and Repeat (which follows the handles as you trim); a time ruler on each
-  waveform; click the overview to listen from any point. The zoomed view is
-  drawn from **10 ms peaks** with an RMS body on a dB scale and the episode's
+  waveform editor on what you're listening to. Transport with play/pause,
+  back-to-start and Repeat (which follows the handles as you trim); a time ruler
+  on each waveform; click the overview to listen from any point. The zoomed view
+  is drawn from **10 ms peaks** with an RMS body on a dB scale and the episode's
   own silence floor marked, so the gaps between words are visible; zoom follows
-  the edge you're working, down to a half-second window. Drag handles,
-  arrow-key nudge, `I`/`O` to mark at the playhead, `[`/`]` to jump between
-  pauses, snap to silence, audition either cut point — then download an MP3
+  the edge you're working, down to a half-second window. Drag across the zoomed
+  view to set both marks at once, click it to place the playhead, drag the
+  handles or arrow-key nudge to adjust, `I`/`O` to mark at the playhead, `[`/`]`
+  to jump between pauses, `⌘Z` for one step of selection undo, snap to silence,
+  hear the clip's own first or last seconds — then download an MP3
   **cut losslessly from the source** (no re-encode; within one 26 ms frame of
   the mark). Entirely in the browser — audio streams from the CDN and never
   touches this server.

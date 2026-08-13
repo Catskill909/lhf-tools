@@ -5,7 +5,7 @@
 
 ## At a glance
 
-**Last updated 9 August 2026.** The editing surface is built. Phases 1–4 shipped
+**Last updated 12 August 2026.** The editing surface is built. Phases 1–4 shipped
 and were verified; Phase 5's tests were written alongside them rather than after.
 
 | Phase | What it gave the producer | State |
@@ -15,13 +15,19 @@ and were verified; Phase 5's tests were written alongside them rather than after
 | [3 — Detail peaks](#phase-3--detail-peaks---built) | 10 ms resolution: you can see the silences, and Snap lands *in* them. Zoom past the selection. | ✅ built |
 | [4 — Marking and navigation](#phase-4--marking-and-navigation---built) | `I`/`O` mark at the playhead, `[`/`]` jump between pauses, Fit. | ✅ built |
 | [5 — Verification](#phase-5--verification) | 49 pure checks in `tests/test-waveform.mjs`, plus browser suites. | ✅ done, alongside |
-| [6 — Momentary-action feedback](#phase-6--show-that-a-momentary-action-is-momentary) | Audition and Snap show they ran. | ✅ built |
+| [6 — Momentary-action feedback](#phase-6--show-that-a-momentary-action-is-momentary) | The edge listens and Snap show they ran. | ✅ built |
+| [7 — Reaching the lower waveform](#phase-7--reaching-the-lower-waveform---built) | Click the zoomed view to place the playhead and drag it to select; arrows scrub; ⌘Z undoes; the edge listens stay inside the clip; ⏮︎ and the view come back together. | ✅ built |
 
-**Three defects were found by using the editor, after their phases shipped** —
+**Defects found by using the editor, after their phases shipped** —
 [Repeat and three others](#audit-of-phases-12-before-starting-phase-3),
 [the lead handle vs. Play](#found-in-use-trimming-the-lead-handle-didnt-move-where-play-starts),
-and [the redundant lead-in button](#found-in-use-with-2s-lead-in-and-audition-in-were-the-same-button).
-All are fixed. All were the same bug shape — see *The recurring bug class* below.
+[the redundant lead-in button](#found-in-use-with-2s-lead-in-and-audition-in-were-the-same-button),
+and [three more in Phase 7](#phase-7--reaching-the-lower-waveform---built) — the
+unclamped edge listens, which were the *same* fixed-window flaw as the lead-in
+left in the buttons that survived that cut; a lower waveform that sat frozen
+while audio played; and `[` / `]` moving the playhead without the range it is
+measured against. All are fixed. Nearly all were the same bug shape — see *The
+recurring bug class* below.
 
 ### Up next
 
@@ -799,6 +805,234 @@ decision from telling you it happened.
 **Not covered by a test.** This is DOM state during real playback, so it needs a
 browser — the same reason the Phase 1–4 suites are not committed. The check to
 run by hand is the one in the notes above.
+
+## Phase 7 — Reaching the lower waveform — ✅ **built**
+
+**12 August 2026.** Four changes, three of them reported from use and one found
+while reading the code around them.
+
+### Found in use: the lower waveform was the only surface you couldn't click
+
+`#waveZoom` had exactly one listener — `wheel`. `#rulerZoom` had none. The
+overview above had both. So the one surface you could not click was the one the
+work happens on.
+
+That cost more than the asymmetry suggests, because `I` and `O` mark *at the
+playhead*, and the only ways to move the playhead were to play and catch it
+going past, jump between silences with `[` / `]`, or click the overview — where
+a pixel is over a second wide. **There was no way to place the playhead
+precisely in the only view that has precision.** Click → `I` now closes.
+
+It deliberately does not play, which is where it parts company with the overview.
+Up there a click is hunting for a moment and playing is the point; down here you
+are usually placing a mark, and audio starting up and running to the end of the
+episode on every press would be something to fight. A press that *travels* is
+also left alone rather than scrubbing: that gesture is spoken for, since
+press-and-travel on this surface is how drag-to-select would work, and spending
+it on a scrub now would leave that with nowhere to go.
+
+### Found in use: "Audition in/out" played audio the clip does not contain
+
+| Button | Played | Problem |
+|---|---|---|
+| Audition in | `in − 2` → `in + 2` | crosses the mark in both directions |
+| Audition out | `out − 2` → `out + 2` | **two full seconds of episode after the clip stops** |
+
+Neither was bounded by the selection. The export is a byte copy of what lies
+between the marks, so *Audition out* was answering a question about material the
+listener will never receive.
+
+Worse, the fixed window overshot both marks on any selection shorter than it. On
+a 1.2-second clip the two buttons played 38→42 and 39.2→43.2 — **2.8 seconds of
+overlap out of 4**, i.e. 70% identical audio, most of it outside the clip. That
+is precisely the flaw
+[the lead-in button was deleted for](#found-in-use-with-2s-lead-in-and-audition-in-were-the-same-button);
+the reasoning was applied to the button that was cut and not to the two that
+stayed.
+
+Now **Hear the start** / **Hear the end**: the clip's own first and last three
+seconds, clamped to the selection at both ends, via `edgeWindow` in
+`waveform.js`. A clip shorter than the window degrades to "play the whole thing"
+from either button, which is honest where overshooting was not. The name changed
+because "audition" described the straddle, and keeping broadcast vocabulary for
+behaviour the buttons no longer have would be worse than plain words.
+
+**The trade, stated:** you lose hearing what lies immediately *before* the
+in-point — useful when deciding whether to extend a clip backwards. Play and the
+overview click both still reach it, so nothing became unreachable.
+
+### Found in use: the way back to the selection was there and unfindable
+
+Reported as "there is no way to quickly return to the start of the selection."
+`stopPlay` had set `playhead = clip.in` since Phase 1, and `Home` did the same
+(`0` was added later, once `Home` turned out not to exist on a Mac laptop).
+The capability existed; the affordance did not. **■ reads as *halt*** — the
+media-player meaning — so the fact that it also returns to the in-point went
+unfound by someone who had the button in front of them.
+
+The glyph is now **⏮︎**, which says return-to-start literally, with `U+FE0E` to
+force text presentation — without it macOS renders it as a colour emoji beside a
+monochrome ▶. `stopPlay` also calls `recentre(true)` now: returning the playhead
+to a spot that is still off screen is the same complaint one layer down.
+
+### Found while reading: playing from an overview click froze the lower waveform
+
+Not reported, found next door. `playRange` never touched `clip.view`, and
+`drawWave` draws no playhead outside `[from, to]` — so clicking the overview at
+30:00 with the selection at 1:11 played audio whose playhead was drawn nowhere,
+over a lower waveform that sat motionless. Nothing was broken, and nothing looked
+like it was working.
+
+`followPlayhead` now brings the view when the playhead has left it, using
+`viewForPlayhead` in `waveform.js`. It returns null while the playhead is
+visible, so the common case — a selection that fits on screen — does not jitter
+every frame. When it does move, the playhead lands a quarter of the way in
+rather than centred, giving three quarters of a window of runway: one jump per
+window instead of one per half. Skipped entirely while `clip.frozen` is set, or
+a handle drag would feed the view's own movement back into the measurement it is
+being made against.
+
+### One instance of the recurring bug class, introduced and caught in the same pass
+
+Clicking the zoom view while paused moved `clip.playhead` but left `playFrom` /
+`playTo` / `follow` alone. `togglePlay` only resumes from the playhead while the
+playhead still lies inside the range it remembers — so a click landing outside
+that range would move the cursor, and `Space` would then play something else
+entirely. Reachable rather than theoretical, since the view can show audio well
+outside the selection once it has followed a playhead there.
+
+The fix sets the resume range with the playhead: inside the selection it stays
+bounded by the selection, outside it becomes an open play from the click. **This
+is the fourth instance of the same shape in this file** — state captured at one
+moment and invalidated by a later one — and the first to be caught before
+shipping rather than in use.
+
+### Also in this pass: drag to select, undo, and scrubbing
+
+Three additions from the same conversation, taken because each one *removes*
+steps rather than adding surface. No new controls were added to the tool row —
+the row is still four buttons.
+
+**Drag across the zoomed view to select.** The gesture every editor has, and its
+absence was felt as extra work rather than as a missing feature: a selection
+could only be *adjusted*, one handle at a time, so making a new one elsewhere
+meant dragging two handles across the view in turn. Click and drag are told
+apart by `DRAG_SLOP`, the rule the overview already uses — hit-testing the
+existing selection was rejected for the same reason it was rejected there, plus
+one specific to this surface: **a press that begins inside the current selection
+is the normal way to start a new one**, so any rule keyed on where the press
+landed would have to guess. The window is frozen for the drag exactly as
+`dragHandle` does it.
+
+A drag shorter than the 0.2 s handle minimum keeps the point you pressed and
+grows away from it — flick right and you have set an in-point, flick left an
+out-point. This was not obvious in advance; the symmetry test forced the
+question by failing, and the answer is now pinned by two checks rather than left
+to whichever way the arithmetic happened to fall.
+
+**One step of selection undo**, on `⌘Z`. A minute of work could be destroyed by
+a stray drag, a mistimed `I`, or a Snap that moved the wrong way, with nothing
+to get it back. It stores a single pair of numbers, in memory, dying with the
+open editor — **nothing new persists**, which keeps it clear of the constraint
+that the browser stores exactly two things and both rebuild themselves. The pair
+is *swapped* rather than consumed, so a second press puts it back; with only one
+step, an accidental undo would otherwise be the one action in the editor with no
+way out of it. A run of arrow nudges coalesces into a single step via a tag,
+since ten nudges are one gesture as far as the hand is concerned.
+
+`markUndo` is called from all eight paths that mutate `clip.in` / `clip.out`,
+verified by grepping the assignments rather than by memory.
+
+**Arrow keys scrub the playhead** when no handle holds focus, at the same 0.1 s
+and 1 s steps the handles nudge by — the same movement applied to the cursor
+instead of a mark, and having the two disagree would make the smaller one feel
+broken. It defers to a focused handle through `e.defaultPrevented`, so the two
+never both fire.
+
+### The fifth instance of the recurring bug class — this one already shipped
+
+Found while routing the click through a shared function. **`[` and `]` moved the
+playhead and left the resume range alone**, so jumping to a pause while paused
+and pressing Space played from wherever the old range began rather than from the
+pause just found:
+
+| | range after jumping to a pause at 300s, selection 71–94 | Space resumes from |
+|---|---|---|
+| shipped | `71 → 94`, untouched | **the selection, not the pause** |
+| now | `300 → end` | the pause |
+
+Every hand-driven playhead move — the click, the arrows, `[` / `]` — now runs
+through one `movePlayhead`, which carries the range with the playhead via
+`resumeRange`. One function so there is one place for it to be right. That makes
+five instances of *state set at one moment and invalidated at a later one* in
+this file; it remains the thing to check first when anything here misbehaves.
+
+### Found in use: the skip-back glyph was fuzzy and unreadable
+
+`⏮` with `U+FE0E` was the first attempt, and the variation selector did not save
+it. Asking for text presentation only helps if a font in the stack has a text
+design for the character; the one that answers here does not, so what arrived
+was **a scaled-down emoji bitmap at 11px** — reported as fuzzy, too small, and
+not identifiable as anything.
+
+It is now **an inline SVG**: a bar and a triangle, `currentColor` so it follows
+the theme, crisp at any size and identical on every machine. The general lesson
+is worth keeping — *a control's icon is artwork, not text*, and the moment one
+matters enough to be recognised at a glance it should be drawn rather than
+typed. The play/pause glyphs are left as characters deliberately: ▶ and ❚❚ have
+real text designs everywhere and render correctly.
+
+The in-app help referred to the button by reproducing the same character, so it
+was illegible in exactly the place someone goes to find out what it means. It
+names the button in words now.
+
+### Found while checking that: Help did not own the keyboard over the editor
+
+`?` opens Help from inside the clip editor — which is the point, since the
+shortcuts it lists are the editor's, and it paints on top by DOM order. But the
+editor's key handler deferred only to the save dialogue, so with Help open:
+
+- **Escape closed both**, taking the editor and the selection with it.
+- Space, `I`, `O`, `[`, `]` and the arrows all still drove an editor the reader
+  could not see, while they read the list describing them.
+
+The rule was already written down one line above the bug — *"a dialogue above
+the editor owns the keyboard while it is open"* — and stated for `saveOpen()`
+only. It now reads `saveOpen() || helpOpen()`. Worth noting as a shape: **a
+guard that enumerates instances of a category will be wrong as soon as the
+category gains a member**, and this file gained one the moment `?` became useful
+from inside the editor.
+
+### Verification
+
+`edgeWindow`, `viewForPlayhead`, `dragSelection` and `resumeRange` were written
+as pure exports in `waveform.js` specifically so this was testable without a
+browser, and all four are covered in `tests/test-waveform.mjs` — 77 checks in
+that file now, 199 across the six pure suites.
+
+The tests assert **invariants swept across a range, not single cases** — the
+broken versions pass any single well-chosen example, which is how this shipped.
+
+- `edgeWindow` is swept over selection lengths from 0.2 s to 600 s at four
+  positions and both edges, asserting the range never leaves the selection: the
+  old implementation fails that in **88 cases**.
+- `viewForPlayhead` is checked by round trip — take the returned centre, rebuild
+  the window through the real `clipWindow`, and require the playhead to actually
+  be inside it. This also catches a centre that clamping pushes back off screen
+  at the ends of the episode; asserting the returned number alone would not.
+- `dragSelection` is swept over eleven spans at six start points in both
+  directions, asserting the minimum length, the episode bounds, and that the two
+  directions agree wherever they should.
+- `resumeRange` asserts the property `togglePlay` actually depends on — the
+  returned range contains the playhead — over playheads inside, outside and
+  exactly on both marks. **A test that only moved the playhead inside the
+  selection would pass the broken version**, because the stale range was usually
+  the selection. That is precisely why `[` / `]` shipped broken.
+
+Still not covered by a test: the DOM and audio behaviour of the handlers
+themselves — the drag gesture, the undo keystroke and the focus rule that makes
+the arrows defer to a handle — for the same reason as Phase 6, they need a
+browser.
 
 ## Brainstorm — features for LHF and the labor podcast network
 
