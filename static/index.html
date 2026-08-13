@@ -729,6 +729,13 @@
     width: min(680px, 100%);
     box-shadow: 0 24px 60px rgba(0,0,0,0.4);
   }
+  /* Every dialogue carries tabindex="-1" so opening focus can land on the
+     dialogue rather than on its close button — see openClip and friends. It is
+     a focus *target*, not a control, so it must not draw a ring: a box already
+     covering the screen does not need announcing, and the ring would appear on
+     the first keypress after opening and read as "the whole thing is
+     selected". Controls inside it keep their own :focus-visible rules. */
+  .modal:focus, .modal:focus-visible { outline: none; }
   .modal-head {
     display: flex; align-items: baseline; justify-content: space-between;
     gap: 1rem; padding: 1.4rem 1.6rem 0.9rem;
@@ -2122,7 +2129,7 @@
 </div>
 
 <div class="backdrop" id="clipModal" hidden>
-  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="clipTitle">
+  <div class="modal" role="dialog" aria-modal="true" tabindex="-1" aria-labelledby="clipTitle">
     <div class="modal-head">
       <div>
         <h2 class="display" id="clipTitle">Clip</h2>
@@ -2250,7 +2257,7 @@
      the archive. #clipModal and #exportModal share a z-index and are told apart
      by DOM order; this one is given the rule explicitly instead. -->
 <div class="backdrop" id="libModal" hidden style="z-index:49">
-  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="libTitle">
+  <div class="modal" role="dialog" aria-modal="true" tabindex="-1" aria-labelledby="libTitle">
     <div class="modal-head">
       <div>
         <h2 class="display" id="libTitle">Clips</h2>
@@ -2528,7 +2535,7 @@
      using the same syntax as the archive search, click any line to hear it,
      select a passage to get its exact duration and send it to the clip editor. -->
 <div class="backdrop" id="txModal" hidden>
-  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="txTitle">
+  <div class="modal" role="dialog" aria-modal="true" tabindex="-1" aria-labelledby="txTitle">
     <div class="modal-head">
       <div>
         <h2 id="txTitle">Transcript</h2>
@@ -2587,7 +2594,7 @@
 </div>
 
 <div class="backdrop" id="help" hidden>
-  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="helpTitle">
+  <div class="modal" role="dialog" aria-modal="true" tabindex="-1" aria-labelledby="helpTitle">
 
     <div class="modal-head">
       <div>
@@ -3471,6 +3478,25 @@ addEventListener("keydown", e => {
   }
 });
 
+/* Opening focus goes to the dialogue itself, never to its close button.
+ *
+ * Focusing the × looks harmless and is the reason Space closed the clip editor:
+ * Space on a focused <button> is "activate" to the browser, so the one key
+ * every reader presses without thinking — scroll down here, play/pause in the
+ * editor — was wired to close. It cost the editor its selection. Nothing moved
+ * the focus off, either, because a click on a canvas cannot take focus and a
+ * click on prose only sometimes does.
+ *
+ * A dialogue with tabindex="-1" is also the better target on its own merits: a
+ * screen reader announces the dialogue and its title rather than the word
+ * "Close", and Tab from it still arrives at the first control inside.
+ *
+ * Dialogues that open on an input or on their primary action (the zip name,
+ * export's Go) are deliberately not this — there Space *should* reach what has
+ * the focus, because the user is already standing on the thing they came for.
+ */
+const focusDialog = backdrop => backdrop.querySelector(".modal").focus();
+
 /* ---------- help ---------- */
 const help = $("#help");
 let lastFocus = null;
@@ -3478,7 +3504,7 @@ let lastFocus = null;
 function openHelp() {
   lastFocus = document.activeElement;
   help.hidden = false;
-  $("#helpClose").focus();
+  focusDialog(help);
 }
 function closeHelp() {
   help.hidden = true;
@@ -4305,7 +4331,7 @@ async function openClip(ep, fromSec, toSec) {
   // They are shown and edited in the save dialogue, not here.
   clipStrip.hide();
   clipModal.hidden = false;
-  $("#clipClose").focus();
+  focusDialog(clipModal);
   // Open framed on the passage, with a little context either side.
   // pad is now half the window, so frame the selection plus a fifth of its
   // length either side rather than the old fixed 2-6 seconds of padding.
@@ -4378,11 +4404,31 @@ $("#clipClose").addEventListener("click", closeClip);
 $("#clipCancel").addEventListener("click", closeClip);
 clipModal.addEventListener("mousedown", e => { if (e.target === clipModal) closeClip(); });
 
+/* Take the focus the prevented default would have moved.
+ *
+ * Every surface in the editor calls preventDefault on mousedown, and has to:
+ * without it a drag paints a text selection across the dialogue. But
+ * preventDefault on mousedown also cancels the browser's *focus transfer*, so
+ * clicking the waveform moves the playhead and leaves the keyboard pointed at
+ * whatever held it before — the last button pressed, or the dialogue itself.
+ * The next keypress then goes somewhere the user stopped looking a click ago,
+ * which is how Space reached the close ×.
+ *
+ * So a surface that prevents the default owes the focus move itself. Canvases
+ * cannot hold focus, so theirs goes to the dialogue: nothing is standing on a
+ * control, which is exactly right after a click on the timeline. The handles
+ * are buttons and take their own — that is what makes arrow-nudge-after-drag
+ * work, and it had never worked, because this same prevented default had been
+ * quietly eating the focus that the nudge keys were waiting for.
+ */
+const focusAfterPress = el => (el || clipModal.querySelector(".modal")).focus();
+
 /* drag the handles on the zoomed view */
 function dragHandle(el, which) {
   el.addEventListener("mousedown", e => {
     if (!clip) return;
     e.preventDefault();
+    focusAfterPress(el);              // or the arrows nudge nothing
     markUndo();                       // once per drag, not once per frame
     clip.anchor = which;              // zoom follows the edge you're working on
     const box = $("#zoomBox");
@@ -4465,6 +4511,7 @@ const DRAG_SLOP = 4;                  // px before a press counts as a drag
 $("#rulerAll").addEventListener("mousedown", e => {
   if (!clip || !clip.duration) return;
   e.preventDefault();
+  focusAfterPress();
   playRange(overviewTime(e.clientX), null);
 });
 
@@ -4474,6 +4521,7 @@ $("#waveAll").addEventListener("mousedown", e => {
   // nothing at all, which reads as a broken control rather than a wait.
   if (!clip || !clip.duration) return;
   e.preventDefault();
+  focusAfterPress();
   const x0 = e.clientX;
   let dragging = false;
 
@@ -4582,6 +4630,7 @@ const zoomSeek = clientX => movePlayhead(zoomTime(clientX));
 function zoomDrag(e) {
   if (!clip || !clip.duration) return;
   e.preventDefault();
+  focusAfterPress();
   const x0 = e.clientX;
   let dragging = false, anchor = 0;
 
@@ -5005,7 +5054,14 @@ addEventListener("keydown", e => {
   // would mean a keyboard user tabbing to Download and pressing Space gets
   // audio instead of a file, with nothing to explain why — too high a price
   // for consistency on the one button the whole modal exists to reach.
-  if (e.key === " " && !e.target.closest(".modal-actions, #clipClose")) {
+  //
+  // The close × was exempt too, and must never be again. The exemption only
+  // holds for a control the user *chose* to stand on, and the × was focused by
+  // openClip — so the exemption was live for everyone from the moment the
+  // editor opened, and the first Space threw the selection away. Nothing in
+  // here may exempt a control that something other than the user's own Tab or
+  // click put the focus on.
+  if (e.key === " " && !e.target.closest(".modal-actions")) {
     e.preventDefault();
     togglePlay();
     return;
@@ -5112,7 +5168,7 @@ async function openTranscript(ep) {
   $("#txSel").classList.remove("has-sel");
   $("#txPlayer").innerHTML = "";
   txModal.hidden = false;
-  $("#txClose").focus();
+  focusDialog(txModal);
 
   // Open pre-loaded with whatever search produced this result, so the words
   // that brought you here are already marked when the transcript appears.
@@ -6139,7 +6195,7 @@ function openLib() {
   refreshLabelList();
   libRender();
   libModal.hidden = false;
-  $("#libClose").focus();
+  focusDialog(libModal);
 }
 
 function closeLib() {

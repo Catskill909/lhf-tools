@@ -130,6 +130,23 @@ and it is the single most common way these documents mislead their reader.
   covers everything; `tests/test-hidden.mjs` exists to stop it being deleted as
   redundant. The per-component `.foo[hidden]` rules further down the stylesheet
   predate it — **don't add more of them.**
+- **A dialogue must never open with the focus on its close button, and
+  `preventDefault` on `mousedown` cancels the browser's focus transfer.** Both
+  halves shipped together and Space in the clip editor closed the editor,
+  losing the selection. The Space binding exempted `#clipClose` — an exemption
+  written for Download, where the user *tabs* to the control on purpose — while
+  `openClip` put the focus there for them, so the browser's own "Space
+  activates a button" was live for every user from the moment the editor
+  opened. Nothing took the focus off, because every timeline surface prevents
+  the mousedown default (it has to, or a drag paints a text selection across
+  the dialogue) and that also cancels the focus move a click would have made.
+  Opening focus now goes to the dialogue itself via `focusDialog`, and a
+  surface that prevents the default calls `focusAfterPress`. **Only a control
+  the user's own Tab or click landed on may be exempted from a global key.**
+  Help, the transcript and the library had the same opening focus, where Space
+  is the ordinary way to scroll a page of text — all four are fixed, and
+  `tests/test-keyboard.mjs` enforces both rules against every dialogue and
+  every `mousedown` handler rather than a kept list of them.
 - **The peaks cache is versioned (`v: 2`).** Change the format without bumping
   it and returning users get old data read as new — a silently wrong waveform.
 - **`schema.sql` is all `CREATE TABLE IF NOT EXISTS`**, so it does nothing to a
@@ -167,6 +184,7 @@ node tests/test-zip.mjs             # pure: the archive packager
 node tests/test-clips.mjs           # pure: the saved-clip store + labels
 node tests/test-palette.mjs         # pure: both themes' colour laws, in L*
 node tests/test-hidden.mjs          # pure: `hidden` actually hides
+node tests/test-keyboard.mjs        # pure: the keyboard reaches what you see
 node tests/verify-clips.mjs 8000    # live: needs the server running + network
 ```
 
