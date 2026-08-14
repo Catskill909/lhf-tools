@@ -346,7 +346,9 @@
     font: inherit; font-size: 0.79rem;
     padding: 0.2rem 0.6rem;
     cursor: pointer;
-    white-space: nowrap;
+    /* Show names come from the feed, so their length is not ours to assume —
+       same trap as `.ent`, and `.filter-group` wraps its line too. */
+    white-space: normal; overflow-wrap: anywhere;
   }
   .chip:hover { color: var(--ink); border-color: var(--ink-3); }
   .chip:focus-visible { outline: 2px solid var(--focus); outline-offset: 1px; }
@@ -443,6 +445,8 @@
     background: none; border: none; border-radius: 2px;
     color: var(--ink-2); font: inherit; font-size: 0.84rem;
     padding: 0.4rem 0.6rem; cursor: pointer; text-align: left;
+    /* bounded: the sort labels are written in the source, not read from the
+       archive, so their length is ours and this nowrap is safe. */
     white-space: nowrap;
   }
   .sort-opt:hover, .sort-opt:focus-visible {
@@ -627,10 +631,21 @@
     font-size: 0.66rem; letter-spacing: 0.11em; text-transform: uppercase;
     color: var(--ink-3); margin-right: 0.1rem;
   }
+  /* A tag is database text of no fixed length, and `.ents` wraps its flex
+     line rather than shrinking the item — so `white-space: nowrap` here made
+     the chip's min-content width the whole unbroken tag, which a flex item's
+     `min-width: auto` refuses to go below. "The People's Historian: The
+     Outsized Life of Howard Zinn" is 434px, and it pushed the card, the page
+     and the document past a 402px phone; iOS then shrank the entire site to
+     fit and the app rendered at 60% in a corner. `normal` keeps one line
+     whenever it fits, so nothing changes on desktop. `anywhere` — not
+     `break-word`, which does not affect intrinsic sizing — is what makes a
+     single unbroken word shrinkable too. */
   .ent {
     background: none; border: 1px solid var(--rule); border-radius: 2px;
     color: var(--ink-2); font: inherit; font-size: 0.72rem;
-    padding: 0.1rem 0.42rem; cursor: pointer; white-space: nowrap;
+    padding: 0.1rem 0.42rem; cursor: pointer;
+    white-space: normal; overflow-wrap: anywhere;
   }
   .ent:hover { color: var(--spot-ink); border-color: var(--spot); }
   .ent:focus-visible { outline: 2px solid var(--focus); outline-offset: 1px; }
@@ -1785,6 +1800,8 @@
 
   .cliprow .cr-times, .cliprow .cr-len {
     font-size: 0.82rem; font-variant-numeric: tabular-nums;
+    /* bounded: a timecode and a duration, both mm:ss — not text of unknown
+       length, so this nowrap cannot widen the row. */
     white-space: nowrap; align-self: start; padding-top: 0.1rem;
   }
   .cliprow .cr-times { color: var(--ink-2); }
@@ -1806,7 +1823,10 @@
     display: inline-flex; align-items: center; gap: 0.28rem;
     background: none; border: 1px solid var(--rule); border-radius: 2px;
     color: var(--ink-3); font: inherit; font-size: 0.7rem;
-    padding: 0.05rem 0.36rem; cursor: pointer; white-space: nowrap;
+    /* A clip label is typed by the user, so this is the one of the three the
+       user can trigger on purpose — same trap as `.ent`. */
+    padding: 0.05rem 0.36rem; cursor: pointer;
+    white-space: normal; overflow-wrap: anywhere;
     transition: color 0.14s ease, border-color 0.14s ease, background 0.14s ease;
   }
   .lblmini:hover { color: var(--ink); border-color: var(--ink-3); }

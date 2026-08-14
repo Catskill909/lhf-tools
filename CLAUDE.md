@@ -134,6 +134,21 @@ and it is the single most common way these documents mislead their reader.
   covers everything; `tests/test-hidden.mjs` exists to stop it being deleted as
   redundant. The per-component `.foo[hidden]` rules further down the stylesheet
   predate it — **don't add more of them.**
+- **`white-space: nowrap` on text that came from the archive is how the whole
+  site ends up 60% of an iPhone.** A tag chip cannot wrap and — as a flex item,
+  whose `min-width` defaults to `auto` — cannot shrink below its own
+  min-content width either, so the tag sets the width of the card, the card
+  sets the width of the document, and iOS answers an over-wide document by
+  scaling the entire page down to fit. It looks like a broken layout and is
+  actually one long string: "The People's Historian: The Outsized Life of
+  Howard Zinn" is 434px against a 402px phone. It shipped on `.ent`, `.chip`
+  and `.lblmini` — tags, show names and the labels the user types — and no
+  desktop window can show it, because there the chip fits. The escape is
+  **`overflow-wrap: anywhere`**, not `break-word`: only `anywhere` lowers the
+  min-content width, which is the number that actually decides this.
+  `tests/test-overflow.mjs` derives the elements whose text is interpolated
+  rather than keeping a list; pinned text that is genuinely fixed-length opts
+  out by saying **`bounded`** in a comment beside the declaration.
 - **A dialogue must never open with the focus on its close button, and
   `preventDefault` on `mousedown` cancels the browser's focus transfer.** Both
   halves shipped together and Space in the clip editor closed the editor,
@@ -212,6 +227,7 @@ node tests/test-clips.mjs           # pure: the saved-clip store + labels
 node tests/test-palette.mjs         # pure: both themes' colour laws, in L*
 node tests/test-hidden.mjs          # pure: `hidden` actually hides
 node tests/test-keyboard.mjs        # pure: the keyboard reaches what you see
+node tests/test-overflow.mjs        # pure: data-shaped text can't outgrow the phone
 python3 tests/test-ingest.py        # pure: feed stamping + rotated-out detection
 node tests/verify-clips.mjs 8000    # live: needs the server running + network
 ```
