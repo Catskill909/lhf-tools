@@ -81,6 +81,13 @@ whatever you just searched for.
   come back. **Edit audio** opens that selection in the clip editor; **Copy
   passage** takes the words.
 
+On a phone, the transcript pares itself down to **find, listen and read**: tap a
+line to play, search inside the episode, and scroll the timestamped words. The
+production-only selection lesson, audio Edit controls and download footer stay
+off the small screen; the full transcript tool remains unchanged on a tablet or
+computer. Native phone text selection still works when you simply need to copy
+words.
+
 ![A passage selected in the transcript, with its timing, duration, out-cue, and editing controls](screenshots/audio-select.png)
 
 Beyond those:

@@ -197,6 +197,12 @@ action, a missing decision, or permission the tools cannot obtain.
   `@media (hover: hover)` and make the action visible/finger-sized under
   `(hover: none), (any-pointer: coarse)`. Focus disclosure remains available
   for keyboard users. `tests/test-touch.mjs` protects the known cases.
+- **Phone transcript mode is find, listen and read—not a shrunken production
+  surface.** Below 768px it deliberately omits per-line Edit, player scissors,
+  the selection lesson and the export footer because the waveform editor is
+  guarded at that same boundary. Keep title/search/player compact and let
+  `.tx-body` own the remaining scroll height. Tablet and desktop retain the
+  full transcript workflow; `tests/test-touch.mjs` enforces the split.
 - **`schema.sql` is all `CREATE TABLE IF NOT EXISTS`**, so it does nothing to a
   database that already exists — which every deployed one does. New columns
   need a `PRAGMA table_info` guarded migration in `ingest/ingest.py`.

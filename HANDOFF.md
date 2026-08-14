@@ -4,7 +4,8 @@
 15 minutes.
 Feature-complete for everything achievable without AI.
 **Local, not deployed:** tablet touch support for the audio editor and the
-tap-safe hover-disclosure pass are built, awaiting Paul's real-iPad verification
+tap-safe hover-disclosure pass are built. The compact phone transcript is also
+built after real-phone review. Paul's real-iPad verification remains pending
 (`docs/touch-dev.md`).
 **Last worked:** 14 August 2026. Built from nothing on 3 August.
 **Client:** Labor Heritage Foundation — Harold Phillips (producer), Chris Garlock
@@ -243,7 +244,9 @@ decision, and an admin screen to run it from. See `docs/ai-layer.md`.
   thickening the edit marks. Below 768px, phones get a tablet/computer notice
   instead of a clipped editor. Hover-revealed transcript, player and library
   actions are exposed directly on tap devices, so the first tap performs the
-  action. This is not deployed yet.
+  action. The phone transcript is a separate find/listen/read surface with its
+  editing routes and large selection lesson removed; a 390×844 emulated-touch
+  render gives its prose 76% of the viewport. This is not deployed yet.
 
 **Clip library** *(built 9 August 2026 — `docs/clip-library.md`)*
 - **`＋ Add to library`** in the editor opens a **save dialogue**: the span, an

@@ -81,6 +81,32 @@ check("transcript hover disclosure is limited to real hover devices",
 check("transcript Edit is visible and finger-sized on touch devices",
   /@media \(hover: none\), \(any-pointer: coarse\)[\s\S]*\.tx-edit\s*\{[^}]*opacity:\s*1;\s*pointer-events:\s*auto[^}]*min-width:\s*44px;\s*min-height:\s*44px/.test(html));
 
+console.log("\nphone transcript reading surface");
+const txPhoneStart = html.indexOf("@media (max-width: 767px)", html.indexOf("A phone transcript has three jobs"));
+const txPhoneEnd = html.indexOf("/* Printing a transcript", txPhoneStart);
+const txPhoneCss = html.slice(txPhoneStart, txPhoneEnd);
+check("the phone transcript is an edge-to-edge dynamic-height surface",
+  /@media \(max-width: 767px\), \(pointer: coarse\) and \(max-height: 500px\)/.test(txPhoneCss) &&
+  /#txModal\s*\{[^}]*padding:\s*0;[^}]*overflow:\s*hidden/.test(txPhoneCss) &&
+  /#txModal \.modal\s*\{[^}]*height:\s*100dvh;\s*max-height:\s*none/.test(txPhoneCss));
+check("the phone title is compact and its close control remains 44px",
+  /#txModal \.modal-head h2\s*\{[^}]*-webkit-line-clamp:\s*2/.test(txPhoneCss) &&
+  /#txModal \.modal-head > button\s*\{\s*width:\s*44px;\s*height:\s*44px/.test(txPhoneCss));
+check("phone transcript search and navigation controls reach 44px",
+  /#txModal \.tx-find input\s*\{[^}]*min-height:\s*44px/.test(txPhoneCss) &&
+  /#txModal \.tx-nav\s*\{\s*width:\s*44px;\s*height:\s*44px/.test(txPhoneCss));
+check("phone transcript options stay contextual rather than filling the opening view",
+  /#txModal \.tx-opt\s*\{\s*display:\s*none/.test(txPhoneCss) &&
+  /#txModal \.tx-tools\.has-query \.tx-opt:first-of-type/.test(txPhoneCss));
+check("phone transcript rows reserve width only for timestamp and prose",
+  /#txModal \.tx-line\s*\{[^}]*grid-template-columns:\s*44px minmax\(0, 1fr\)/.test(txPhoneCss));
+check("phone transcript omits every route into unavailable audio editing",
+  /#txModal \.tx-player \.pl-edit\s*\{\s*display:\s*none/.test(txPhoneCss) &&
+  /#txModal \.tx-edit,[\s\S]*#txModal \.tx-sel,[\s\S]*#txModal \.tx-actions\s*\{\s*display:\s*none !important/.test(txPhoneCss));
+check("clearing transcript search also clears Matches only",
+  /if \(!q\) \$\("#txOnly"\)\.checked = false;/.test(html) &&
+  /classList\.toggle\("has-query", !!q\)/.test(html));
+
 console.log("\ntap-safe hover disclosure");
 const clipHoverStart = html.indexOf("@media (hover: hover)", html.indexOf("Hover can disclose secondary"));
 const clipTouchEnd = html.indexOf("/* The scope of a bulk download", clipHoverStart);

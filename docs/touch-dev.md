@@ -140,14 +140,37 @@ keyboard help remains for desktop and keyboard-equipped tablets.
 The audit did not find another touch blocker on the scale of the editor.
 Ordinary buttons use `click`, inputs are native, dialogs have reachable close
 controls, and the result grid collapses at phone width. The hover-disclosure
-pass is also built: transcript Edit, the player scrubber knob, clip-label
-remove, “+ label” and clip-row actions are visible and finger-sized on touch;
-their hover-only versions are gated to devices that genuinely hover. This
-prevents iPad from spending the first tap revealing a control instead of
-playing transcript audio or opening Edit. Transcript text selection still
-depends on native mobile selection behavior, and tightly packed filter groups
-deserve a physical-phone overflow pass. Neither prevents the primary archive
-journey today.
+pass is also built: transcript Edit on tablets, the player scrubber knob,
+clip-label remove, “+ label” and clip-row actions are visible and finger-sized
+on touch; their hover-only versions are gated to devices that genuinely hover.
+This prevents iPad from spending the first tap revealing a control instead of
+playing transcript audio or opening Edit. On phones, transcript audio-editing
+routes are deliberately absent; the compact transcript surface below replaces
+them with more room to read. Tightly packed filter groups still deserve a
+physical-phone overflow pass, but do not prevent the primary archive journey.
+
+### Phone transcript reading surface — built locally
+
+The real-phone pass exposed a second, narrower problem rather than a reason to
+bring back the waveform editor. At 390px, the transcript modal stacked a large
+title, three option rows, player, always-visible passage-selection lesson and
+download footer around a very small scrolling area. Its Edit button also took a
+third column from every passage even though the destination editor is guarded
+on phones.
+
+Below 768px—or on a short coarse-pointer landscape screen—the transcript now
+becomes a focused **find, listen and read** surface. It is edge-to-edge and
+dynamic-viewport-height; title and metadata are clamped, search and match
+navigation remain 44px, and the compact player stays above the independently
+scrolling prose. Timestamps and Follow audio keep their useful defaults without
+occupying rows. Matches only appears only after a query, when it has a job.
+Per-line Edit, the player scissors, selection lesson and export footer are
+withheld. Native text selection and copy still work.
+
+A Chrome mobile/touch render at 390×844 measured 642px of transcript scroll
+area—76% of the viewport—with all four phone-inappropriate editing surfaces
+confirmed hidden. Real Safari remains the release authority for address-bar,
+safe-area and audio-policy behavior.
 
 ## Phone guard — built in this audit
 
@@ -249,9 +272,10 @@ viable.
 
 The production app remains dependency-free. Tests follow the existing split:
 
-- `tests/test-touch.mjs` has 27 structural checks: phone boundary, Pointer
-  Events, capture/cancellation, scoped `touch-action`, 44px geometry, touch
-  instructions and tap-safe hover disclosure;
+- `tests/test-touch.mjs` has 34 structural checks: phone editor boundary,
+  compact phone transcript, Pointer Events, capture/cancellation, scoped
+  `touch-action`, 44px geometry, touch instructions and tap-safe hover
+  disclosure;
 - a rebuildable browser/device checklist for actual pointer capture, canvas
   geometry, audio policies and downloads;
 - the existing waveform, keyboard, hidden-state, overflow and palette suites as
@@ -267,5 +291,6 @@ Those stay in the real-device phase.
 - Pinch zoom or two-finger editing gestures.
 - Re-encoding, fades, gain or any change to frame-for-frame MP3 export.
 - Moving audio or peaks through the server.
-- Redesigning search, export, transcripts or the clip library unless hardware
-  testing exposes an actual blocker.
+- Redesigning archive search, export or the clip library unless hardware testing
+  exposes an actual blocker. The phone transcript exception above exists
+  because real-device testing did expose one.
