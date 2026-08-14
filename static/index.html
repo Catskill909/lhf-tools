@@ -1628,6 +1628,23 @@
   }
   footer b { color: var(--ink-2); font-weight: 600; }
 
+  footer .updated { margin-left: .5rem; color: var(--ink-3); }
+  footer .updated::before { content: "· "; }
+
+  /* Stale is a notice, so it gets an *area* of colour rather than a darker
+     hairline — on the light stock a darker grey is invisible, and emphasis
+     there is ink coverage. --gold-text is the small-text form of gold; --gold
+     itself is lighter than the copy on paper and would recede exactly where
+     this has to advance. --gold-wash is tuned as a surface; --rule is not. */
+  footer .updated.stale {
+    color: var(--gold-text);
+    background: var(--gold-wash);
+    padding: .1rem .4rem;
+    border-radius: 4px;
+    font-weight: 600;
+  }
+  footer .updated.stale::before { content: "⚠ "; }
+
   @media (max-width: 620px) {
     .row { grid-template-columns: 1fr; gap: 0.35rem; }
     .row .when { display: flex; gap: 0.4rem; padding-top: 0; }
@@ -2124,6 +2141,9 @@
     <b>Searching titles, show notes and transcripts</b>, with topics, guests and
     interviewers worked out from the words themselves.
     <button class="try" id="footHelp" style="margin-left:.4rem">Search help</button>
+    <!-- Filled by loadFacets. Empty until then rather than showing a
+         placeholder, because a wrong freshness claim is worse than none. -->
+    <span id="footUpdated" class="updated" hidden></span>
   </footer>
 
 </div>
@@ -3125,12 +3145,61 @@ function hms(sec) {
 const esc = s => (s || "").replace(/[&<>"]/g,
   c => ({ "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;" }[c]));
 
+/* ---------- when the feeds were last checked ----------
+   Exists because nothing in this application ever showed it. On 13 August 2026
+   the only way to tell whether the archive was current was to open Podbean and
+   compare episode by episode, and a ten-hour-old episode was mistaken for a
+   broken updater for the better part of an evening.
+
+   The value is `shows.feed_checked_at` — every poll that reached Podbean,
+   including one answered 304. It is NOT `last_seen_in_feed`, which only moves
+   when a feed changed; both shows are weekly, so that number is days old
+   almost always and would make a healthy updater look dead.
+*/
+function agoLabel(ms) {
+  const mins = Math.floor(ms / 60000);
+  if (mins < 2)  return "just now";
+  if (mins < 60) return `${mins} minutes ago`;
+  const hours = Math.floor(mins / 60);
+  if (hours < 24) return hours === 1 ? "an hour ago" : `${hours} hours ago`;
+  const days = Math.floor(hours / 24);
+  return days === 1 ? "yesterday" : `${days} days ago`;
+}
+
+function showLastChecked(stamp) {
+  const el = $("#footUpdated");
+  if (!el) return;
+
+  // No stamp means a database that has never completed a poll — a first build
+  // still running, or one migrated a moment ago. Say nothing rather than guess.
+  if (!stamp) { el.hidden = true; return; }
+
+  // SQLite's datetime('now') is "YYYY-MM-DD HH:MM:SS", always UTC and with no
+  // zone marker. Every browser parses that shape as *local* time, so without
+  // the explicit Z a reader in New York sees a fresh check as four hours in
+  // the future and gets "just now" for a day-old archive.
+  const t = Date.parse(stamp.replace(" ", "T") + "Z");
+  if (!Number.isFinite(t)) { el.hidden = true; return; }
+
+  const age = Date.now() - t;
+  el.hidden = false;
+  el.textContent = `Feeds checked ${agoLabel(age)}`;
+  el.title = `Last successful read of both Podbean feeds: ${new Date(t).toLocaleString()}`;
+
+  // The loop polls every 15 minutes, so anything past a couple of hours means
+  // it is not running. Flagged rather than silently shown, because the whole
+  // point of this line is to make a stopped updater visible without an audit.
+  el.classList.toggle("stale", age > 2 * 60 * 60 * 1000);
+}
+
 /* ---------- facets ---------- */
 async function loadFacets() {
   const f = await (await fetch("/api/facets")).json();
   const t = f.totals;
   CORPUS.episodes = t.episodes;
   CORPUS.hours = t.hours;
+
+  showLastChecked(f.updated);
 
   const allChip = (kind, n) =>
     `<button class="chip all" data-kind="${kind}" data-val=""

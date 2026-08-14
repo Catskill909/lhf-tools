@@ -582,10 +582,37 @@ def facets(conn):
         FROM episodes
         """
     ).fetchone()
+    # When the feeds were last successfully read. Surfaced because nothing in
+    # this application has ever shown it: on 13 August 2026 the only way to
+    # tell whether the archive was current was to open Podbean and compare by
+    # hand, and an hour went into deciding whether a ten-hour-old episode meant
+    # the updater was broken. A stale archive should be visible by looking.
+    #
+    # `shows.feed_checked_at`, not `episodes.last_seen_in_feed`. The second only
+    # moves when a feed actually changed, and both shows are weekly — so on a
+    # 15-minute poll it is days old almost all the time, and a footer built on
+    # it would report a perfectly healthy updater as stale. What the reader
+    # wants to know is when we last *looked*.
+    #
+    # Guarded on the column existing, which is not defensive habit: a deployed
+    # database predates it, `schema.sql` only creates *missing* tables, and the
+    # ALTER lives in ingest.py's migrate() — which does not run until the first
+    # poll after a deploy. serve.py answers immediately, and this endpoint is
+    # also the container health check, so raising here would fail the check and
+    # restart the container in a loop until a poll happened to land. A missing
+    # column means exactly "never polled", which the footer already renders as
+    # nothing at all.
+    have = {r["name"] for r in conn.execute("PRAGMA table_info(shows)")}
+    updated = None
+    if "feed_checked_at" in have:
+        updated = conn.execute(
+            "SELECT MAX(feed_checked_at) m FROM shows").fetchone()["m"]
+
     return {
         "shows": [dict(r) for r in shows],
         "years": [dict(r) for r in years],
         "totals": dict(totals),
+        "updated": updated,
     }
 
 

@@ -41,10 +41,24 @@ from datetime import datetime, timezone
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 
+# The third field is "only run this when the feed actually brought something
+# new". It exists so the loop can poll often without doing expensive work on
+# every tick — see the note on interval below.
+#
+#   Feeds        two conditional GETs; a 304 costs nothing, and even a full
+#                read is ~1 MB and a couple of hundred no-op upserts.
+#   Transcripts  one indexed SELECT for `transcript_status = 'pending'` and
+#                nothing else when there is nothing outstanding. Always runs,
+#                because Podbean sometimes attaches a transcript to an episode
+#                days after publishing it — gating it on new episodes would
+#                mean never picking those up.
+#   Enrichment   `DELETE FROM reairs` + `DELETE FROM mentions` and a full
+#                rebuild across every episode. This is the one that must not
+#                run every few minutes.
 STEPS = [
-    ("Feeds",       ["ingest", "ingest.py"]),
-    ("Transcripts", ["ingest", "transcripts.py"]),
-    ("Enrichment",  ["ingest", "enrich.py"]),
+    ("Feeds",       ["ingest", "ingest.py"],      False),
+    ("Transcripts", ["ingest", "transcripts.py"], False),
+    ("Enrichment",  ["ingest", "enrich.py"],      True),
 ]
 
 
@@ -62,12 +76,31 @@ def parse_interval(text):
     return n * {"": 1, "m": 60, "h": 3600, "d": 86400}[unit]
 
 
-def run_once(passthrough):
-    """Returns (exit_code, summary_line)."""
+def run_once(passthrough, owed=None):
+    """Returns (exit_code, summary_line, owed).
+
+    `owed` carries steps that still have to run even though this tick brought
+    nothing new — a step that failed on the tick which *did* bring something
+    new. Without it the retry looks like an ordinary quiet tick, the step is
+    skipped as "no new episodes", the run reports success, and the failure is
+    swallowed for as long as the feeds stay unchanged. That is precisely the
+    silently-broken updater this loop is supposed to avoid.
+    """
     started = time.time()
     new_episodes = transcribed = 0
+    owed = set(owed or ())
 
-    for i, (label, path) in enumerate(STEPS, 1):
+    for i, (label, path, only_when_new) in enumerate(STEPS, 1):
+        # Both shows publish weekly, so on all but two ticks a week the feeds
+        # bring nothing. Rebuilding the whole mentions/re-airs graph on those
+        # ticks is pure waste, and it is what made a short interval look
+        # expensive. `Feeds` runs first, so its count is known by the time this
+        # is checked.
+        if only_when_new and new_episodes == 0 and label not in owed:
+            print(f"\n{'=' * 62}\n  {i}/{len(STEPS)}  {label} — skipped, "
+                  f"no new episodes\n{'=' * 62}", flush=True)
+            continue
+
         script = os.path.join(HERE, *path)
         print(f"\n{'=' * 62}\n  {i}/{len(STEPS)}  {label}\n{'=' * 62}", flush=True)
         proc = subprocess.run([sys.executable, script] + passthrough,
@@ -77,7 +110,14 @@ def run_once(passthrough):
             sys.stderr.write(proc.stderr)
 
         if proc.returncode != 0:
-            return proc.returncode, f"{label} failed (exit {proc.returncode})"
+            # Only the skippable steps need remembering; the others run every
+            # tick anyway.
+            if only_when_new:
+                owed.add(label)
+            return (proc.returncode,
+                    f"{label} failed (exit {proc.returncode})", owed)
+
+        owed.discard(label)
 
         m = re.search(r"Total:\s*(\d+) new", proc.stdout)
         if m:
@@ -88,7 +128,7 @@ def run_once(passthrough):
 
     took = time.time() - started
     return 0, (f"{new_episodes} new episode(s), {transcribed} transcript(s) "
-               f"in {took:.0f}s")
+               f"in {took:.0f}s"), owed
 
 
 def main():
@@ -100,16 +140,17 @@ def main():
     args, passthrough = ap.parse_known_args()
 
     if not args.loop:
-        code, summary = run_once(passthrough)
+        code, summary, _ = run_once(passthrough)
         print(f"\n{'=' * 62}\n  {summary}\n{'=' * 62}")
         return code
 
     interval = args.loop
     print(f"[{stamp()}] refresh loop started — every {interval}s "
-          f"({interval / 3600:.1f}h). Ctrl-C to stop.", flush=True)
+          f"({interval / 60:.0f}m). Ctrl-C to stop.", flush=True)
     failures = 0
+    owed = set()
     while True:
-        code, summary = run_once(passthrough)
+        code, summary, owed = run_once(passthrough, owed)
         if code == 0:
             failures = 0
             if not (args.quiet_if_nothing_new and summary.startswith("0 new episode(s), 0")):

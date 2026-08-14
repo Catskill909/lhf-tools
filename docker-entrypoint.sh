@@ -37,8 +37,8 @@ refresh_loop_in_background() {
   [ "${LHF_AUTO_REFRESH:-1}" = "0" ] && return 0
   (
     while [ ! -f "$MARK" ]; do sleep 15; done
-    echo "Update loop started — checking the feeds every 24h."
-    exec python3 /app/refresh.py --loop 24h --quiet-if-nothing-new
+    echo "Update loop started — checking the feeds every 15m."
+    exec python3 /app/refresh.py --loop 15m --quiet-if-nothing-new
   ) &
 }
 
@@ -80,9 +80,13 @@ case "${1:-serve}" in
       echo "Waiting for the first build to finish before starting the loop."
       while [ ! -f "$MARK" ]; do sleep 15; done
     fi
-    # Both shows are weekly, so daily is already generous. --quiet-if-nothing-new
-    # keeps the logs readable so a real failure stands out.
-    exec python3 /app/refresh.py --loop 24h --quiet-if-nothing-new
+    # Both shows are weekly, but a daily check meant a new episode could sit
+    # unseen for most of a day — not good enough for a live podcast. A tick is
+    # now nearly free: the feeds are fetched conditionally, so an unchanged one
+    # answers 304 with an empty body, and the expensive enrichment pass only
+    # runs when something new actually arrived. --quiet-if-nothing-new keeps the
+    # logs readable so a real failure stands out.
+    exec python3 /app/refresh.py --loop 15m --quiet-if-nothing-new
     ;;
   once)
     init_schema

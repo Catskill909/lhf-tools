@@ -1,0 +1,16 @@
+{
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"$CLAUDE_PROJECT_DIR/.claude/hooks/inject-task-box.py\"",
+            "timeout": 10,
+            "statusMessage": "Loading HANDOFF task box"
+          }
+        ]
+      }
+    ]
+  }
+}

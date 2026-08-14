@@ -11,7 +11,13 @@ CREATE TABLE IF NOT EXISTS shows (
     name        TEXT NOT NULL,
     feed_url    TEXT NOT NULL,
     site_url    TEXT,
-    description TEXT
+    description TEXT,
+    feed_etag   TEXT,              -- for If-None-Match; a 304 skips the parse
+    -- Every poll that reached Podbean, including one answered 304. Distinct
+    -- from episodes.last_seen_in_feed, which only moves when a feed actually
+    -- changed: "when did we last look" and "when did the archive last change"
+    -- are different questions, and the footer asks the first one.
+    feed_checked_at TEXT
 );
 
 CREATE TABLE IF NOT EXISTS episodes (

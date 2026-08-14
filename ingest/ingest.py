@@ -17,6 +17,7 @@ import os
 import re
 import sqlite3
 import sys
+import urllib.error
 import urllib.request
 import xml.etree.ElementTree as ET
 from datetime import timezone
@@ -48,6 +49,23 @@ SHOWS = [
 ]
 
 USER_AGENT = "LHF-Podcast-Archive/0.1 (+ingest)"
+
+# "This episode was not stamped by its show's most recent pass", i.e. the feed
+# no longer carries it and this database is the only copy we can reach.
+#
+# **Per show, not globally.** The feeds are read one after the other, so the two
+# shows are stamped seconds apart; a global MAX puts whichever was read first
+# below it and reports that show's entire catalogue as gone. A conditional
+# request makes it worse: a feed answering 304 is not restamped at all, so its
+# stamps stay behind the other show's for as long as it keeps not changing.
+# Comparing within a show is what makes both cases correct, because every
+# episode of an unchanged show moves together.
+#
+# Module level so `tests/test-ingest.py` can exercise this exact predicate
+# rather than a copy of it that can drift.
+GONE_FROM_FEED = """last_seen_in_feed IS NULL OR last_seen_in_feed < (
+                        SELECT MAX(e2.last_seen_in_feed) FROM episodes e2
+                        WHERE e2.show_id = episodes.show_id)"""
 
 
 # ---------------------------------------------------------------- helpers
@@ -127,10 +145,29 @@ def text_of(node, path, default=None):
     return found.text.strip()
 
 
-def fetch(url):
-    req = urllib.request.Request(url, headers={"User-Agent": USER_AGENT})
-    with urllib.request.urlopen(req, timeout=60) as resp:
-        return resp.read()
+def fetch(url, etag=None):
+    """Returns (body, etag). `body` is None when the feed has not changed.
+
+    Podbean serves an ETag on both feeds and honours `If-None-Match` with a
+    304 and an empty body — verified 13 August 2026. Each feed is about half a
+    megabyte, so without this a short poll interval would re-download ~1 MB
+    every tick to discover nothing had happened. Both shows publish weekly, so
+    all but two ticks a week are exactly that.
+    """
+    headers = {"User-Agent": USER_AGENT}
+    if etag:
+        headers["If-None-Match"] = etag
+    req = urllib.request.Request(url, headers=headers)
+    try:
+        with urllib.request.urlopen(req, timeout=60) as resp:
+            return resp.read(), resp.headers.get("ETag")
+    except urllib.error.HTTPError as exc:
+        # 304 is the success case for a conditional request, not an error —
+        # urllib raises it because it is a non-2xx status. Anything else is a
+        # real failure and belongs with the caller.
+        if exc.code == 304:
+            return None, etag
+        raise
 
 
 # ---------------------------------------------------------------- database
@@ -158,6 +195,17 @@ def migrate(conn):
     have to be added here or they only ever appear on a fresh build. Same
     PRAGMA-guarded pattern as enrich.py.
     """
+    show_cols = {r["name"] for r in conn.execute("PRAGMA table_info(shows)")}
+    if "feed_etag" not in show_cols:
+        # Left NULL, so the first pass after this migration is an ordinary
+        # unconditional fetch and stores the ETag it comes back with.
+        conn.execute("ALTER TABLE shows ADD COLUMN feed_etag TEXT")
+    if "feed_checked_at" not in show_cols:
+        # Left NULL rather than backfilled: we genuinely do not know when an
+        # existing database was last polled, and the footer says nothing at all
+        # rather than inventing a time. The next poll fills it in.
+        conn.execute("ALTER TABLE shows ADD COLUMN feed_checked_at TEXT")
+
     cols = {r["name"] for r in conn.execute("PRAGMA table_info(episodes)")}
     if "last_seen_in_feed" not in cols:
         conn.execute("ALTER TABLE episodes ADD COLUMN last_seen_in_feed TEXT")
@@ -192,7 +240,16 @@ def upsert_show(conn, show, channel):
     return row["id"]
 
 
-def upsert_episode(conn, show_id, item):
+def upsert_episode(conn, show_id, item, seen_at):
+    """`seen_at` is one timestamp for the whole pass, deliberately.
+
+    It used to be `datetime('now')` evaluated per row. Writing a hundred
+    episodes spans several seconds, so one pass wrote several distinct stamps
+    and only the rows that happened to land in the final second matched
+    `MAX(last_seen_in_feed)` — which made `--stats` report most of the archive
+    as having left the feed. A stamp that means "this pass saw it" has to be
+    taken once per pass, not once per row.
+    """
     guid = text_of(item, "guid")
     title = text_of(item, "title") or text_of(item, "itunes:title") or "(untitled)"
     if not guid:
@@ -232,6 +289,7 @@ def upsert_episode(conn, show_id, item):
         "is_encore": 1 if ENCORE_RE.search(title) else 0,
         "transcript_url": tx_url,
         "transcript_type": tx_type,
+        "seen_at": seen_at,
     }
 
     existing = conn.execute("SELECT id FROM episodes WHERE guid = ?", (guid,)).fetchone()
@@ -251,7 +309,7 @@ def upsert_episode(conn, show_id, item):
                 -- Seeing it here *is* the evidence that the feed still carries
                 -- it. Set on every pass, so the stamp of an episode that has
                 -- rotated out simply stops moving.
-                last_seen_in_feed = datetime('now')
+                last_seen_in_feed = :seen_at
             WHERE guid = :guid
             """,
             row,
@@ -267,7 +325,7 @@ def upsert_episode(conn, show_id, item):
         ) VALUES (
             :show_id, :guid, :title, :published_at, :duration_sec, :episode_url,
             :audio_url, :image_url, :description_html, :description_text, :is_encore,
-            :transcript_url, :transcript_type, datetime('now')
+            :transcript_url, :transcript_type, :seen_at
         )
         """,
         row,
@@ -283,10 +341,29 @@ def ingest(conn):
     for show in SHOWS:
         print(f"\n{show['name']}")
         print(f"  fetching {show['feed_url']}")
+
+        prior = conn.execute(
+            "SELECT feed_etag FROM shows WHERE slug = ?", (show["slug"],)
+        ).fetchone()
         try:
-            raw = fetch(show["feed_url"])
+            raw, etag = fetch(show["feed_url"], prior["feed_etag"] if prior else None)
         except Exception as exc:                       # noqa: BLE001
             print(f"  ERROR fetching feed: {exc}", file=sys.stderr)
+            continue
+
+        if raw is None:
+            # Reaching Podbean at all is what this records, whether or not the
+            # feed had changed — it is the evidence the updater is alive, and it
+            # is what the footer shows. Safe to do here because a 304 can only
+            # happen when we sent an ETag, which means the row already exists.
+            conn.execute("UPDATE shows SET feed_checked_at = datetime('now') "
+                         "WHERE slug = ?", (show["slug"],))
+            conn.commit()
+            # Nothing to restamp: `last_seen_in_feed` is only ever compared
+            # against the newest stamp for the same show, so skipping a pass
+            # leaves every episode of it equally old and nothing looks as though
+            # it left the feed. The stamps move again on the next changed body.
+            print("  unchanged since last check (304)")
             continue
 
         root = ET.fromstring(raw)
@@ -299,11 +376,26 @@ def ingest(conn):
         items = channel.findall("item")
         print(f"  {len(items)} episodes in feed")
 
+        # One stamp for every episode in this pass — see upsert_episode.
+        seen_at = conn.execute("SELECT datetime('now')").fetchone()[0]
+
         counts = {"inserted": 0, "updated": 0, "skipped": 0}
         for item in items:
-            _, action = upsert_episode(conn, show_id, item)
+            _, action = upsert_episode(conn, show_id, item, seen_at)
             counts[action] += 1
             totals[action] += 1
+
+        # Stored only after every item in this body has been written, and in
+        # the same transaction as them. Saving it earlier would mean a crash
+        # mid-loop leaves an ETag claiming a feed we did not finish reading,
+        # and the next pass would 304 past the episodes we missed.
+        #
+        # `feed_checked_at` moves on every poll that reached Podbean; this is
+        # the changed-body path, and the 304 path sets it above. A NULL etag
+        # simply means the feed offered none, and the next poll is unconditional.
+        conn.execute(
+            "UPDATE shows SET feed_etag = ?, feed_checked_at = datetime('now') "
+            "WHERE slug = ?", (etag, show["slug"]))
 
         conn.commit()
         print(f"  {counts['inserted']} new, {counts['updated']} updated, "
@@ -345,31 +437,23 @@ def stats(conn):
     ).fetchone()["h"]
     print(f"ALL: {total} episodes, {hours} hours of audio")
 
-    # Anything not stamped by the most recent pass has left the feed. Reported
-    # here because it is the number that decides whether the archive is a
-    # convenience or the only copy — and nothing else in the app surfaces it yet.
-    newest = conn.execute(
-        "SELECT MAX(last_seen_in_feed) m FROM episodes"
-    ).fetchone()["m"]
-    if newest:
-        gone = conn.execute(
-            """SELECT COUNT(*) c FROM episodes
-               WHERE last_seen_in_feed IS NULL OR last_seen_in_feed < ?""",
-            (newest,),
-        ).fetchone()["c"]
-        if gone:
-            print(f"\n{gone} episode(s) no longer in the feed — this database is "
-                  f"the only copy we can reach.")
-            for r in conn.execute(
-                """SELECT title, date(last_seen_in_feed) AS last
-                   FROM episodes
-                   WHERE last_seen_in_feed IS NULL OR last_seen_in_feed < ?
-                   ORDER BY last_seen_in_feed LIMIT 10""",
-                (newest,),
-            ):
-                print(f"  last seen {r['last'] or 'unknown'}  {r['title'][:60]}")
-        else:
-            print("All episodes are still in the feed.")
+    # Reported here because it is the number that decides whether the archive is
+    # a convenience or the only copy — and nothing else in the app surfaces it.
+    # See GONE_FROM_FEED for why the comparison is per show.
+    gone = conn.execute(
+        f"SELECT COUNT(*) c FROM episodes WHERE {GONE_FROM_FEED}").fetchone()["c"]
+    if gone:
+        print(f"\n{gone} episode(s) no longer in the feed — this database is "
+              f"the only copy we can reach.")
+        for r in conn.execute(
+            f"""SELECT title, date(last_seen_in_feed) AS last
+               FROM episodes
+               WHERE {GONE_FROM_FEED}
+               ORDER BY last_seen_in_feed LIMIT 10"""
+        ):
+            print(f"  last seen {r['last'] or 'unknown'}  {r['title'][:60]}")
+    else:
+        print("All episodes are still in the feed.")
 
     if total:
         print("\nSearch sanity check — FTS5 query for 'strike':")
