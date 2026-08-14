@@ -30,7 +30,7 @@ and stop.
 ## At a glance
 
 **What this is:** a list of the clips you have made, saved in your browser, so
-that finding a moment in a 143-hour archive is work you only do once.
+that finding a moment in the archive is work you only do once.
 
 **What this is not:** a place to assemble a programme. LHF's producers already
 have audio editors, and `docs/audio-editor-dev.md` has taken the position that
@@ -81,12 +81,11 @@ tree was wanted for, without the copying that makes a tree go wrong. See below.
 
 Folders solve a **scale** problem: too many items to scan. That problem does not
 exist yet, and building the structure first means asking a producer to invent a
-filing system for eleven clips — a taxonomy they have not yet formed an opinion
-about.
+taxonomy before actual use has shown what it should be.
 
 There is a second reason specific to this application. **It is a search
-application.** Search is the folder. A hierarchy layered on top of a full-text
-index over 14,937 passages is a worse version of something already built.
+application.** Search is the folder. A hierarchy layered on top of the existing
+15,294-passage full-text index is a worse version of something already built.
 
 There is also a modelling trap waiting, and it is worth recording now so nobody
 walks into it later. The motivating example was *"save Introduction clips and
@@ -665,7 +664,9 @@ missing.
   `label:` and `date:` fields. The matching sort menu offers Best match while
   searching, saved date, title and length. On phones the search owns its own
   row; search, sort, close and row actions reach 44px, and the dialogue uses
-  dynamic viewport height without horizontal overflow.
+  dynamic viewport height without horizontal overflow. On any touch/coarse
+  pointer, label remove and `＋ label` are visible without a hover-disclosure
+  tap, and row actions remain 44px targets.
 - **A scrubber on the playing row.** It exists only while that clip plays and
   vanishes when it stops or another starts, so the bar itself is the signal for
   which row is live. Painted by direct DOM writes: `timeupdate` fires ~4×/second

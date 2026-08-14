@@ -34,7 +34,7 @@ episodes?" is a status question, and the answer was already written down.
 | **The controlled vocabulary / 34 terms / tag names** | `docs/ask-vocabulary.md` and `docs/ai-layer.md` → *A shared vocabulary*. Blocked on the client. |
 | **Saved clips, the clip library, labels** | `docs/clip-library.md`. |
 | **The audio editor, waveform, transport, marking, keyboard** | `docs/audio-editor-dev.md` — opens with a status summary. `docs/audio-editor-spec.md` is the spec it was built against (Phases 1–5, verified). |
-| **Touchscreens, tablet editor support, phone warning** | `docs/touch-dev.md` — implementation status, support boundary and real-device acceptance. |
+| **Touchscreens, tablet editor support, phone warning, phone transcript** | `docs/touch-dev.md` — implementation status, support boundary and real-device acceptance. |
 | **Export, the archive package, the zip** | `docs/export-dev.md`; `docs/export-spec.md` is the spec (built). |
 | **Transcripts, segments, passages** | `docs/transcripts-plan.md`, `docs/transcript-modal.md`. |
 | **Colour, theme, contrast, "make it darker", legibility** | `CLAUDE.md` → the palette traps. They are counter-intuitive and enforced by `tests/test-palette.mjs`. |

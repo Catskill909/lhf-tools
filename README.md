@@ -282,20 +282,21 @@ audio from Podbean's CDN directly.
 `serve.py` is stdlib `http.server` — fine for local work. For deployment,
 swap in FastAPI behind the same two routes; the front end won't know.
 
-## What's in there now
+## What's in the local retained archive now
 
 | | Power Hour | Labor History Today |
 |---|---|---|
-| Episodes | 100 | 100 |
-| Date range | 2024-09-12 → 2026-07-30 | 2024-09-22 → 2026-08-02 |
+| Episodes | 102 | 101 |
+| Date range | 2024-09-12 → 2026-08-13 | 2024-09-22 → 2026-08-09 |
 | Avg length | 54 min | 32 min |
-| Total audio | 90.3 hrs | 52.8 hrs |
+| Total audio | 92.1 hrs | 53.3 hrs |
 | Encores | 7 | 15 |
-| Transcripts | 77 | 67 |
+| Transcripts | 79 | 68 |
 
-200 episodes, 143.1 hours. **144 carry full transcripts** pulled free from the
+203 episodes, 145.4 hours. **147 carry full transcripts** pulled free from the
 feed — 15,294 searchable passages, 904,266 words. Plus 232 producer-linked
-tags and 14 detected re-airs.
+tags and 14 detected re-airs. Production currently shows 200 episodes/143.1
+hours until the three retained rows are restored; see `HANDOFF.md`.
 
 ## Features
 
@@ -310,10 +311,10 @@ tags and 14 detected re-airs.
   episode with the same query syntax as the archive, a matches-only view,
   click-to-play with follow-along, print, and Text / SRT / VTT download.
   Opens pre-highlighted with whatever search produced the result.
-  **Every line has an Edit** that opens the clip editor on that passage —
-  permanently visible on lines that matched the search, so a hit is one click
-  from a waveform. Selecting a longer stretch reports its exact duration,
-  in/out times and out-cue before anything is cut.
+  On tablets and computers, **every line has an Edit** that opens the clip
+  editor on that passage; selecting a longer stretch reports its exact
+  duration, in/out times and out-cue before anything is cut. Phones use a
+  compact find/listen/read layout that withholds those production-only tools.
 - **Re-air detection** — flags encores and programmes that ran on both shows
 - **Tags** — 232 people/orgs/books from the producers' own hyperlinks
 - **Topics** *(built, no data until the extraction pass is run)* — what each
@@ -342,7 +343,9 @@ tags and 14 detected re-airs.
 - **Touch boundary** — the complete editor is supported from 768 CSS px
   (tablet-sized) upward. Pointer capture, cancellation cleanup and 44px targets
   cover touch-capable tablets and laptops; phones get a clear tablet/computer
-  notice instead of a clipped editor. Real-iPad verification is still pending.
+  notice instead of a clipped editor. Core editor gestures and single-tap
+  transcript playback have been confirmed on a real iPad; the broader device
+  and rotation matrix remains in `docs/touch-dev.md`.
 - **Shareable links** — the address bar carries the full search state;
   `?ep=123&from=522&to=549` opens a single moment and `?help` opens the guide.
   `?q=` is the integration point for a search box on laborheritage.org.
@@ -390,7 +393,7 @@ node tests/test-palette.mjs       # pure — both themes' colour laws
 node tests/test-hidden.mjs        # pure — hidden elements actually hide
 node tests/test-keyboard.mjs      # pure — keyboard/focus interaction laws
 node tests/test-overflow.mjs      # pure — archive text cannot widen a phone
-node tests/test-touch.mjs         # pure — phone boundary + tablet pointer editor
+node tests/test-touch.mjs         # pure — phone transcript/guard + tablet pointer + hover safety
 python3 tests/test-ingest.py      # pure — feed stamping and retention
 node tests/verify-clips.mjs       # live — needs the server running + network
 ```
@@ -417,8 +420,8 @@ route:
 - **Podbean dashboard export** — the manual one-off option
 
 Worth settling before the transcription backfill, since it determines what
-"the whole archive" actually means. Not urgent for interface work — 200 real
-episodes is plenty to design against.
+"the whole archive" actually means. The retained local archive currently has
+203 episodes even though a fresh feed pull can expose only 200.
 
 ## Schema notes
 
@@ -471,9 +474,9 @@ FTS5 syntax worth knowing: `"exact phrase"`, `labor NOT history`,
 
 ## Next
 
-- **Deploy it.** The container files are written and the pipeline is proven,
-  but this has never been built or run as an image — there is no Docker on the
-  dev machine. Coolify will be the first thing to build it.
+- **Use `HANDOFF.md` as the task list.** Production is deployed; the urgent
+  work is preserving/restoring the three episodes that rotated out, while the
+  current touch changes remain local until their release pass is complete.
 - **An admin interface.** The blocker for the AI layer and for three features
   the schema already supports with no way to reach them: staff notes, tag
   corrections, and marking an episode re-aired. Needs auth in front of it.
@@ -481,4 +484,4 @@ FTS5 syntax worth knowing: `"exact phrase"`, `labor NOT history`,
   `ingest/extract.py` is written and its output path is tested end to end, but
   it has never touched the live API — there is no key on the dev machine.
   `--dry-run` prices it at $4.35. See [docs/ai-layer.md](docs/ai-layer.md).
-- The 53 episodes with no feed transcript (~$9)
+- The 56 episodes with no feed transcript (~$9)

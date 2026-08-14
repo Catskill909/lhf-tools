@@ -6,8 +6,9 @@
 ## At a glance
 
 **Last updated 14 August 2026.** The editing surface is built. Phases 1–7 shipped
-and were verified. Tablet touch support is built locally as Phase 8 and awaits a
-real-iPad producer pass before it is called shipped.
+and were verified. Tablet touch support is built locally as Phase 8. Core editor
+interaction has been confirmed on a real iPad; the wider rotation, download and
+cross-device matrix remains in `touch-dev.md`.
 
 | Phase | What it gave the producer | State |
 |---|---|---|
@@ -18,7 +19,7 @@ real-iPad producer pass before it is called shipped.
 | [5 — Verification](#phase-5--verification) | 49 pure checks in `tests/test-waveform.mjs`, plus browser suites. | ✅ done, alongside |
 | [6 — Momentary-action feedback](#phase-6--show-that-a-momentary-action-is-momentary) | The edge listens and Snap show they ran. | ✅ built |
 | [7 — Reaching the lower waveform](#phase-7--reaching-the-lower-waveform---built) | Click the zoomed view to place the playhead and drag it to select; arrows scrub; ⌘Z undoes; the edge listens stay inside the clip; ⏮︎ and the view come back together. | ✅ built |
-| [8 — Tablet touch](touch-dev.md) | The same editor gestures work through Pointer Events; tablet targets grow to 44px; phones get an honest boundary. | 🧪 built locally; real iPad pending |
+| [8 — Tablet touch](touch-dev.md) | The same editor gestures work through Pointer Events; tablet targets grow to 44px; phones get an honest boundary. | ✅ built locally; core iPad use confirmed |
 
 **Defects found by using the editor, after their phases shipped** —
 [Repeat and three others](#audit-of-phases-12-before-starting-phase-3),
@@ -49,14 +50,14 @@ recurring bug class* below.
 
 **What is actually next:**
 
-- **Real-iPad touch verification** — `docs/touch-dev.md` → Phase 4. Pointer
-  input, capture/cancellation, tablet geometry and touch guidance are built
-  locally; Paul will run the producer journey in portrait and landscape.
+- **Finish the touch device matrix** — `docs/touch-dev.md` → Phase 4. Core
+  editor interaction and transcript first-tap playback passed on a real iPad;
+  rotation/loading/download edge cases and the Android/Windows rows remain.
 
 - **The shared topic vocabulary** — `docs/ai-layer.md` → *A shared vocabulary*,
   with a ready-to-send draft at `docs/ask-vocabulary.md`. The cheapest first
   step needs no AI, no key and no money: measure how far the 145 existing regex
-  rules get against 882,346 words of transcript.
+  rules get against the current 904,266 words of transcript.
 - **Titles from the transcript** — the one clip-library idea that was designed
   and not built. `docs/clip-library.md` → divergence 5.
 - **No automated coverage of the library's interface.** Two of the three bugs

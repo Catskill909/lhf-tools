@@ -5,8 +5,9 @@
 Feature-complete for everything achievable without AI.
 **Local, not deployed:** tablet touch support for the audio editor and the
 tap-safe hover-disclosure pass are built. The compact phone transcript is also
-built after real-phone review. Paul's real-iPad verification remains pending
-(`docs/touch-dev.md`).
+built after real-phone review. Paul confirmed the core editor touch interaction
+and first-tap transcript playback on a real iPad; the broader device/rotation
+matrix remains open (`docs/touch-dev.md`).
 **Last worked:** 14 August 2026. Built from nothing on 3 August.
 **Client:** Labor Heritage Foundation — Harold Phillips (producer), Chris Garlock
 and Elise Bryant (hosts), Patrick Dixon.
@@ -56,12 +57,10 @@ verified snapshot by hand.
 2. **The five open threads below** (Descript formats, speaker names, how far the
    projects go back, Podbean credentials, what happens to episodes that fall off
    the feed). Slow-moving; nothing is blocked on them.
-3. **Run the tablet editor on a real iPad** in portrait and landscape before
-   calling touch support shipped. Phases 1–3 are built locally: Pointer Events,
-   capture/cancellation cleanup, 44px targets, touch-specific guidance and no
-   first tap lost to hover disclosure in transcripts, players or the clip
-   library. The exact producer journey and edge cases are in
-   `docs/touch-dev.md` → Phase 4.
+3. **Finish the touch release matrix before making a broad device-support
+   claim.** Real-iPad use confirmed the core editor interaction and the
+   transcript first-tap fix. Rotation/loading/download edge cases plus Android
+   tablet and Windows hybrid checks remain in `docs/touch-dev.md` → Phase 4.
 
 ### 💭 NOTE — nobody has to do anything
 
@@ -130,7 +129,9 @@ decision, and an admin screen to run it from. See `docs/ai-layer.md`.
 ### Working now
 
 **Search**
-- 200 episodes, 143.1 hours, both shows, updating automatically from the feeds
+- Production: 200 episodes, 143.1 hours, both shows, updating automatically
+  from the feeds. Local retained archive: 203 episodes, 145.4 hours; the three
+  extra rows are the restoration task at the top of this file.
 - Full-text with ranked results and highlighted excerpts
 - As-you-type prefix matching (`carsie bla` finds Carsie Blanton)
 - Query syntax: `"exact phrase"`, `AND`/`OR`/`NOT`, `(grouping)`, `organiz*`
@@ -139,8 +140,9 @@ decision, and an admin screen to run it from. See `docs/ai-layer.md`.
 - Filters: show, year, encores-only, and by tag — with All / Reset to clear
 
 **Transcripts** *(free — pulled from the feed, no AI, no vendor)*
-- 147 of 200 episodes carry full transcripts: **15,294 passages, 904,266 words**
-  (measured live 13 Aug 2026; rising as new episodes arrive with transcripts)
+- Production is 147 of 200; the retained local archive is 147 of 203 because
+  the three restored rows have no transcript: **15,294 passages, 904,266 words**
+  (verified 14 Aug 2026)
 - Search reaches spoken audio; hits are marked "Heard in this episode" and the
   excerpt is the spoken line
 - **Jump to the moment** — up to 3 timestamps per result; click one and an
@@ -157,7 +159,7 @@ decision, and an admin screen to run it from. See `docs/ai-layer.md`.
 
 **Export**
 - **Choose the scope** — this search, or the whole archive. Both counts are
-  always visible, so a file quietly holding 78 of 200 episodes can't happen by
+  always visible, so a file quietly holding 78 of 203 episodes can't happen by
   accident. Calls `search()` rather than reimplementing the query, so the file
   and the screen can't drift apart.
 - CSV / TSV / JSON, written for spreadsheet import: UTF-8 BOM (Excel mangles
@@ -238,7 +240,7 @@ decision, and an admin screen to run it from. See `docs/ai-layer.md`.
   folder months later still says where it came from
 - Audio streams from Podbean's CDN direct to the browser; peaks are cached in
   IndexedDB so an episode is only ever downloaded once
-- **Tablet touch is built locally, awaiting real-device verification.** The
+- **Tablet touch is built locally; core real-iPad use passed.** The
   editor's handles, rulers and waveforms use one Pointer Events lifecycle with
   capture and cancellation cleanup; touch targets expand to 44px without
   thickening the edit marks. Below 768px, phones get a tablet/computer notice
@@ -246,7 +248,8 @@ decision, and an admin screen to run it from. See `docs/ai-layer.md`.
   actions are exposed directly on tap devices, so the first tap performs the
   action. The phone transcript is a separate find/listen/read surface with its
   editing routes and large selection lesson removed; a 390×844 emulated-touch
-  render gives its prose 76% of the viewport. This is not deployed yet.
+  render gives its prose 76% of the viewport. The broader Phase 4 matrix is
+  still open. This is not deployed yet.
 
 **Clip library** *(built 9 August 2026 — `docs/clip-library.md`)*
 - **`＋ Add to library`** in the editor opens a **save dialogue**: the span, an
@@ -317,10 +320,10 @@ Exposes" must be 8000**; it defaults to 3000.
   rather than a build. See `docs/ai-layer.md`.
 - **An admin interface** → the blocker for the above, and for staff notes, tag
   corrections and `replayed_at`, all of which have schema and no UI. Needs auth.
-- The 53 episodes with no feed transcript (~$9 via Google STT). **Was 55**;
-  measured live 13 August 2026 at 147/200 covered, and the count keeps falling
-  on its own — 86% of 2026 episodes arrive with a transcript against 39% of
-  2024's, so the gap is nearly all old episodes ageing off the feed. It is also
+- Production has 53 episodes with no feed transcript; the retained local
+  archive has 56 (~$9 via Google STT) because its three restored rows have no
+  transcript. Production is 147/200 covered and local is 147/203 as verified
+  14 August 2026. The gap is nearly all old episodes. It is also
   the only outstanding job that needs the *audio*, so it is the only one that
   can expire if Podbean ever deletes rather than unlists.
 - One broken transcript link on Podbean's side ("MLK in Memphis" 404s);
@@ -339,12 +342,12 @@ Exposes" must be 8000**; it defaults to 3000.
 
 | Ask | Status | Notes |
 |---|---|---|
-| Scrape existing + future episodes | ✅ **Done** | 200 episodes, re-runnable weekly. Last ~2 years — see the feed cap. |
+| Scrape existing + future episodes | ✅ **Done** | 203 retained episodes, re-runnable weekly. Last ~2 years — see the feed cap. |
 | Searchable database | ✅ **Done** | Full-text, boolean, fielded, six sorts, filters. |
 | Find older shows to replay | ✅ **Done** | Search, filter, sort by duration for a slot of a given length. |
 | Check if a segment is "in the can" | ✅ **Done** | Re-air detection incl. cross-show. Better than asked. |
 | Catalogue **guests** | 🟡 **Partial** | 232 names — but only those the producers hyperlinked. |
-| Catalogue **topics** | 🟡 **Built, not run** | Needs AI + a client decision. Hashtags tested and useless (`#LaborHistory` on 176/200). $4.35 for the archive. |
+| Catalogue **topics** | 🟡 **Built, not run** | Needs AI + a client decision. Hashtags were tested and are too repetitive to classify subjects. $4.35 for the archive. |
 | Catalogue **interviewers** | 🟡 **Built, not run** | Same pass. It's a two-host show — a small job once it runs. |
 | Public search box on laborheritage.org | 🟡 **Works, not deployed** | `?q=` deep links make a plain search box work already; needs hosting. |
 
@@ -375,22 +378,22 @@ run it from.
 >
 > - **Both shows in one searchable place** — 200 episodes, 143 hours, updating
 >   automatically as new ones publish.
-> - **Search that reaches inside the audio.** 144 episodes have full
+> - **Search that reaches inside the audio.** 147 episodes have full
 >   transcripts, so searching finds what was *said*, not just what was written
 >   in the show notes. Searching "picket line" turns up 59 episodes — only two
 >   of which mention it in the notes.
 > - **Jump straight to the moment.** When your words were spoken aloud, the
->   result shows the exact times. Click one and the episode plays from that
+>   result shows the exact times. Click or tap one and the episode plays from that
 >   second — no scrubbing.
 > - **"Have we run this already?"** — the archive spots when the same programme
 >   has aired more than once, as an encore or on both shows, and says so under
->   the episode. It found 22 encores and 5 programmes that ran on both.
+>   the episode. The live archive currently carries 21 encores.
 > - **Browse by name.** The people, bands, museums and books you link in your
 >   show notes have become a clickable index — 232 of them. Nothing had to be
 >   tagged by hand.
 > - **Proper search tools** — exact phrases, AND/OR/NOT, wildcards, searching a
 >   single field, and six ways to sort. There's a Help button explaining all of
->   it, with examples you can click to run.
+>   it, with examples you can click or tap to run.
 > - **Export to a spreadsheet.** Whatever you're looking at — filtered however
 >   you've filtered it — downloads as a file that opens straight in Google
 >   Sheets or Excel, with dates, lengths and yes/no columns ready to sort and
@@ -402,7 +405,7 @@ run it from.
 >   to hyperlink. Reading everything properly — every guest, the interviewer,
 >   and what each episode was actually about — is the remaining step, and it's
 >   what turns this into a true catalogue.
-> - **The last 55 episodes** don't have transcripts in the feed; we can fill
+> - **The remaining 53 live episodes** don't have transcripts in the feed; we can fill
 >   those in cheaply.
 > - **The public search box** for laborheritage.org.
 >
@@ -420,12 +423,12 @@ run it from.
 > from Podbean's back-end.
 
 **The quote above is the message as sent — left exactly as it went out, so the
-figures in it are the figures Harold was given.** Two have since moved: the
-transcript gap is **53 episodes, not 55** (coverage rises on its own as new
-episodes arrive with transcripts), and the 100-episode limit stopped being
-theoretical — three episodes have now dropped off, and their recordings still
-play. `docs/client-guide.md` carries the current numbers and is the document to
-send.
+figures in it are the figures Harold was given.** The retained archive is now
+203 episodes with a **56-episode transcript gap**: the three restored rows add
+to the retained total but do not carry transcripts. The 100-episode limit also
+stopped being theoretical when those episodes dropped off; their recordings
+still play. `docs/client-guide.md` carries the current numbers and is the
+document to send.
 
 ## Files
 
@@ -439,8 +442,8 @@ send.
 | `docs/export-dev.md` | The export as the client's full backup of their Podbean archive — catalogue, transcripts, artwork, audio. **Not built.** Explains why it is two exports: 5 MB of text against 8–12 GB of media. |
 | `docs/client-guide.md` | **Send this one.** Feature + usage guide for LHF, with screenshot slots. Every figure verified against the database. |
 | `docs/audio-editor-spec.md` | Browser-side clip editor: the **export** design (frame copy, bitrate probing) and its verification. **Built.** The editing *surface* it describes has since been rebuilt — see the dev doc below. |
-| `docs/audio-editor-dev.md` | Audit of the editing *surface* + phased plan. **Phases 1–7 built; Phase 8 tablet touch built locally, iPad verification pending.** Opens with a status summary. Read before touching the editor UI. |
-| `docs/touch-dev.md` | Tablet touch audit, implementation record and real-device acceptance checklist. Phones remain deliberately outside the full editor. |
+| `docs/audio-editor-dev.md` | Audit of the editing *surface* + phased plan. **Phases 1–7 built; Phase 8 tablet touch built locally, core iPad use confirmed.** Opens with a status summary. Read before touching the editor UI. |
+| `docs/touch-dev.md` | Touch audit, implementation record and real-device acceptance checklist: tablet editor, phone guard, tap-safe hover and compact phone transcript. |
 | `docs/clip-library.md` | Saving clips. **✅ Built 9 Aug 2026** — design, then an **As built** section recording the four places the code diverged and why. Its **What lives where** section is the canonical local-vs-server boundary and the source for the client guide's plain-language version. |
 | `static/clips.js` | The saved-clip store: `list / add / update / remove / restore` plus label derivation and date grouping. **The only file that knows clips live in `localStorage`** — that seam is what makes a server move one file rather than a hunt. Keys on the audio URL, never the episode row id. |
 | `tools/cropshot.py` | Crops a full-page screenshot down to the dialogue in it, for `docs/client-guide.md`. Pure stdlib — PNG is zlib plus a header, so no Pillow. Finds the modal by its 4px spot-red top border, then its bottom by where the left edge stops being an edge. `python3 tools/cropshot.py in.png out.png --pad 10`, or `--check` to print the box and write nothing. **Screenshots are retina, so set an explicit `width` in the guide at about half the pixel width** — markdown alone stretches them to the column. |
@@ -498,7 +501,7 @@ the cost figures there are sound.
 and seek precisely rather than depending on a `?t=` parameter their pages don't
 support. Checked before designing around it.
 
-**7. 145 of 200 episodes already publish full transcripts in the RSS feed**
+**7. 147 of 200 live episodes publish full transcripts in the RSS feed**
 (Podcast 2.0 `<podcast:transcript>` tags → `.srt` files, timestamped to the
 millisecond, free). Only 53 episodes need machine transcription — about $9,
 not $102. Descript turns out to be largely irrelevant: Chris already publishes
@@ -569,20 +572,12 @@ decides they want.
 
 ## Where we stopped
 
-Everything listed under "Working now" is built, verified and documented. The
-database rebuilds from nothing in ~2½ minutes via `refresh.py`.
-
-The natural next moves, in order of value:
-
-1. **Deploy it.** The client can't see any of this until it has a URL.
-   Coolify + a Dockerfile; ~an hour. Nothing else matters until this happens.
-2. **An admin interface.** Blocks the AI pass and unlocks staff notes, tag
-   corrections and re-air marking. Needs auth in front of it.
-3. **The AI pass** ($4.35 for the archive, ~2¢/episode after) — topics,
-   un-hyperlinked guests, interviewers. Written and tested, never run; now a
-   client decision rather than a build. See `docs/ai-layer.md`.
-4. **The 53-episode transcript gap** (~$9) — the only job that needs the audio,
-   so the only one that can expire.
+Production is deployed. The current touch work—tablet editor support, tap-safe
+hover disclosure and the compact phone transcript—is complete locally, with
+core iPad use confirmed and the remaining Phase 4 device matrix recorded in
+`docs/touch-dev.md`. The task box at the top of this file is the authoritative
+next-work list; older design and correspondence sections below are historical
+context, not a second backlog.
 
 ---
 
@@ -596,12 +591,12 @@ Everything is stored locally, nothing is re-fetched at query time:
 
 | | |
 |---|---|
-| `episodes.transcript_text` | 144 episodes, 4 MB |
+| `episodes.transcript_text` | 147 episodes, 4 MB |
 | `segments` (timestamped passages) | 15,294 rows, ~4 MB |
-| `description_html` + `description_text` | all 200 episodes |
+| `description_html` + `description_text` | all 203 episodes |
 | Audio | **not stored** — only the URL |
 
-Database is 33 MB. Podbean's transcript URLs and audio URLs are recorded but
+Database is 56 MB. Podbean's transcript URLs and audio URLs are recorded but
 never depended on after ingest, so CDN link rot can't take the archive down. If
 both feeds vanished tomorrow, everything searchable still works.
 
@@ -817,7 +812,7 @@ node tests/test-palette.mjs         # pure: both themes' colour laws
 node tests/test-hidden.mjs          # pure: hidden elements actually hide
 node tests/test-keyboard.mjs        # pure: keyboard/focus interaction laws
 node tests/test-overflow.mjs        # pure: archive text cannot widen a phone
-node tests/test-touch.mjs           # pure: phone guard + tablet pointer + hover disclosure
+node tests/test-touch.mjs           # pure: phone transcript/guard + tablet pointer + hover safety
 python3 tests/test-ingest.py        # pure: feed stamping + rotated-out detection
 node tests/verify-clips.mjs         # live: needs the server running + network
 ```

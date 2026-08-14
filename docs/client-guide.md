@@ -44,10 +44,10 @@ a section about it further down.
 
 ## What it does
 
-**200 episodes · 143 hours · both shows**, checking for new episodes every 15
+**200 episodes · 143.1 hours · both shows**, checking for new episodes every 15
 minutes. The footer tells you when it last looked.
 
-![The archive — 200 episodes, both shows, filters and sorting](screenshots/01-search.png)
+![The archive — both shows, filters and sorting](screenshots/01-search.png)
 
 **It searches what was said, not just the show notes.** Searching the phrase
 *"picket line"* finds 59 episodes — only **2** mention it in the written
@@ -72,9 +72,9 @@ whatever you just searched for.
 
 **Two gestures do most of the work.** Everything else is a refinement of them:
 
-- **Click a line to hear it.** Anywhere on the line, or its timestamp. Tick
-  **Follow audio** and the transcript scrolls along as it plays, so the words
-  keep pace with the sound.
+- **Click or tap a line to hear it.** Anywhere on the line, or its timestamp.
+  **Follow audio** starts on, so the transcript scrolls along as it plays and
+  the words keep pace with the sound.
 - **Drag across the text to select a passage.** The bar along the bottom tells
   you exactly how long it runs, where it starts and ends, and its **out-cue** —
   the last few words before it ends, so whoever's on the desk knows when to
@@ -90,7 +90,7 @@ words.
 
 ![A passage selected in the transcript, with its timing, duration, out-cue, and editing controls](screenshots/audio-select.png)
 
-Beyond those:
+Beyond those, on a tablet or computer:
 
 - **Edit** on a single line does the same for just that line, and is always
   showing on lines that matched your search
@@ -119,8 +119,9 @@ The complete waveform editor needs at least a tablet-sized screen. On a phone,
 opening it says to continue on a tablet or computer rather than showing clipped
 controls; search, playback, transcripts and saved clips still work normally.
 Tablet controls are finger-sized, and the same gestures continue to work with a
-mouse or trackpad. This tablet work is in the current development build and
-will reach the live site after its real-iPad check.
+mouse or trackpad. Core editor touch and one-tap transcript playback have passed
+on a real iPad. The compact phone transcript and remaining release checks are in
+the current development build and are not on the live site yet.
 
 The editor is built around listening, because that's how an edit is actually
 judged:
@@ -167,7 +168,7 @@ down to a fraction of a second on one edge.
 
 ![The clip editor — the passage selected on the waveform, in and out points, the controls for hearing the start and end of the clip and snapping a cut to silence, and the MP3 download](screenshots/audio-edit-modal.png)
 
-**It remembers the clips you make.** Finding a moment in 143 hours is the hard
+**It remembers the clips you make.** Finding a moment in 143.1 hours is the hard
 part, and it used to be work you did again every time — cut a clip, and the only
 record you ever found it was a file in a downloads folder.
 
@@ -180,7 +181,7 @@ endings.
 **Clips** at the top of the page opens the list:
 
 - **Hear one without opening the editor** — press play and a scrubber appears on
-  that row; click along it to move within the clip
+  that row; click or tap along it to move within the clip
 - **Rename** by clicking the title, **re-open** it to adjust the edit, or
   **download** it again from the arrow on the row
 - **Copy link** from the **⋯** menu gives you a web address that opens the
@@ -247,7 +248,7 @@ It's worth knowing what that file is, because it's more than a download:
   note inside saying so. A partial export is perfectly useful, but it isn't a
   backup, and a year later nothing else would tell you which one you had.
 
-Audio isn't inside it — only links to it. All 143 hours would be 8–12 GB, which
+Audio isn't inside it — only links to it. All 143.1 hours would be 8–12 GB, which
 is a download rather than a file. That's worth holding alongside the
 **100-episode limit** section above: this package preserves everything *except*
 the recordings.
@@ -269,7 +270,7 @@ Just type — results narrow as you go. Beyond that:
   filling a slot of a certain length
 - **More** at the end of a description opens the rest of the show notes
 - **Transcript** opens the full transcript, with the same search inside it
-- **Help** explains the rest, with examples you can click to run
+- **Help** explains the rest, with examples you can click or tap to run
 
 ---
 
@@ -443,7 +444,8 @@ technical notes.
 
 **Topics are the one part of the original list still missing**, and they're
 missing for a specific reason — show notes describe an episode but never
-classify it. Neither do the hashtags: `#LaborHistory` is on 176 of the 200.
+classify it. Neither do the hashtags: `#LaborHistory` appears throughout the
+archive without distinguishing one subject from another.
 Nothing to scrape. The only way to get topics is to have something read the
 episodes.
 
@@ -459,7 +461,7 @@ What it would cost, measured against your actual archive rather than guessed:
 
 | | |
 |---|---|
-| Reading all 200 episodes, once | **about $4** |
+| Reading the current archive once | **about $4** |
 | Each new episode from then on | **about 2 cents** |
 | Which, at two shows a week, is | **about $2 a year** |
 
@@ -515,7 +517,7 @@ be yes now.
 There's a question hiding underneath "topics", and it's worth settling first
 because it changes the answer: **what should the topics actually be called?**
 
-Left to itself, anything reading 200 episodes will produce *unions*, *labor
+Left to itself, anything reading the whole archive will produce *unions*, *labor
 unions* and *unionization* as three separate topics, and a list like that is
 worse than no list — you can't browse it and you can't trust a count.
 
@@ -538,7 +540,7 @@ entries together. If this archive invents its own topic names instead, the two
 collections never join up — and joining them later is much harder than starting
 that way.
 
-**It's the cheap version of the job.** Tagging 200 episodes by hand is about
+**It's the cheap version of the job.** Tagging the whole archive by hand is about
 seven hours of somebody's time, and then two more episodes every week, forever.
 Agreeing a list of 34 terms is one meeting. And agreeing a labor-history
 vocabulary is exactly the thing the **former Library of Congress people in your

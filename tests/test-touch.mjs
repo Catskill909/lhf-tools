@@ -106,6 +106,12 @@ check("phone transcript omits every route into unavailable audio editing",
 check("clearing transcript search also clears Matches only",
   /if \(!q\) \$\("#txOnly"\)\.checked = false;/.test(html) &&
   /classList\.toggle\("has-query", !!q\)/.test(html));
+check("phone Help hides production-only transcript instructions",
+  /\.tx-help-phone\s*\{\s*display:\s*none/.test(html) &&
+  /@media \(max-width: 767px\), \(pointer: coarse\) and \(max-height: 500px\)[\s\S]*#help \.tx-help-production\s*\{\s*display:\s*none/.test(html) &&
+  /#help \.tx-help-phone\s*\{\s*display:\s*block/.test(html));
+check("phone Help explains the find-listen-read boundary",
+  /class="lede tx-help-phone"[\s\S]*focused find,[\s\S]*listen and read view[\s\S]*line Edit buttons,[\s\S]*player scissors/.test(html));
 
 console.log("\ntap-safe hover disclosure");
 const clipHoverStart = html.indexOf("@media (hover: hover)", html.indexOf("Hover can disclose secondary"));

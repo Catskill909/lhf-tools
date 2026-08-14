@@ -258,7 +258,7 @@ node tests/test-palette.mjs         # pure: both themes' colour laws, in L*
 node tests/test-hidden.mjs          # pure: `hidden` actually hides
 node tests/test-keyboard.mjs        # pure: the keyboard reaches what you see
 node tests/test-overflow.mjs        # pure: data-shaped text can't outgrow the phone
-node tests/test-touch.mjs           # pure: phone boundary + tablet pointer editor
+node tests/test-touch.mjs           # pure: phone transcript/guard + tablet pointer + hover safety
 python3 tests/test-ingest.py        # pure: feed stamping + rotated-out detection
 node tests/verify-clips.mjs 8000    # live: needs the server running + network
 ```

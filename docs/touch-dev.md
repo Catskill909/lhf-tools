@@ -1,9 +1,11 @@
 # Touch support — exploratory audit and phased plan
 
-**Status:** Phases 1–3 built locally 14 August 2026. The touch, keyboard,
-layout, theme, waveform, clip-store, update-prompt and ingest regressions pass.
-**Phase 4 is open: Paul will verify the producer workflow on a real iPad before
-this is called shipped.**
+**Status:** Phases 1–3 and the phone transcript follow-up are built locally as
+of 14 August 2026. The touch, keyboard, layout, theme, waveform, clip-store,
+update-prompt and ingest regressions pass. Paul confirmed the core audio-editor
+touch interaction and transcript first-tap playback on a real iPad. **Phase 4
+remains open for rotation/loading/download edge cases and the Android/Windows
+device rows before a broad support claim.**
 
 **Scope assumption:** “touch” means operating the existing web app on a
 touchscreen. The remaining real-device verification is tracked in the task box
@@ -28,6 +30,8 @@ The support boundary is therefore:
 
 - **Phones / compact windows below 768 CSS px:** archive functions remain
   available, but audio editing shows a clear tablet-or-computer requirement.
+  The transcript becomes a compact find/listen/read surface rather than showing
+  editing controls whose destination is unavailable.
 - **Tablets and larger touchscreens from 768 CSS px:** target for the complete
   audio editor, in portrait and landscape.
 - **Mouse and keyboard:** must keep every current editor behavior and shortcut.
@@ -43,7 +47,7 @@ warning.
 | 1 — Pointer input foundation | ✅ built locally | One pointer lifecycle, capture, cancel/lost-capture cleanup; no mouse-only editor gesture bindings |
 | 2 — Tablet geometry | ✅ built locally | 44px touch targets, split handle hit areas, wrapping footer, dynamic viewport and safe-area rules |
 | 3 — Touch feedback | ✅ built locally | Coarse-pointer instructions, pressed waveform/handle states, touch-sized controls |
-| 4 — Real devices | ❓ awaiting Paul | iPad portrait/landscape producer journey first; Android/Windows follow before a broad support claim |
+| 4 — Real devices | 🟡 in progress | Core editor touch and transcript first-tap playback passed on iPad; rotation/loading/download edges and Android/Windows remain |
 
 Nothing here changes the frame-copy MP3 export, waveform cache format, audio
 source or server boundary. These are interaction and layout changes only.
@@ -55,11 +59,14 @@ source or server boundary. These are interaction and layout changes only.
 - Every mouse, click, wheel, keyboard and selection handler in the front end.
 - The waveform state helpers and the existing keyboard, overflow, palette,
   hidden-state and waveform tests.
-- A compact headless-Chrome render of the archive and a deep-linked audio edit
-  (`?ep=101&from=30&to=60`). Chrome produced a 390 × 844 bitmap but reported a
-  **500 × 757 CSS viewport**—its headless minimum—so the crop was used only to
-  expose desktop assumptions, not represented as a real 390px device test.
-  Actual iOS and Android hardware remains part of the release phase.
+- The initial command-line Chrome crop exposed desktop assumptions but could
+  not represent a real 390px CSS viewport. The final CDP device run did: 390 ×
+  844, mobile metrics, touch enabled, `(hover: none)` and coarse pointer. It
+  measured 642px of transcript scroll area and also checked an 844 × 390 short
+  landscape phone plus the full controls at 820px tablet width.
+- Real-iPad use then confirmed the interaction issue emulation cannot certify:
+  the editor feels usable under touch and transcript prose plays on the first
+  tap rather than spending one tap revealing Edit.
 
 ## Original audit findings
 
@@ -205,7 +212,8 @@ The shared interaction layer should:
 
 **Current evidence:** the static suite rejects mouse-only editor gesture
 bindings and requires capture plus all cancellation paths. Keyboard regressions
-pass. The behavioral half of acceptance moves to the real-iPad run.
+pass. Core behavior has passed on a real iPad; cancellation during loading,
+rotation and the remaining cross-device cases stay in Phase 4.
 
 ### Phase 2 — tablet geometry and controls — built locally
 
@@ -222,9 +230,9 @@ Make 768px portrait the minimum full-editor layout:
 
 **Current evidence:** structural tests enforce the 768px boundary, 44px targets,
 thin visual handles, footer wrapping, safe-area placement and dynamic viewport
-height. A 768px fine-pointer browser render has no horizontal overflow and keeps
-every editor control visible. Portrait/landscape coarse-pointer behavior remains
-an iPad check because headless Chrome cannot emulate that media query reliably.
+height. CDP touch emulation confirms the coarse-pointer rules at phone and
+tablet sizes; core editor interaction has also passed on a real iPad. Rotation
+during loading and the other stateful Phase 4 cases remain hardware checks.
 
 ### Phase 3 — touch-first editor feedback — built locally
 
@@ -243,16 +251,17 @@ from “click” to “tap” for coarse pointers. Pinch-to-zoom is deliberately
 Phase 3 requirement; the explicit zoom controls are predictable and already
 part of the editor.
 
-**Current evidence:** coarse-pointer copy and active press states are present;
-the full first-time producer journey is the central iPad acceptance test.
+**Current evidence:** coarse-pointer copy and active press states are present,
+and core use passed on a real iPad. The remaining acceptance work targets the
+state transitions below rather than re-proving the basic gesture model.
 
-### Phase 4 — device validation and release boundary — open
+### Phase 4 — device validation and release boundary — in progress
 
 Run the end-to-end producer journey on real hardware:
 
 | Device class | Minimum checks |
 |---|---|
-| iPadOS, 768px portrait + landscape | drag arbitration, audio start, rotation, download |
+| iPadOS, 768px portrait + landscape | **Core touch use passed**; finish rotation/loading and download edge cases |
 | Android tablet, roughly 800px+ | pointer capture, scroll, audio start, download |
 | Windows touch laptop | touch followed by mouse/trackpad, no duplicate events |
 | Desktop Chrome + Safari | all current mouse and keyboard editor behavior |
@@ -272,7 +281,7 @@ viable.
 
 The production app remains dependency-free. Tests follow the existing split:
 
-- `tests/test-touch.mjs` has 34 structural checks: phone editor boundary,
+- `tests/test-touch.mjs` has 36 structural checks: phone editor boundary,
   compact phone transcript, Pointer Events, capture/cancellation, scoped
   `touch-action`, 44px geometry, touch instructions and tap-safe hover
   disclosure;

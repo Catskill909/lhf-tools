@@ -18,8 +18,9 @@ bundle" and "passage-level CSV" items from the list below. See
 `docs/export-dev.md`. Two things from this spec remain: the column picker, and
 Dublin Core / citations — the latter still blocked on a format decision.
 
-Still outstanding from this spec: column picker, `.zip` transcript bundle,
-passage-level CSV, Dublin Core XML, citations, and storing the raw `.srt`.
+Still outstanding from this spec: the column picker, Dublin Core XML,
+citations, and storing the raw `.srt`. The `.zip` transcript bundle and
+passage-level CSV are part of the built catalogue package.
 
 **All of those are now folded into a larger plan.** `docs/export-dev.md` treats
 the export as the client's complete backup of their Podbean archive — catalogue,
@@ -93,7 +94,7 @@ Worth stating precisely, because it determines what an export can contain:
 
 | | Stored? | Detail |
 |---|---|---|
-| Full transcript text | ✅ | ~49k chars for a 55-min episode; 882k words total |
+| Full transcript text | ✅ | 147 episodes; 904k words in the local retained archive |
 | Timing markers | ✅ | Per passage — `start_sec` / `end_sec` |
 | Cue-level precision | ❌ | ~1,970 source cues merged into ~140 passages (~25s each) for search quality |
 | Speaker labels | ❌ | Not present in the source `.srt` |
@@ -109,8 +110,8 @@ different fidelities:
 
 Plus **`episode_url`** for the human-facing Podbean page.
 
-> **Recommendation:** also store the raw `.srt` verbatim. At ~83 KB × 144 that's
-> ~12 MB against a 33 MB database — trivial — and it removes the last dependency
+> **Recommendation:** also store the raw `.srt` verbatim. At ~83 KB × 147 that's
+> ~12 MB against the current database — trivial — and it removes the last dependency
 > on Podbean's CDN. Right now, if those URLs rot we permanently lose cue-level
 > precision. One column, a few lines in `transcripts.py`.
 
@@ -142,7 +143,7 @@ Two refinements worth building:
 
 ## Transcripts — the real decision
 
-You're right that they're hard to manage inline. Concretely: 882,346 words. A
+You're right that they're hard to manage inline. Concretely: 904,266 words. A
 CSV with a transcript column would be ~5 MB, and Google Sheets caps a single
 cell at **50,000 characters** — a 55-minute episode is roughly 50–55k, so the
 longest episodes would be silently truncated. That's the worst outcome: it
@@ -177,7 +178,7 @@ rather than new machinery.
 │  ● Copy for Google Sheets      paste into a sheet│
 │  ○ CSV file                                      │
 │  ○ JSON                                          │
-│  ○ Transcripts (.zip)                    144 files│
+│  ○ Transcripts (.zip)                    147 files│
 │  ○ Dublin Core XML                               │
 │  ○ Citations                                     │
 │                                                  │

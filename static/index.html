@@ -1204,6 +1204,11 @@
     .help-row { grid-template-columns: 1fr; }
     .modal-head, .modal-body, .modal-foot { padding-left: 1.1rem; padding-right: 1.1rem; }
   }
+  .tx-help-phone { display: none; }
+  @media (max-width: 767px), (pointer: coarse) and (max-height: 500px) {
+    #help .tx-help-production { display: none; }
+    #help .tx-help-phone { display: block; }
+  }
 
 
   /* ------------------------------------------------------- moments
@@ -2811,11 +2816,11 @@
       <div class="pkg-opts" id="pkgOpts" hidden>
         <label><input type="checkbox" id="pkgTx" checked>
           <span><b>Transcripts</b> — one readable text file per episode
-            <span class="sz">144 files, 4.7 MB</span></span></label>
+            <span class="sz">147 files, 4.8 MB</span></span></label>
         <label><input type="checkbox" id="pkgPass" checked>
           <span><b>Timestamps</b> — every spoken line with the second it was
             said, as a spreadsheet
-            <span class="sz">14,937 rows</span></span></label>
+            <span class="sz">15,294 rows</span></span></label>
         <p class="pkg-size" id="pkgSize">About 2 MB zipped.</p>
       </div>
 
@@ -2950,7 +2955,7 @@
     <div class="modal-head">
       <div>
         <h2 class="display" id="helpTitle">Searching the archive</h2>
-        <p>Click any example to run it.</p>
+        <p>Click or tap any example to run it.</p>
       </div>
       <button id="helpClose" aria-label="Close help">&times;</button>
     </div>
@@ -3021,7 +3026,7 @@
       <section class="help-sec">
         <h3>Jumping to a moment</h3>
         <p class="lede">When your words were spoken aloud, the timestamps under
-          a result show exactly where. Click one and the episode starts playing
+          a result show exactly where. Click or tap one and the episode starts playing
           from that second — no scrubbing.</p>
       </section>
 
@@ -3038,7 +3043,7 @@
         <h3>Tags</h3>
         <p class="lede">The names under each episode are people, bands, museums
           and books the producers linked in the show notes — a hand-curated index,
-          not guesswork. Click one to see every episode tagged with it.</p>
+          not guesswork. Click or tap one to see every episode tagged with it.</p>
       </section>
 
       <!-- Hidden until the archive has actually been read. Help that describes
@@ -3049,7 +3054,7 @@
         <h3><span class="swatch" style="background:var(--gold)"></span>Topics</h3>
         <p class="lede">Show notes say what happened, not what an episode is
           <em>about</em>. The gold-edged topics are read from the notes and the
-          transcript, so they exist even where nobody wrote them down. Click one
+          transcript, so they exist even where nobody wrote them down. Click or tap one
           to see everything on that subject. Unlike Tags, these are inferred —
           right nearly always, but worth a glance before you cite them.</p>
       </section>
@@ -3057,7 +3062,7 @@
       <section class="help-sec" data-needs="extraction" hidden>
         <h3>Guests and interviewers</h3>
         <p class="lede">Who was on, and who was asking. Read from the same pass,
-          which catches the guests who were never hyperlinked. Click any name to
+          which catches the guests who were never hyperlinked. Click or tap any name to
           see every episode they appear in — the producers' links and the ones
           found in the audio both count.</p>
       </section>
@@ -3074,18 +3079,20 @@
       <section class="help-sec wide">
         <p class="lede"><b>Transcript</b> beside the episode title opens the
           words with the tools around them, already marked up with whatever you
-          searched for. <b>Two gestures do most of the work:</b> <b>click</b> a
-          line to hear it, and <b>drag</b> across the text to select a passage.</p>
+          searched for. <b>Click or tap a line</b> to hear it. On a tablet or
+          computer, dragging across the text also selects a passage for the
+          production tools.</p>
         <ul class="help-list">
-          <li><b>Click a line — or its timestamp — to play from there.</b> Tick
-            <b>Follow audio</b> and the transcript scrolls along as it goes,
-            keeping the spoken line in view.</li>
-          <li><b>Drag across the text to select a passage.</b> The bar along the
+          <li><b>Click or tap a line — or its timestamp — to play from there.</b>
+            <b>Follow audio</b> is on by default, so the transcript scrolls along
+            and keeps the spoken line in view. Its switch remains available in
+            the full tablet/computer toolbar.</li>
+          <li class="tx-help-production"><b>Drag across the text to select a passage.</b> The bar along the
             bottom reports exactly how long it runs, where it starts and ends,
             and its <b>out-cue</b> — the last few words, so the studio knows
             when to come back. From there, <b>Edit audio</b> opens it in the
             clip editor and <b>Copy passage</b> takes the words.</li>
-          <li><b>Edit</b> on a single line does the same for just that line —
+          <li class="tx-help-production"><b>Edit</b> on a single line does the same for just that line —
             always showing on lines that matched your search, so a hit is one
             click from a waveform.</li>
           <li><b>Find within the episode</b> using the same shortcuts as the
@@ -3096,12 +3103,17 @@
             through them.</li>
           <li><b>Matches only</b> collapses a 55-minute show down to just the
             lines that mention the thing you're after — the fastest way from a
-            word to the moment it was said.</li>
-          <li><b>Print it</b>, or download it as text, or as subtitles
+            word to the moment it was said. On a phone it appears after you
+            search, when it has something to filter.</li>
+          <li class="tx-help-production"><b>Print it</b>, or download it as text, or as subtitles
             (SRT / VTT) for a video editor.</li>
         </ul>
-        <p class="lede">144 of the 200 episodes have one. The rest say so
-          plainly rather than pretending to be broken.</p>
+        <p class="lede tx-help-phone"><b>On a phone this is a focused find,
+          listen and read view.</b> The line Edit buttons, player scissors,
+          passage-selection lesson and download footer stay off the small
+          screen; native text selection still lets you copy words.</p>
+        <p class="lede">Most episodes have a transcript. Those without one say
+          so plainly rather than pretending to be broken.</p>
       </section>
 
       <h2 class="help-group-head">Clips &amp; audio editing</h2>
@@ -3227,7 +3239,7 @@
 
       <section class="help-sec">
         <h3>Keeping a clip</h3>
-        <p class="lede">Finding a moment in 143 hours is work worth doing once.
+        <p class="lede">Finding a moment in the archive is work worth doing once.
           In the editor, <b>＋ Add to library</b> opens a short dialogue where you
           name the clip and give it labels, then saves it — <b>without closing the
           editor</b>, so you can nudge a handle and save a second version of the
@@ -3268,8 +3280,8 @@
       <section class="help-sec">
         <h3>The list</h3>
         <p class="lede">Press <b>▶</b> to hear a clip without opening the editor;
-          a scrubber appears on that row while it plays, and you can click along
-          it to move within the clip. Click a title to rename it. The
+          a scrubber appears on that row while it plays, and you can click or tap
+          along it to move within the clip. Click or tap a title to rename it. The
           <b>download arrow</b> saves that one clip as an MP3;
           <b>⋯</b> holds <i>Edit in editor</i>, <i>Copy link</i> and
           <i>Remove</i>.</p>
@@ -3336,7 +3348,8 @@
             picked.</li>
         </ul>
         <p class="lede"><b>Where the rows come from.</b> They're read from this
-          archive, which is built from your two feeds and refreshes daily —
+          archive, which is built from your two feeds and checks for updates
+          every 15 minutes —
           nothing is fetched from Podbean when you press the button. That's why
           it's instant, and why audio and artwork appear as <em>links</em>
           rather than files: Podbean is still hosting those, and a spreadsheet
@@ -3354,7 +3367,7 @@
         <p class="lede">A single <code>.zip</code> holding the catalogue, the
           transcripts and a README that explains itself — <b>a copy of the
           archive that doesn't need this website to be readable</b>. The whole
-          thing, all 200 episodes and every transcript, comes to under
+          thing, the complete catalogue and every transcript, comes to under
           4&nbsp;MB. It's small enough to email and plain enough that another
           developer, or any AI, could rebuild the catalogue from it.</p>
         <p class="lede">Inside:</p>
@@ -3365,7 +3378,7 @@
           <li><code>episodes.csv</code> and <code>episodes.json</code> — one row
             per episode, the same rows as the spreadsheet export.</li>
           <li><code>passages.csv</code> — <b>every spoken line with the second
-            it was said</b>, all 14,937 of them. This is the file for finding a
+            it was said</b>. This is the file for finding a
             quote and knowing exactly where it is in the audio.</li>
           <li><code>transcripts/</code> — one plain-text file per episode,
             named by date so the folder reads chronologically.</li>
@@ -4413,8 +4426,8 @@ async function buildPackage(done) {
   ];
 
   // Every row carries its guid, so transcripts and passages can be matched to
-  // their episode by identity rather than by position. Only 144 of 200
-  // episodes have a transcript, so lining up two arrays by index would quietly
+  // their episode by identity rather than by position. Not every episode has
+  // a transcript, so lining up two arrays by index would quietly
   // attach the wrong words to the wrong show.
   const byGuid = {};
   data.episodes.forEach(e => { if (e.guid) byGuid[e.guid] = e; });
@@ -5738,8 +5751,8 @@ async function loadTranscript() {
   if (!tx.segments.length) {
     $("#txBody").innerHTML = `<div class="tx-empty">
       <b>No transcript published for this episode.</b>
-      The feed carries one for 144 of the 200 episodes; this is one of the rest.
-      Nothing is broken — there is simply nothing to show.</div>`;
+      The feed did not publish one for this episode. Nothing is broken — there
+      is simply nothing to show.</div>`;
     $("#txCount").textContent = "";
     return;
   }
@@ -6208,7 +6221,7 @@ function libRender() {
     list.innerHTML = `
       <div class="lib-empty">
         <h3 class="display">Keep the moments you find</h3>
-        <p>Finding a quote in 143 hours is work worth doing once. Cut a clip in the
+        <p>Finding a quote in the archive is work worth doing once. Cut a clip in the
            editor, add it here, and it's still here tomorrow — named and labelled
            however you work.</p>
         <div class="demo" aria-hidden="true">

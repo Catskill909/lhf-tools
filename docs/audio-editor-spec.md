@@ -6,10 +6,12 @@
 > bitrate probing, cut accuracy — is current and unchanged; it is the part that
 > matters most and the part `tests/verify-clips.mjs` still proves on every run.
 >
-> The *editing surface* described below has since been rebuilt across four
+> The *editing surface* described below has since been rebuilt through eight
 > phases: a real transport, time rulers, click-to-listen, 10 ms detail peaks
-> with RMS and a visible silence floor, zoom decoupled from the selection, and
-> keyboard marking. Where this document and **`docs/audio-editor-dev.md`**
+> with RMS and a visible silence floor, zoom decoupled from the selection,
+> keyboard marking and one Pointer Events path for tablet touch. Phones keep a
+> deliberate tablet/computer boundary. Where this document and
+> **`docs/audio-editor-dev.md`**
 > disagree about the interface, the dev doc is right. The mock-up and the
 > individual decisions that no longer hold are marked inline below. The build
 > phases at the end are left as the historical record they are — don't

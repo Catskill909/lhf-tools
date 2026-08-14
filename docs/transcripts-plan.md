@@ -1,21 +1,22 @@
 # Transcripts — phased plan
 
-> **Status: Phases 1–4 shipped.** *(Figures below are as at shipping. Live on
-> 13 Aug 2026: 147 transcripts, 15,294 passages, 904,266 words, and the gap now
-> 53 episodes at ~$9 — coverage rises on its own as new episodes arrive with
-> transcripts.)* 144 transcripts, 14,937 passages, 882,346
-> words, with jump-to-timestamp playback. Phases 5–6 remain: the 55-episode
-> gap (~$9.52) and AI enrichment over the transcripts — now **written and
+> **Status: Phases 1–4 shipped.** Live on 14 Aug 2026: 147 transcripts across
+> 200 episodes, 15,294 passages, 904,266 words, and a 53-episode gap at roughly
+> $9 — coverage rises on its own as new episodes arrive with transcripts. The
+> local retained archive has the same 147 transcripts across 203 episodes, so
+> its gap is 56. Jump-to-timestamp playback is built. Phases 5–6 remain:
+> filling the gap and AI enrichment over the transcripts — now **written and
 > tested but never run**, and measured at **$4.35** for the archive rather than
 > the ~$7 estimated here. See `docs/ai-layer.md`.
 
-**The finding that reframes this:** 145 of 200 episodes (72%) already publish
+**The finding that reframes this:** 147 of 200 live episodes (73.5%) already publish
 full `.srt` transcripts in their RSS feeds, via the Podcast 2.0
 `<podcast:transcript>` tag. Free, timestamped to the millisecond, no
 credentials, no Descript API, no vendor relationship.
 
-Only 55 episodes (39.7 hrs) need machine transcription — about **$9.52** at
-Google's batch rate, down from ~$102.
+The current live gap is 53 episodes; the local retained gap is 56 episodes
+(40.3 hours). Either is roughly **$9–10** at Google's batch rate, down from
+about $102 for the whole archive.
 
 **Architectural stance (adopted):** Descript is a *source*, never a dependency.
 The pipeline is `RSS → .srt → our database`. Descript is invisible to our code;
@@ -118,9 +119,9 @@ searching what was *said* rather than what was *written about* an episode.
 
 ---
 
-## Phase 5 — Fill the 55-episode gap
+## Phase 5 — Fill the remaining transcript gap
 
-**Effort: ~half a day + runtime. Cost: ~$9.52.**
+**Effort: ~half a day + runtime. Cost: roughly $9–10.**
 
 Google STT batch for episodes with no feed transcript, writing into the same
 `segments` table with `transcript_source = 'google'`. Nothing downstream

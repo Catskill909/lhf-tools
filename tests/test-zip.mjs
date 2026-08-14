@@ -26,6 +26,14 @@ console.log("\nzip writer");
 
 /* ---------- CRC-32 against known values ---------- */
 const enc = new TextEncoder();
+let rawDeflate = false;
+try {
+  new CompressionStream("deflate-raw");
+  rawDeflate = true;
+} catch {
+  // Older Node releases do not expose the browser's raw-deflate stream. The
+  // production writer deliberately falls back to a valid stored ZIP there.
+}
 check("crc32 of empty input is 0", crc32(enc.encode("")) === 0);
 check("crc32('123456789') is the standard check value",
       crc32(enc.encode("123456789")) === 0xcbf43926,
@@ -90,8 +98,12 @@ print(json.dumps(out))
   check("UTF-8 filenames and contents survive",
         res.unicode === "No Pasarán — Workers’ Revolt\n");
   check("a 10 KB file round-trips whole", res.long_ok === long.length);
-  check("large entries are deflated", res.methods.includes(8));
-  check("compression actually made it smaller", res.compressed_smaller === true);
+  check(rawDeflate ? "large entries are deflated"
+                   : "raw-deflate unavailable: entries use the stored fallback",
+        rawDeflate ? res.methods.includes(8) : res.methods.includes(0));
+  check("compression makes entries smaller when the runtime supports it",
+        !rawDeflate || res.compressed_smaller === true,
+        rawDeflate ? "" : "raw-deflate unavailable in this Node runtime");
 
   /* Determinism: the same input twice must give the same bytes, or two
      exports of unchanged data cannot be compared. */

@@ -40,14 +40,15 @@ thing than `backup.py`, which restores this application and only this one.
 
 ### The number that decides the design
 
-Measured against the live archive, 9 August 2026:
+Refreshed against the local retained archive, 14 August 2026. Production still
+contains 200 episodes / 143.1 hours until the three restored rows are deployed:
 
 | Part | Size | Notes |
 |---|---|---|
-| Transcript text | **4.7 MB** | 882,346 words, 14,937 passages |
+| Transcript text | **4.8 MB** | 904,266 words, 15,294 passages |
 | Descriptions (HTML) | **0.2 MB** | |
-| Cover images | **~38 MB** | 144 distinct, ~267 KB each — verified by request |
-| **Audio** | **~8–12 GB** | 143.1 hours; a 28-minute episode measured at 27.0 MB, and the archive carries both 128 and 192 kbps |
+| Cover images | **~39 MB** | 146 distinct; the earlier measured average was ~267 KB each |
+| **Audio** | **~8–12 GB** | 145.4 retained hours; a 28-minute episode measured at 27.0 MB, and the archive carries both 128 and 192 kbps |
 
 **The catalogue is five megabytes. The media is ten thousand.** A factor of two
 thousand between them is not a difference of degree, and one mechanism cannot
@@ -92,7 +93,7 @@ lhf-archive-2026-08-09/
 ```
 
 **`passages.csv` is the piece a researcher will actually live in.** One row per
-spoken line — episode, show, date, start, end, text — is 14,937 rows, which is
+spoken line — episode, show, date, start, end, text — is 15,294 rows, which is
 nothing for a spreadsheet, and it makes "find every mention of the Pittston
 strike, with timecodes" a filter rather than a project. It is also the single
 most useful thing to hand a language model, because it is already chunked with
@@ -105,20 +106,21 @@ silently lose text, which is the worst failure mode a backup can have.
 
 ### How big is the transcript folder, exactly
 
-Measured 9 August 2026, not estimated:
+Counts and plain-text sizes refreshed 14 August 2026; the generated-format and
+zip sizes remain estimates based on the 9 August package measurement:
 
 | | |
 |---|---|
-| Episodes carrying text | **144** |
-| Plain text, all of them | **4.7 MB** |
-| Average per episode | **33 KB** |
-| Largest single episode | **57 KB** |
-| Same content as SRT | **5.2 MB** (14,937 cues, timestamps included) |
-| All three formats (txt + srt + vtt) | **~15 MB** |
-| **Zipped** | **1.8 MB** for the text — 38% of raw |
+| Episodes carrying text | **147** |
+| Plain text, all of them | **4.8 MB** |
+| Average per episode | **34 KB** |
+| Largest single episode | **58 KB** |
+| Same content as SRT | **~5.3 MB** (15,294 passages, timestamps included) |
+| All three formats (txt + srt + vtt) | **~15–16 MB** |
+| **Zipped** | **~1.9 MB** for the text |
 
 **The whole catalogue package, transcripts and all, is under 10 MB zipped.**
-Eight hundred and eighty-two thousand words of spoken labor history fits
+More than nine hundred thousand words of spoken labor history fits
 comfortably inside a single email attachment. There is no size argument against
 including all of it, in every format, every time.
 

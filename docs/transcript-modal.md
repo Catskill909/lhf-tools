@@ -2,10 +2,11 @@
 
 **Status: built.** The first cut described at the bottom of this document is
 now in the app — a **Transcript** button on every episode that has one (144 of
-200 when this was written; **147 as at 13 Aug 2026**, and rising as new episodes
-arrive with transcripts), opening the words with the tools around them. Counts
-elsewhere in this document are as at build time for the same reason. No AI
-involved; this is
+200 when this was written; **147 of 200 in production and 147 of 203 in the
+local retained archive as at 14 Aug 2026**), opening the words with the tools
+around them.
+Counts elsewhere in this document are as at build time for the same reason. No
+AI involved; this is
 scraping, the existing index and the existing clip editor pushed as far as they
 go.
 
@@ -13,12 +14,13 @@ What shipped:
 
 | | |
 |---|---|
-| **Read** | Every line with its timing, click any to play, follow-along highlight as the audio moves, timestamps toggle |
+| **Read** | Every line with its timing, click or tap any to play, follow-along highlight as the audio moves, timestamps toggle |
 | **Find** | Search inside the episode using the archive's own syntax — `"phrases"`, `AND`/`OR`/`NOT`, `organiz*`, `NEAR()` — with a hit count, next/previous, and a **matches only** view that collapses a 55-minute show to just the lines that mention the thing |
 | **Carried through** | Opens pre-loaded with the search that produced the result, so the words that brought you here are already marked |
-| **Use** | **Edit** on any line opens the clip editor on that passage — permanently visible on lines that matched the search, so a hit is one click from a waveform. Or select a longer stretch for its exact duration, in/out times and **out-cue**, then hand that to the editor. Copy the passage as text. |
-| **Take away** | Print (a stylesheet that drops everything but the words), and download as **Text**, **SRT** or **VTT** |
-| **Honest** | A provenance line saying the transcript is machine-made, and a real empty state for the 56 episodes without one |
+| **Use** | On tablets/computers, **Edit** on any line opens the clip editor on that passage. Or select a longer stretch for its exact duration, in/out times and **out-cue**, then hand that to the editor. Copy the passage as text. |
+| **Take away** | On tablets/computers, print (a stylesheet that drops everything but the words), and download as **Text**, **SRT** or **VTT** |
+| **Phone** | A compact find/listen/read surface: full-height scrolling prose, contextual Matches only, no editing routes or large selection lesson |
+| **Honest** | A provenance line saying the transcript is machine-made, and a real empty state for episodes without one |
 
 Citations were deliberately **not** built — see `docs/ai-layer.md`. They need a
 format decision (Chicago vs MLA vs the Library of Congress broadcast
