@@ -239,8 +239,11 @@ version in `docs/client-guide.md`, and the two must agree.
 | **Saved clips and their labels** | **This browser — `localStorage`** | **No.** This is the new one, and the only client-side data that is not derived from something else. |
 
 **Verified 9 August 2026** by reading the source, because a client-facing claim
-about where their work is kept should not be written from memory: the app
-persists exactly two things today, `lhf-theme`
+about where their work is kept should not be written from memory. **Superseded
+13 August 2026:** `clips.js` has since shipped, so the count is now three — the
+table above is current, this paragraph records what was true when the library
+was still a design. As of 9 August the app
+persisted exactly two things, `lhf-theme`
 ([`static/index.html:2242`](../static/index.html#L2242)) and the peaks database
 ([`static/waveform.js:17`](../static/waveform.js#L17)). Nothing else. In
 particular the update-prompt dismissal is **not** persisted — `hushedVersion`

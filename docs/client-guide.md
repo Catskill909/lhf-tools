@@ -32,7 +32,8 @@ same way.
 
 ## What it does
 
-**200 episodes · 143 hours · both shows**, updating itself daily.
+**200 episodes · 143 hours · both shows**, checking for new episodes every 15
+minutes. The footer tells you when it last looked.
 
 ![The archive — 200 episodes, both shows, filters and sorting](screenshots/01-search.png)
 

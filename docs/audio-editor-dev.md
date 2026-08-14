@@ -934,7 +934,10 @@ to whichever way the arithmetic happened to fall.
 a stray drag, a mistimed `I`, or a Snap that moved the wrong way, with nothing
 to get it back. It stores a single pair of numbers, in memory, dying with the
 open editor — **nothing new persists**, which keeps it clear of the constraint
-that the browser stores exactly two things and both rebuild themselves. The pair
+on what the browser stores. (That constraint read "exactly two things, both of
+which rebuild themselves" when this was written; `clips.js` has since added a
+third, `lhf-clips`, which does *not* rebuild. The point here is unaffected —
+selection undo still persists nothing.) The pair
 is *swapped* rather than consumed, so a second press puts it back; with only one
 step, an accidental undo would otherwise be the one action in the editor with no
 way out of it. A run of arrow nudges coalesces into a single step via a tag,

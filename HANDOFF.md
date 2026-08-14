@@ -1,6 +1,7 @@
 # LHF Digital Asset Manager — Handoff
 
-**Status:** **deployed and live on Coolify**, real data, updating itself daily.
+**Status:** **deployed and live on Coolify**, real data, checking the feeds every
+15 minutes.
 Feature-complete for everything achievable without AI.
 **Last worked:** 9 August 2026. Built from nothing on 3 August.
 **Client:** Labor Heritage Foundation — Harold Phillips (producer), Chris Garlock
@@ -19,7 +20,17 @@ on purpose and easily mistaken for a backlog. See *How to report work here* in
 
 ### 🔥 DO — something bad happens if ignored
 
-*Nothing outstanding.*
+1. **Restore the three rotated-off episodes into production** from
+   `~/Desktop/lhf-BACKUP-2026-08-13.sqlite` (Paul's machine). Podbean no longer
+   serves them, so a rebuild cannot bring them back and no future ingest will
+   ever produce them. **That single file is currently the only copy in
+   existence** — if it goes, the episodes go. See **Backups** for the three
+   titles and how they were lost.
+
+2. **Get that backup off one laptop.** It is now load-bearing for the archive
+   and lives in exactly one place, un-versioned, on a machine that could fail
+   tonight. `backup.py` is the tool; the VPS snapshot schedule covers the
+   *volume*, not this file.
 
 **Backups are handled** — confirmed by Paul, 9 August 2026: the VPS takes
 snapshots *and* full backups on a two-week retention, and the archive package
@@ -262,7 +273,8 @@ decision, and an admin screen to run it from. See `docs/ai-layer.md`.
 - Back-to-top in the gutter; floats centred on tablet and phone
 - Responsive; no build step, single HTML file
 
-**Deployment is done.** It is live on Coolify and updating itself daily. The
+**Deployment is done.** It is live on Coolify and checking the feeds every 15
+minutes. The
 first attempt failed and taught three things, all fixed and all written up in
 README.md under "Coolify settings that matter": Coolify runs its own health
 check rather than the Dockerfile's, it shells out to `curl` which
@@ -384,7 +396,7 @@ run it from.
 |---|---|
 | `ingest/ingest.py` | RSS → SQLite. Idempotent, keys on `<guid>`. Also the weekly-cron path. |
 | `ingest/transcripts.py` | Podcast 2.0 `.srt` → `segments`. Idempotent; `--retry` re-attempts failures. |
-| `refresh.py` | Runs all three pipeline steps in order; `--loop 24h` schedules itself. |
+| `refresh.py` | Runs all three pipeline steps in order; `--loop 15m` schedules itself. Skips enrichment when the feeds brought nothing. |
 | `CLAUDE.md` | The constraints and traps that are easy to break without knowing them, for whoever (or whatever) picks this up. Read `HANDOFF.md` first. |
 | `docs/export-spec.md` | Export design + the CSV details that decide whether it imports cleanly. **Built.** |
 | `docs/export-dev.md` | The export as the client's full backup of their Podbean archive — catalogue, transcripts, artwork, audio. **Not built.** Explains why it is two exports: 5 MB of text against 8–12 GB of media. |
@@ -561,7 +573,7 @@ free and fast. Worth revisiting only if clip export gets built.
 
 Worth knowing exactly, because the clip library adds to this list and
 `docs/client-guide.md` now makes a promise to the client about it. **The app
-persists exactly two things client-side today:**
+persists three things client-side today:**
 
 | What | Where | Lost if cleared? |
 |---|---|---|
@@ -582,9 +594,31 @@ including which features would need a server and why they are all one decision.
 
 ### 2. Timed updates — ✅ built and running in production
 
-`refresh.py --loop 24h` runs the pipeline on a schedule and keeps itself alive.
+`refresh.py --loop 15m` runs the pipeline on a schedule and keeps itself alive.
 It works the same on a laptop, in Docker, and on Coolify without depending on a
 host scheduler, and backs off on repeated failure instead of hammering the feed.
+
+**It was 24h until 13 August 2026**, which meant a new episode could sit unseen
+for most of a day — not good enough for a live podcast. Two things made a short
+interval affordable, and both matter more than the number itself:
+
+- **Conditional GET.** Podbean serves an `ETag` on both feeds and honours
+  `If-None-Match` with a 304 and an empty body. `shows.feed_etag` stores it, so
+  an unchanged feed costs no bytes rather than ~1 MB. Without this, a 15-minute
+  poll would pull roughly 3 GB a month to learn nothing had happened.
+- **Enrichment only when something arrived.** `enrich.py` does
+  `DELETE FROM reairs` + `DELETE FROM mentions` and rebuilds across every
+  episode; it cannot run every 15 minutes. It is gated on the feeds actually
+  bringing something. Transcripts still run every tick — one indexed lookup when
+  nothing is outstanding — because Podbean sometimes attaches a transcript days
+  after publishing, and gating that would mean never collecting those.
+
+A step that fails is **owed** and retried on the next tick. Without that, the
+retry looks like an ordinary quiet tick, the step is skipped as "nothing new",
+the run reports success, and the failure is swallowed for as long as the feeds
+stay unchanged.
+
+Measured: a tick with nothing new takes **1 second and downloads 0 bytes**.
 
 **This is now wired up and running.** `docker-entrypoint.sh` starts the loop in
 the background unless `LHF_AUTO_REFRESH=0`, which is what keeps a single-container
@@ -600,11 +634,20 @@ For a host scheduler instead of either, the cron form is:
 0 4 * * 0  cd /path/to/digital-asset-manager && /usr/bin/python3 refresh.py >> /var/log/lhf-refresh.log 2>&1
 ```
 
-**Still genuinely missing: failure notification.** The loop logs failures to
-stderr and backs off, but nobody is watching stderr. An email or webhook on
-repeated failure is the piece that isn't there — a silently broken updater is
-how this rots, and the symptom (an archive that quietly stops growing) is
-exactly the kind nobody notices for months.
+**Failure notification is still missing, but the symptom is now visible.** The
+loop logs failures to stderr and backs off, and nobody is watching stderr. An
+email or webhook on repeated failure remains the piece that isn't there.
+
+What changed on 13 August 2026 is that a stopped updater no longer hides. The
+footer shows **"Feeds checked N minutes ago"** from `shows.feed_checked_at`,
+stamped on every poll that reached Podbean *including one answered 304*, and
+flagged stale past two hours. This exists because the prediction in the
+paragraph above came true almost exactly: production drifted, nobody noticed,
+and the only way to check was to open Podbean and compare episode by episode.
+
+Deliberately **not** `episodes.last_seen_in_feed` — that only moves when a feed
+actually changed, and on a weekly show it is days old almost always, so a footer
+built on it would report a perfectly healthy updater as dead.
 
 An earlier version of this section said to back up first because "the feeds are
 re-scrapeable for free". **That is no longer true** — see Backups above. Both
@@ -730,6 +773,7 @@ node tests/test-waveform.mjs        # pure: peak reduction + snap-to-silence
 node tests/test-update-prompt.mjs   # pure: the new-version reload prompt
 node tests/test-zip.mjs             # pure: the archive packager
 node tests/test-clips.mjs           # pure: the saved-clip store + labels
+python3 tests/test-ingest.py        # pure: feed stamping + rotated-out detection
 node tests/verify-clips.mjs         # live: needs the server running + network
 ```
 
@@ -741,7 +785,11 @@ correctly positioned and genuinely lossless.
 
 ### Keeping the archive current
 
-`serve` starts its own daily refresh loop unless `LHF_AUTO_REFRESH=0`.
+`serve` starts its own 15-minute refresh loop. `LHF_AUTO_REFRESH` defaults to
+`1` (`${LHF_AUTO_REFRESH:-1}`), so **no environment variable needs to be set for
+updates to run** — and none is set in Coolify. Only an explicit `0` disables it,
+which is what `docker-compose.yml` does because compose runs a *separate*
+refresh worker and two loops on one SQLite file would race.
 
 This matters because **Coolify deploys the Dockerfile, not the compose file**,
 so it runs one container. The refresh worker in `docker-compose.yml` never
@@ -754,31 +802,43 @@ The loop waits for the first build to finish before its first tick.
 
 ### Backups — this gets more important with time, not less
 
-Today the database is disposable: `refresh.py` rebuilds all 200 episodes from
-the feeds in 143 seconds. Losing the volume costs two and a half minutes.
+**The database is no longer disposable, and three episodes have already been
+lost proving it.** An earlier version of this section said losing the volume
+cost two and a half minutes of re-scraping. That was true when written and is
+now the most expensive stale line this repo has produced — see below.
 
-**That stops being true as the feed window slides.** Podbean only serves the
-most recent 100 episodes per show, so every week the oldest episode in the feed
-falls out of reach. Anything already ingested stays in the database — but once
-it has left the feed, it cannot be fetched again.
+Podbean serves only the most recent 100 episodes per show, so every week the
+oldest episode in each feed falls out of reach. Anything already ingested stays
+in the database, because `episodes` rows are never deleted — there is no
+`DELETE FROM episodes` anywhere in `ingest/`. But once an episode has left the
+feed it cannot be fetched again, and a database rebuilt from the feeds comes
+back **without it**.
 
-**Measured 9 August 2026: that threshold is not a year away, it is now.**
+**Measured 13 August 2026 — the first measurement ever taken against
+production.** The 9 August figures previously printed here were the *local dev*
+database's, from a 4 August ingest, and read as though they were production's.
 
-| Show | Episodes held | Oldest | Newest |
-|---|---|---|---|
-| Labor Heritage Power Hour | **100** | 2024-09-12 | 2026-07-30 |
-| Labor History Today | **100** | 2024-09-22 | 2026-08-02 |
+Three episodes have now rotated off Podbean:
 
-Both shows sit at **exactly** the cap, and `episodes` rows are never deleted —
-there is no `DELETE FROM episodes` anywhere in `ingest/`. So the database
-currently holds precisely what the feeds hold, and **the next episode of each
-show pushes the oldest one out of reach while the database keeps it.** From that
-publication onward the volume is the only copy of something, permanently, with
-no event to notice and nothing in the UI that changes.
+| Show | Date | Title |
+|---|---|---|
+| Labor Heritage Power Hour | 2024-09-12 | The power of our stories |
+| Labor Heritage Power Hour | 2024-09-19 | Shift Happens |
+| Labor History Today | 2024-09-22 | The Disney Revolt (Encore) |
 
-Both shows are weekly. This may already have happened in production, which
-refreshes daily — the check is whether the live site reports more than 100
-episodes for either show.
+**None of the three is on production**, because `/data` was not a persistent
+volume: it lived in the container's writable layer and was destroyed on every
+redeploy, so each deploy silently reset the archive to whatever the feeds held
+that day. Confirmed by Paul on 13 August 2026 — there was no volume configured
+in Coolify at all. One is mounted now, and from here the archive accumulates.
+
+They survive only in `~/Desktop/lhf-BACKUP-2026-08-13.sqlite` on Paul's machine.
+**That file is the only copy of those three episodes that exists anywhere.**
+
+**The standing check** — worth running after any deploy — is whether the live
+site reports **more than 100** episodes for either show. Both shows are weekly,
+so the count should now grow by one per show per week and never reset. A count
+of exactly 100 after a deploy means the volume is not holding.
 
 Nothing prior to September 2024 was ever reachable by scraping; the shows are
 older than that. The Podbean back-end export remains the only route to the

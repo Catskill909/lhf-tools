@@ -52,12 +52,20 @@ Both shows publish weekly. Three ways to run it automatically, pick one:
 with no host scheduler involved:
 
 ```bash
-python3 refresh.py --loop 24h --quiet-if-nothing-new
+python3 refresh.py --loop 15m --quiet-if-nothing-new
 ```
 
-Runs immediately, then every 24h. Only logs when something changed. On repeated
-failure it backs off (5m, 10m, 20m…) rather than hammering the feed, and keeps
-retrying — transient network errors are normal and shouldn't need a human.
+Runs immediately, then every 15 minutes — the deployed setting. Only logs when
+something changed. On repeated failure it backs off (5m, 10m, 20m…) rather than
+hammering the feed, and keeps retrying — transient network errors are normal and
+shouldn't need a human.
+
+**Fifteen minutes is affordable because a tick with nothing new costs 1 second
+and downloads 0 bytes.** Podbean serves an `ETag` and honours `If-None-Match`
+with a 304, so an unchanged feed transfers no body; and the expensive
+enrichment pass (a full rebuild of mentions and re-airs) is skipped unless the
+feeds actually brought something. Both shows publish weekly, so that is all but
+two ticks a week.
 
 **2. Cron** — if you'd rather the host own the schedule:
 
@@ -84,7 +92,7 @@ it. Re-scraping no longer recovers everything. See `HANDOFF.md`, "Backups".
 ## Deploying
 
 ```bash
-docker compose up --build        # web on :8000, plus a daily refresh worker
+docker compose up --build        # web on :8000, plus a refresh worker
 ```
 
 Or in Coolify: point it at **https://github.com/Catskill909/lhf-tools**, add a
@@ -134,7 +142,7 @@ added later, put auth in front of it before deploying again.
 
 ```
 Dockerfile             python:3.12-slim, stdlib only, nothing to install
-docker-compose.yml     web + daily refresh worker, sharing one volume
+docker-compose.yml     web + refresh worker, sharing one volume
 docker-entrypoint.sh   serve | refresh | once — and the first-run bootstrap
 refresh.py             run the whole pipeline in order
 ingest/ingest.py       feed → SQLite

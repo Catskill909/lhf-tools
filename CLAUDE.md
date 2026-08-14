@@ -61,8 +61,12 @@ and it is the single most common way these documents mislead their reader.
   material. **The first write endpoint is a security decision**, not a feature
   increment — and it is the same decision the AI layer and a shared clip
   library are both waiting on.
-- **The browser persists exactly two things, and both rebuild themselves**:
-  `localStorage["lhf-theme"]` and the IndexedDB peaks cache. Nothing else — the
+- **The browser persists three things, and only two of them rebuild
+  themselves**: `localStorage["lhf-theme"]` and the IndexedDB peaks cache do;
+  **`localStorage["lhf-clips"]` (`static/clips.js`) does not** — saved clips are
+  real user data, derived from nothing, and gone if the browser is cleared. This
+  line said "exactly two things" until 13 August 2026, months after `clips.js`
+  shipped the third. Nothing else — the
   update prompt's dismissal is an in-memory variable, not storage. **Anything
   new that persists is the first user data this application can actually lose**,
   so it has to say where it lives, in the interface, at the point the user forms
@@ -158,10 +162,27 @@ and it is the single most common way these documents mislead their reader.
 - **`schema.sql` is all `CREATE TABLE IF NOT EXISTS`**, so it does nothing to a
   database that already exists — which every deployed one does. New columns
   need a `PRAGMA table_info` guarded migration in `ingest/ingest.py`.
+  **`serve.py` never runs that migration**, so anything it reads from a new
+  column has to tolerate the column not being there yet: the server answers
+  immediately on boot and the migration does not run until the first poll. This
+  is not hypothetical — `/api/facets` is also the container health check
+  (`Dockerfile`), so an unguarded read there fails the check and restarts the
+  container in a loop until an ingest happens to land.
+- **A timestamp meaning "this pass" must be taken once per pass.**
+  `last_seen_in_feed` used `datetime('now')` evaluated inside the row loop.
+  Writing a hundred episodes spans several seconds, so one pass wrote several
+  distinct stamps and only the rows landing in the final second matched
+  `MAX(...)` — `--stats` reported **84 of 203 episodes as gone from the feed**
+  when the true number was 3. The same rule applies to any "as of this run"
+  marker added later. Related: **"has it left the feed" is decided per show, not
+  globally** (`GONE_FROM_FEED`) — the feeds are read in sequence so the two
+  shows are always stamped seconds apart, and a feed answering 304 is not
+  restamped at all. `tests/test-ingest.py` covers both.
 - **The archive is no longer disposable.** Both shows sit at Podbean's
-  100-episode feed cap, so the database is becoming the only reachable copy of
-  anything that rotates out. "Just re-scrape it" stopped being true in August
-  2026.
+  100-episode feed cap, so the database is the only reachable copy of anything
+  that rotates out. "Just re-scrape it" stopped being true in August 2026 —
+  **three episodes have already been lost this way**, and survive only in a
+  backup on Paul's machine. See `HANDOFF.md` → *Backups*.
 
 ## The recurring bug class
 
@@ -191,8 +212,12 @@ node tests/test-clips.mjs           # pure: the saved-clip store + labels
 node tests/test-palette.mjs         # pure: both themes' colour laws, in L*
 node tests/test-hidden.mjs          # pure: `hidden` actually hides
 node tests/test-keyboard.mjs        # pure: the keyboard reaches what you see
+python3 tests/test-ingest.py        # pure: feed stamping + rotated-out detection
 node tests/verify-clips.mjs 8000    # live: needs the server running + network
 ```
+
+`test-ingest.py` is the one Python suite, because the thing it covers is Python.
+It imports `ingest/ingest.py` directly and needs no network.
 
 `test-clips.mjs` shims `localStorage` onto `globalThis` and imports the real
 module. **Adding a front-end module means adding it to `names` in `serve.py`'s
