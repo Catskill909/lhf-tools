@@ -139,12 +139,15 @@ keyboard help remains for desktop and keyboard-equipped tablets.
 
 The audit did not find another touch blocker on the scale of the editor.
 Ordinary buttons use `click`, inputs are native, dialogs have reachable close
-controls, and the result grid collapses at phone width. Some polish remains if
-the scope later broadens: many chips and secondary controls are below the ideal
-44px target, some library affordances are revealed by hover, transcript text
-selection depends on native mobile selection behavior, and tightly packed
-filter groups deserve a physical-phone overflow pass. None of those prevents
-the primary archive journey today.
+controls, and the result grid collapses at phone width. The hover-disclosure
+pass is also built: transcript Edit, the player scrubber knob, clip-label
+remove, “+ label” and clip-row actions are visible and finger-sized on touch;
+their hover-only versions are gated to devices that genuinely hover. This
+prevents iPad from spending the first tap revealing a control instead of
+playing transcript audio or opening Edit. Transcript text selection still
+depends on native mobile selection behavior, and tightly packed filter groups
+deserve a physical-phone overflow pass. Neither prevents the primary archive
+journey today.
 
 ## Phone guard — built in this audit
 
@@ -246,9 +249,9 @@ viable.
 
 The production app remains dependency-free. Tests follow the existing split:
 
-- `tests/test-touch.mjs` has 20 structural checks: phone boundary, Pointer
-  Events, capture/cancellation, scoped `touch-action`, 44px geometry and touch
-  instructions;
+- `tests/test-touch.mjs` has 27 structural checks: phone boundary, Pointer
+  Events, capture/cancellation, scoped `touch-action`, 44px geometry, touch
+  instructions and tap-safe hover disclosure;
 - a rebuildable browser/device checklist for actual pointer capture, canvas
   geometry, audio policies and downloads;
 - the existing waveform, keyboard, hidden-state, overflow and palette suites as

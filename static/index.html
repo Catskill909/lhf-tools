@@ -891,9 +891,22 @@
     letter-spacing: 0.02em; padding: 0.08rem 0.42rem; cursor: pointer;
     opacity: 0; pointer-events: none;
   }
-  .tx-line:hover .tx-edit,
   .tx-line:focus-within .tx-edit,
   .tx-line.hit .tx-edit { opacity: 1; pointer-events: auto; }
+  /* Hover-revealed descendants make iPad Safari consume the first tap merely
+     to enter :hover; the row's click arrives only on the second tap. Keep that
+     disclosure on devices that genuinely hover, and make Edit an ordinary,
+     reachable control on touch devices so tapping the prose plays at once. */
+  @media (hover: hover) {
+    .tx-line:hover .tx-edit { opacity: 1; pointer-events: auto; }
+  }
+  @media (hover: none), (any-pointer: coarse) {
+    .tx-edit {
+      opacity: 1; pointer-events: auto;
+      min-width: 44px; min-height: 44px; padding: 0.35rem 0.55rem;
+    }
+    .tx-t { width: 44px; min-height: 44px; }
+  }
   .tx-edit:hover { background: var(--spot); color: #fff; }
   .tx-edit:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
   .tx-line mark {
@@ -1152,7 +1165,10 @@
     background: var(--spot); left: 0; transform: translateX(-50%);
     opacity: 0; transition: opacity .12s;
   }
-  .pl-track:hover .pl-knob, .pl-track:focus-visible .pl-knob { opacity: 1; }
+  .pl-track:focus-visible .pl-knob { opacity: 1; }
+  @media (hover: hover) {
+    .pl-track:hover .pl-knob { opacity: 1; }
+  }
   .pl-track:focus-visible { outline: 2px solid var(--focus); outline-offset: 3px; border-radius: 2px; }
 
   .pl-time {
@@ -1352,8 +1368,12 @@
     content: ""; position: absolute; top: 100%; left: 50%; margin-left: -4px;
     border: 4px solid transparent; border-top-color: var(--ink);
   }
-  .pl-edit:hover .pl-tip,
   .pl-edit:focus-visible .pl-tip { opacity: 1; transform: translate(50%, 0); }
+  /* iPad turns a first tap into hover when hover reveals a descendant. Keep
+     the mouse tooltip, but never let it intercept the tap that opens Edit. */
+  @media (hover: hover) {
+    .pl-edit:hover .pl-tip { opacity: 1; transform: translate(50%, 0); }
+  }
   @media (prefers-reduced-motion: reduce) {
     .pl-tip, .pl-edit { transition: none; }
   }
@@ -1881,7 +1901,7 @@
   .lblmini:focus-visible { outline: 2px solid var(--focus); outline-offset: 1px; }
   .lblmini[data-active="1"] { color: var(--spot-ink); border-color: var(--spot); background: var(--spot-tint); }
   .lblmini .x { color: var(--ink-3); font-size: 0.85em; line-height: 1; opacity: 0; transition: opacity 0.14s ease; }
-  .cliprow:hover .lblmini .x, .cliprow:focus-within .lblmini .x { opacity: 1; }
+  .cliprow:focus-within .lblmini .x { opacity: 1; }
   .lblmini .x:hover { color: var(--spot-ink); }
 
   .lbladd {
@@ -1890,7 +1910,7 @@
     padding: 0.05rem 0.4rem; cursor: pointer;
     opacity: 0; transition: opacity 0.14s ease, color 0.14s ease, border-color 0.14s ease;
   }
-  .cliprow:hover .lbladd, .cliprow:focus-within .lbladd { opacity: 1; }
+  .cliprow:focus-within .lbladd { opacity: 1; }
   .lbladd:focus-visible { opacity: 1; outline: 2px solid var(--focus); outline-offset: 1px; }
   .lbladd:hover { color: var(--ink); border-color: var(--ink-3); }
 
@@ -1912,8 +1932,7 @@
     display: grid; place-items: center;
   }
   .cliprow .cr-dl svg { width: 14px; height: 14px; fill: currentColor; }
-  .cliprow:hover .cr-more, .cliprow:focus-within .cr-more,
-  .cliprow:hover .cr-dl, .cliprow:focus-within .cr-dl {
+  .cliprow:focus-within .cr-more, .cliprow:focus-within .cr-dl {
     border-color: var(--rule); color: var(--ink-2);
   }
   .cliprow .cr-more:hover { color: var(--ink); border-color: var(--ink-3); }
@@ -1922,6 +1941,35 @@
     outline: 2px solid var(--focus); outline-offset: 1px;
   }
   .cliprow .cr-dl:disabled { opacity: 0.4; cursor: default; }
+
+  /* Hover can disclose secondary row actions only on a device that genuinely
+     hovers. On touch/coarse pointers those actions are already present and
+     finger-sized, so tapping always performs the action on the first tap. */
+  @media (hover: hover) {
+    .cliprow:hover .lblmini .x { opacity: 1; }
+    .cliprow:hover .lbladd { opacity: 1; }
+    .cliprow:hover .cr-more, .cliprow:hover .cr-dl {
+      border-color: var(--rule); color: var(--ink-2);
+    }
+  }
+  @media (hover: none), (any-pointer: coarse) {
+    .pl-knob { opacity: 1; }
+    .pl-play, .pl-edit { width: 44px; height: 44px; }
+    .pl-track { min-height: 44px; }
+    /* A hybrid can match hover:hover because a mouse is attached while this
+       tap is still coming from its screen. The tooltip must stay out of that
+       tap path; keyboard focus may continue to explain the icon. */
+    .pl-edit:hover .pl-tip { opacity: 0; transform: translate(50%, 3px); }
+    .pl-edit:focus-visible .pl-tip { opacity: 1; transform: translate(50%, 0); }
+
+    .lblmini .x { opacity: 1; }
+    .lbladd { opacity: 1; min-height: 44px; padding: 0.35rem 0.55rem; }
+    .cliprow .cr-play { width: 44px; height: 44px; }
+    .cliprow .cr-more, .cliprow .cr-dl {
+      width: 44px; height: 44px;
+      border-color: var(--rule); color: var(--ink-2);
+    }
+  }
 
   /* The scope of a bulk download is never implied. The archive export already
      shows both counts so "a file quietly holding 78 of 200" can't happen by
@@ -2182,7 +2230,7 @@
       width: 44px; height: 44px; border-color: var(--rule); color: var(--ink-2);
     }
     .cliprow .cr-meta, .cliprow .cr-labels, .cliprow .cr-scrub { grid-column: 2 / -1; }
-    .lbladd { opacity: 1; min-height: 36px; }
+    .lbladd { opacity: 1; min-height: 44px; }
   }
 
   /* Tablet touch layout. `any-pointer` includes hybrid Windows machines whose

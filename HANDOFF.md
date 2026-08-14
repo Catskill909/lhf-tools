@@ -3,8 +3,9 @@
 **Status:** **deployed and live on Coolify**, real data, checking the feeds every
 15 minutes.
 Feature-complete for everything achievable without AI.
-**Local, not deployed:** tablet touch support for the audio editor is built and
-awaiting Paul's real-iPad verification (`docs/touch-dev.md`).
+**Local, not deployed:** tablet touch support for the audio editor and the
+tap-safe hover-disclosure pass are built, awaiting Paul's real-iPad verification
+(`docs/touch-dev.md`).
 **Last worked:** 14 August 2026. Built from nothing on 3 August.
 **Client:** Labor Heritage Foundation — Harold Phillips (producer), Chris Garlock
 and Elise Bryant (hosts), Patrick Dixon.
@@ -56,8 +57,10 @@ verified snapshot by hand.
    the feed). Slow-moving; nothing is blocked on them.
 3. **Run the tablet editor on a real iPad** in portrait and landscape before
    calling touch support shipped. Phases 1–3 are built locally: Pointer Events,
-   capture/cancellation cleanup, 44px targets and touch-specific guidance. The
-   exact producer journey and edge cases are in `docs/touch-dev.md` → Phase 4.
+   capture/cancellation cleanup, 44px targets, touch-specific guidance and no
+   first tap lost to hover disclosure in transcripts, players or the clip
+   library. The exact producer journey and edge cases are in
+   `docs/touch-dev.md` → Phase 4.
 
 ### 💭 NOTE — nobody has to do anything
 
@@ -238,7 +241,9 @@ decision, and an admin screen to run it from. See `docs/ai-layer.md`.
   editor's handles, rulers and waveforms use one Pointer Events lifecycle with
   capture and cancellation cleanup; touch targets expand to 44px without
   thickening the edit marks. Below 768px, phones get a tablet/computer notice
-  instead of a clipped editor. This is not deployed yet.
+  instead of a clipped editor. Hover-revealed transcript, player and library
+  actions are exposed directly on tap devices, so the first tap performs the
+  action. This is not deployed yet.
 
 **Clip library** *(built 9 August 2026 — `docs/clip-library.md`)*
 - **`＋ Add to library`** in the editor opens a **save dialogue**: the span, an
@@ -809,7 +814,7 @@ node tests/test-palette.mjs         # pure: both themes' colour laws
 node tests/test-hidden.mjs          # pure: hidden elements actually hide
 node tests/test-keyboard.mjs        # pure: keyboard/focus interaction laws
 node tests/test-overflow.mjs        # pure: archive text cannot widen a phone
-node tests/test-touch.mjs           # pure: phone boundary + tablet pointer editor
+node tests/test-touch.mjs           # pure: phone guard + tablet pointer + hover disclosure
 python3 tests/test-ingest.py        # pure: feed stamping + rotated-out detection
 node tests/verify-clips.mjs         # live: needs the server running + network
 ```

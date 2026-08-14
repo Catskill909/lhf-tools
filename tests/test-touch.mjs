@@ -76,6 +76,33 @@ check("the inline player scrubber is touch-operable too",
   /track\.addEventListener\("pointerdown"/.test(html) &&
   !/track\.addEventListener\("mousedown"/.test(html) &&
   /\.pl-track\s*\{[^}]*touch-action:\s*pan-y/.test(html));
+check("transcript hover disclosure is limited to real hover devices",
+  /@media \(hover: hover\)\s*\{\s*\.tx-line:hover \.tx-edit/.test(html));
+check("transcript Edit is visible and finger-sized on touch devices",
+  /@media \(hover: none\), \(any-pointer: coarse\)[\s\S]*\.tx-edit\s*\{[^}]*opacity:\s*1;\s*pointer-events:\s*auto[^}]*min-width:\s*44px;\s*min-height:\s*44px/.test(html));
+
+console.log("\ntap-safe hover disclosure");
+const clipHoverStart = html.indexOf("@media (hover: hover)", html.indexOf("Hover can disclose secondary"));
+const clipTouchEnd = html.indexOf("/* The scope of a bulk download", clipHoverStart);
+const clipDisclosureCss = html.slice(clipHoverStart, clipTouchEnd);
+check("the player knob hover reveal is limited to real hover devices",
+  /@media \(hover: hover\)\s*\{\s*\.pl-track:hover \.pl-knob/.test(html));
+check("the player knob stays visible on touch and coarse pointers",
+  /@media \(hover: none\), \(any-pointer: coarse\)[\s\S]*\.pl-knob\s*\{\s*opacity:\s*1/.test(html));
+check("the audio Edit tooltip cannot consume a touch device's first tap",
+  /@media \(hover: hover\)\s*\{\s*\.pl-edit:hover \.pl-tip/.test(html) &&
+  /\.pl-edit:focus-visible \.pl-tip/.test(html) &&
+  /@media \(hover: none\), \(any-pointer: coarse\)[\s\S]*\.pl-edit:hover \.pl-tip\s*\{\s*opacity:\s*0/.test(html));
+check("clip label actions use hover disclosure only on real hover devices",
+  /^@media \(hover: hover\)/.test(clipDisclosureCss.trim()) &&
+  /\.cliprow:hover \.lblmini \.x\s*\{\s*opacity:\s*1/.test(clipDisclosureCss) &&
+  /\.cliprow:hover \.lbladd\s*\{\s*opacity:\s*1/.test(clipDisclosureCss) &&
+  /\.cliprow:hover \.cr-more, \.cliprow:hover \.cr-dl/.test(clipDisclosureCss));
+check("clip label and row actions are visible and finger-sized on touch",
+  /@media \(hover: none\), \(any-pointer: coarse\)/.test(clipDisclosureCss) &&
+  /\.lblmini \.x\s*\{\s*opacity:\s*1/.test(clipDisclosureCss) &&
+  /\.lbladd\s*\{[^}]*opacity:\s*1;\s*min-height:\s*44px/.test(clipDisclosureCss) &&
+  /\.cliprow \.cr-more, \.cliprow \.cr-dl\s*\{\s*width:\s*44px;\s*height:\s*44px/.test(clipDisclosureCss));
 
 console.log(`\n${checks - failures} passed, ${failures} failed`);
 if (failures) process.exit(1);

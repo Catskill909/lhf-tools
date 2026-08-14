@@ -191,6 +191,12 @@ action, a missing decision, or permission the tools cannot obtain.
   vertical scrolling with `touch-action: pan-y`; handles alone claim the whole
   gesture. `tests/test-touch.mjs` enforces the structure and
   `docs/touch-dev.md` holds the real-device checklist.
+- **Never reveal an actionable descendant with an unrestricted `:hover`.**
+  iPad can spend the first tap establishing hover, so transcript playback once
+  needed two taps: the first only exposed Edit. Gate hover disclosure with
+  `@media (hover: hover)` and make the action visible/finger-sized under
+  `(hover: none), (any-pointer: coarse)`. Focus disclosure remains available
+  for keyboard users. `tests/test-touch.mjs` protects the known cases.
 - **`schema.sql` is all `CREATE TABLE IF NOT EXISTS`**, so it does nothing to a
   database that already exists — which every deployed one does. New columns
   need a `PRAGMA table_info` guarded migration in `ingest/ingest.py`.
