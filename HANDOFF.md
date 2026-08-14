@@ -3,7 +3,9 @@
 **Status:** **deployed and live on Coolify**, real data, checking the feeds every
 15 minutes.
 Feature-complete for everything achievable without AI.
-**Last worked:** 9 August 2026. Built from nothing on 3 August.
+**Local, not deployed:** tablet touch support for the audio editor is built and
+awaiting Paul's real-iPad verification (`docs/touch-dev.md`).
+**Last worked:** 14 August 2026. Built from nothing on 3 August.
 **Client:** Labor Heritage Foundation — Harold Phillips (producer), Chris Garlock
 and Elise Bryant (hosts), Patrick Dixon.
 
@@ -16,7 +18,7 @@ documents is reasoning — parked ideas, rejected options, trade-offs — record
 on purpose and easily mistaken for a backlog. See *How to report work here* in
 `CLAUDE.md` for the four buckets and why they are kept apart.
 
-**Last reviewed: 9 August 2026.**
+**Last reviewed: 14 August 2026.**
 
 ### 🔥 DO — something bad happens if ignored
 
@@ -52,14 +54,19 @@ verified snapshot by hand.
 2. **The five open threads below** (Descript formats, speaker names, how far the
    projects go back, Podbean credentials, what happens to episodes that fall off
    the feed). Slow-moving; nothing is blocked on them.
+3. **Run the tablet editor on a real iPad** in portrait and landscape before
+   calling touch support shipped. Phases 1–3 are built locally: Pointer Events,
+   capture/cancellation cleanup, 44px targets and touch-specific guidance. The
+   exact producer journey and edge cases are in `docs/touch-dev.md` → Phase 4.
 
 ### 💭 NOTE — nobody has to do anything
 
 Here so they are not mistaken for the lists above.
 
-- **No automated tests cover the clip library's interface.** A known property,
-  not a defect — the logic underneath has 41 checks and the export path is
-  proven. Worth half a day only if a UI bug actually ships and annoys someone.
+- **Clip search/sort/mobile wiring has structural coverage; row audio event
+  ordering remains browser-only.** A known property, not a defect — the query
+  and storage logic have 53 pure checks, the new interface has 13 structural
+  checks, and the export path is proven.
 - **Clip titles don't come from the transcript.** Designed, not built; see
   `docs/clip-library.md` divergence 5. Nobody has asked for it.
 - **Everything under a *Brainstorm*, *Parked* or *Where it could go* heading**
@@ -189,7 +196,7 @@ decision, and an admin screen to run it from. See `docs/ai-layer.md`.
   follows the handles as you move them*. `Space` plays/pauses, `0` returns to
   the start of the selection (`Home` too, where the keyboard has one — Mac
   laptops do not, which is why the reachable binding is a digit).
-- **Click the overview to listen** from that point; drag it to move the
+- **Click or tap the overview to listen** from that point; drag it to move the
   selection, as before. The two are told apart by whether the pointer travels,
   because a short selection is only a pixel or two wide on that waveform.
 - **Zoom** (− / + or scroll wheel) reports the **window**, not the padding.
@@ -227,6 +234,11 @@ decision, and an admin screen to run it from. See `docs/ai-layer.md`.
   folder months later still says where it came from
 - Audio streams from Podbean's CDN direct to the browser; peaks are cached in
   IndexedDB so an episode is only ever downloaded once
+- **Tablet touch is built locally, awaiting real-device verification.** The
+  editor's handles, rulers and waveforms use one Pointer Events lifecycle with
+  capture and cancellation cleanup; touch targets expand to 44px without
+  thickening the edit marks. Below 768px, phones get a tablet/computer notice
+  instead of a clipped editor. This is not deployed yet.
 
 **Clip library** *(built 9 August 2026 — `docs/clip-library.md`)*
 - **`＋ Add to library`** in the editor opens a **save dialogue**: the span, an
@@ -238,8 +250,11 @@ decision, and an admin screen to run it from. See `docs/ai-layer.md`.
   **"Labels", not "tags"** — `Tags` already means the 232 hyperlinked entities.
 - The **Clips** counter in the masthead opens the list: play in place with a
   **scrubber on the live row**, rename inline, download a single clip from a row
-  icon, `⋯` for Edit/Remove, ten-second undo, date grouping, a filter box past
-  six clips, and a **top-labels bar** (six most used, `+n more`, two labels AND).
+  icon, `⋯` for Edit/Remove, ten-second undo and date grouping. Every non-empty
+  library has **full clip search** across title/show/date/labels and a matching
+  **sort menu** (best match, saved date, title, length), plus a **top-labels
+  bar** (six most used, `+n more`, two labels AND). Phone controls and row
+  actions are 44px and the modal stays inside the dynamic viewport.
 - **Download all** packs them into one zip — stored, not deflated, so the bytes
   stay bit-identical — with a dialogue to name the file and add a note. The note
   and a full listing go in as `clips.txt`. Filtered, the button says *"Download
@@ -416,7 +431,8 @@ send.
 | `docs/export-dev.md` | The export as the client's full backup of their Podbean archive — catalogue, transcripts, artwork, audio. **Not built.** Explains why it is two exports: 5 MB of text against 8–12 GB of media. |
 | `docs/client-guide.md` | **Send this one.** Feature + usage guide for LHF, with screenshot slots. Every figure verified against the database. |
 | `docs/audio-editor-spec.md` | Browser-side clip editor: the **export** design (frame copy, bitrate probing) and its verification. **Built.** The editing *surface* it describes has since been rebuilt — see the dev doc below. |
-| `docs/audio-editor-dev.md` | Audit of the editing *surface* + phased plan. **Phases 1–4 built and verified; Phase 6 open.** Opens with a status summary. Read before touching the editor UI. |
+| `docs/audio-editor-dev.md` | Audit of the editing *surface* + phased plan. **Phases 1–7 built; Phase 8 tablet touch built locally, iPad verification pending.** Opens with a status summary. Read before touching the editor UI. |
+| `docs/touch-dev.md` | Tablet touch audit, implementation record and real-device acceptance checklist. Phones remain deliberately outside the full editor. |
 | `docs/clip-library.md` | Saving clips. **✅ Built 9 Aug 2026** — design, then an **As built** section recording the four places the code diverged and why. Its **What lives where** section is the canonical local-vs-server boundary and the source for the client guide's plain-language version. |
 | `static/clips.js` | The saved-clip store: `list / add / update / remove / restore` plus label derivation and date grouping. **The only file that knows clips live in `localStorage`** — that seam is what makes a server move one file rather than a hunt. Keys on the audio URL, never the episode row id. |
 | `tools/cropshot.py` | Crops a full-page screenshot down to the dialogue in it, for `docs/client-guide.md`. Pure stdlib — PNG is zlib plus a header, so no Pillow. Finds the modal by its 4px spot-red top border, then its bottom by where the left edge stops being an edge. `python3 tools/cropshot.py in.png out.png --pad 10`, or `--check` to print the box and write nothing. **Screenshots are retina, so set an explicit `width` in the guide at about half the pixel width** — markdown alone stretches them to the column. |
@@ -787,7 +803,13 @@ the same place.
 node tests/test-waveform.mjs        # pure: peak reduction + snap-to-silence
 node tests/test-update-prompt.mjs   # pure: the new-version reload prompt
 node tests/test-zip.mjs             # pure: the archive packager
-node tests/test-clips.mjs           # pure: the saved-clip store + labels
+node tests/test-clips.mjs           # pure: saved clips, labels + query semantics
+node tests/test-clips-ui.mjs        # structural: clip search/sort/mobile wiring
+node tests/test-palette.mjs         # pure: both themes' colour laws
+node tests/test-hidden.mjs          # pure: hidden elements actually hide
+node tests/test-keyboard.mjs        # pure: keyboard/focus interaction laws
+node tests/test-overflow.mjs        # pure: archive text cannot widen a phone
+node tests/test-touch.mjs           # pure: phone boundary + tablet pointer editor
 python3 tests/test-ingest.py        # pure: feed stamping + rotated-out detection
 node tests/verify-clips.mjs         # live: needs the server running + network
 ```
@@ -936,7 +958,7 @@ header can fix that, because a running page never asks the server anything. A
 tab left open for a fortnight runs fortnight-old JavaScript, indefinitely.
 
 So the page now asks. `/api/version` returns a content hash of `index.html` and
-the two ES modules, and the UI re-checks it **when the tab is returned to** —
+all four ES modules, and the UI re-checks it **when the tab is returned to** —
 `visibilitychange` and `focus`, throttled to one request a minute. On a change
 it shows a dismissible bar offering a reload. Three deliberate choices:
 
@@ -983,9 +1005,9 @@ the code — and `git log -S'some string from the screen'` will date it exactly.
   with a stubbed `python3` (all four paths, including the first-run bootstrap
   and the worker's wait-for-database), and Python 3.12 compatibility was checked
   by auditing every import — but that is not the same as a build.
-- Ingest has no test suite; it's deterministic and rebuilds in ~2½ minutes, so
-  `refresh.py` → check counts is the test. The clip editor does have tests
-  (`tests/`) — see "Tests" below.
+- Ingest's feed-stamping and rotated-out rules have a pure suite in
+  `tests/test-ingest.py`; a complete rebuild and count check remains the
+  integration test. The clip editor's pure/static tests are also in `tests/`.
 - The waveform needs the whole episode (30–105 MB) before it draws. The modal
   is usable without it and peaks are cached after the first open, but the first
   open on a slow connection is a wait.

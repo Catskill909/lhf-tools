@@ -1,8 +1,9 @@
 # Clip library — design
 
-**Status: ✅ BUILT, 9 August 2026.** Shipped as `static/clips.js` plus the
+**Status: ✅ BUILT, expanded 14 August 2026.** Shipped as `static/clips.js` plus the
 library, save and download dialogues in `static/index.html`, covered by
-`tests/test-clips.mjs` (41 pure checks). Written, rewritten after the scope
+`tests/test-clips.mjs` (53 pure checks) and `tests/test-clips-ui.mjs` (13
+structural interface checks). Written, rewritten after the scope
 discussion that cut it down, extended with labels and a
 [What lives where](#what-lives-where) section, then built — all the same day.
 
@@ -54,8 +55,8 @@ is **finding and extracting** the moment. The library's job is **not losing it**
 - **Play in place**, without a trip through the editor
 - **Re-open in the editor**, **download**, **remove with a ten-second undo**
 - **Automatic grouping by date** — Today, Yesterday, Last week
-- **A filter box**, because this is a search application and a list without one
-  would be odd here
+- **A search box and sort menu**, because this is a search application and a
+  list without the same discovery tools would be odd here
 - **Labels, and a top-labels bar** — added to v1 on 9 August 2026 at the
   client's request. Argued below as **[Tags](#tags--added-to-v1)**, which is
   what they were called during the design; **they shipped as Labels**
@@ -656,6 +657,15 @@ missing.
 
 ### Also built, not in the design
 
+- **Full clip search and sorting, expanded 14 August.** The original substring
+  filter was hidden until six clips and had no ordering control. Search now
+  appears for every non-empty library and follows the archive's everyday query
+  model over clip title, show, date and labels: implicit AND, prefix-as-you-type,
+  phrases, boolean operators, parentheses, `*`, plus `title:`, `show:`,
+  `label:` and `date:` fields. The matching sort menu offers Best match while
+  searching, saved date, title and length. On phones the search owns its own
+  row; search, sort, close and row actions reach 44px, and the dialogue uses
+  dynamic viewport height without horizontal overflow.
 - **A scrubber on the playing row.** It exists only while that clip plays and
   vanishes when it stops or another starts, so the bar itself is the signal for
   which row is live. Painted by direct DOM writes: `timeupdate` fires ~4×/second

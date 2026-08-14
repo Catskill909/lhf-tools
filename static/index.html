@@ -408,7 +408,7 @@
      the Help / Theme family — so it carries their edge and fill rather than a
      boundary hairline. On paper a --rule-hard edge here read as a table rule
      someone had drawn round the words, not as a control. */
-  #sortBtn {
+  #sortBtn, #libSortBtn {
     background: var(--paper-2); border: 1px solid var(--ink-2); color: var(--ink);
     border-radius: 2px; cursor: pointer; font: inherit;
     font-size: 0.72rem; font-weight: 600;
@@ -420,14 +420,14 @@
      on paper is *fainter* than the button's own --ink-2 edge — hovering made
      the control recede. Invisible in dark, where --ink-3 is the brighter of
      the two; the light stock inverts that ordering. */
-  #sortBtn:hover { color: var(--ink); border-color: var(--ink); }
-  #sortBtn:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
-  #sortBtn .cur { color: var(--ink); }
-  #sortBtn .caret { font-size: 0.62rem; opacity: 0.7; transition: transform .12s; }
-  #sortBtn[aria-expanded="true"] { border-color: var(--spot); color: var(--spot-ink); }
-  #sortBtn[aria-expanded="true"] .caret { transform: rotate(180deg); }
+  #sortBtn:hover, #libSortBtn:hover { color: var(--ink); border-color: var(--ink); }
+  #sortBtn:focus-visible, #libSortBtn:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+  #sortBtn .cur, #libSortBtn .cur { color: var(--ink); }
+  #sortBtn .caret, #libSortBtn .caret { font-size: 0.62rem; opacity: 0.7; transition: transform .12s; }
+  #sortBtn[aria-expanded="true"], #libSortBtn[aria-expanded="true"] { border-color: var(--spot); color: var(--spot-ink); }
+  #sortBtn[aria-expanded="true"] .caret, #libSortBtn[aria-expanded="true"] .caret { transform: rotate(180deg); }
 
-  #sortMenu {
+  #sortMenu, #libSortMenu {
     position: absolute; right: 0; top: calc(100% + 0.4rem); z-index: 30;
     min-width: 11rem;
     background: var(--paper-2);
@@ -438,8 +438,9 @@
     padding: 0.25rem;
     text-transform: none; letter-spacing: 0;
   }
-  :root[data-theme="light"] #sortMenu { box-shadow: 0 12px 32px rgba(27,26,23,0.16); }
-  #sortMenu[hidden] { display: none; }
+  :root[data-theme="light"] #sortMenu,
+  :root[data-theme="light"] #libSortMenu { box-shadow: 0 12px 32px rgba(27,26,23,0.16); }
+  #sortMenu[hidden], #libSortMenu[hidden] { display: none; }
   .sort-opt {
     display: flex; align-items: baseline; gap: 0.55rem; width: 100%;
     background: none; border: none; border-radius: 2px;
@@ -1136,7 +1137,7 @@
   .pl-track {
     flex: 1; position: relative; height: 1.1rem;
     display: flex; align-items: center; cursor: pointer;
-    border: none; background: none; padding: 0;
+    border: none; background: none; padding: 0; touch-action: pan-y;
   }
   .pl-track::before {
     content: ""; position: absolute; left: 0; right: 0; height: 3px;
@@ -1364,13 +1365,34 @@
   #clipModal .modal {
     width: min(1600px, 97vw);
     max-height: 94vh;
+    max-height: 94dvh;
     display: flex; flex-direction: column;
   }
+  /* Phones do not have enough room for two precision waveforms, handles and
+     the transport without hiding controls off-screen. Until the editor has a
+     touch interaction model, be honest at the point of entry instead of
+     presenting a surface that looks usable and then ignores every drag. */
+  .clip-phone-warning {
+    display: none;
+    margin: 1.2rem 1.6rem 1.5rem;
+    padding: 0.9rem 1rem;
+    border-left: 3px solid var(--gold);
+    border-radius: 0 3px 3px 0;
+    background: var(--gold-wash);
+    color: var(--ink-2);
+  }
+  .clip-phone-warning strong {
+    display: block; color: var(--gold-text); margin-bottom: 0.25rem;
+  }
+  .clip-phone-warning p { margin: 0; font-size: 0.88rem; }
+
   #clipModal .modal-head, #clipModal .modal-actions { flex: none; }
   #clipModal .modal-body {
     flex: 1 1 auto; overflow-y: auto;
+    overscroll-behavior: contain;
     display: flex; flex-direction: column;
   }
+  .pointer-coarse { display: none; }
   .wave-label {
     font-size: 0.64rem; letter-spacing: 0.11em; text-transform: uppercase;
     color: var(--ink-3); margin: 0 0 0.3rem;
@@ -1405,7 +1427,10 @@
      and shares one implementation so the two can't drift apart in the rule
      that picks their spacing. Without it the zoom control read "6.0s" and
      nothing on screen said where in the episode that was. */
-  .ruler { display: block; width: 100%; height: 15px; margin-bottom: 1px; }
+  .ruler {
+    display: block; width: 100%; height: 15px; margin-bottom: 1px;
+    touch-action: pan-y; -webkit-user-select: none; user-select: none;
+  }
   /* The timelines invite a click; the waveforms under them take aim.
      Both strips seek, and both used to under-sell it — the zoom ruler had no
      cursor rule at all and hovered as a plain arrow, and crosshair was tried on
@@ -1427,8 +1452,14 @@
   }
   .wave-box canvas {
     display: block; width: 100%; cursor: crosshair; user-select: none;
+    touch-action: pan-y; -webkit-user-select: none;
     height: clamp(58px, 9vh, 112px);
   }
+  .wave-box.gesture-active {
+    border-color: var(--spot);
+    box-shadow: 0 0 0 3px var(--spot-soft);
+  }
+  .ruler.gesture-active { background: var(--spot-tint); }
   /* The zoomed view is where the work happens, so it gets the room. */
   .wave-box.zoom canvas { height: clamp(148px, 26vh, 320px); }
 
@@ -1480,7 +1511,7 @@
   .handle {
     position: absolute; top: 0; bottom: 0; width: 11px;
     margin-left: -5px; cursor: ew-resize; background: none; border: none;
-    padding: 0; z-index: 2;
+    padding: 0; z-index: 2; touch-action: none;
   }
   .handle::before {
     content: ""; position: absolute; left: 4px; top: 0; bottom: 0;
@@ -1493,6 +1524,7 @@
   .handle.in::after  { top: 0; }
   .handle.out::after { bottom: 0; }
   .handle:focus-visible { outline: 2px solid var(--focus); outline-offset: 1px; }
+  .handle.dragging::after { box-shadow: 0 0 0 6px var(--spot-soft); }
 
   /* --------------------------------------------------------- transport
      Sits *between* the two waveforms because it acts on both of them, and
@@ -1715,21 +1747,37 @@
 
   #libBtn[data-empty="1"] .n { display: none; }
 
-  #libModal .modal { width: min(780px, 100%); }
+  #libModal .modal {
+    width: min(780px, 100%); max-height: 92dvh;
+    display: flex; flex-direction: column;
+  }
+  #libModal .modal-body { overflow-y: auto; }
 
   .lib-tools { display: flex; align-items: center; gap: 0.7rem; padding: 0.9rem 0 0.6rem; }
+  .lib-search { position: relative; display: flex; flex: 1 1 auto; min-width: 0; }
   #libFilter {
-    flex: 1 1 auto;
+    width: 100%; min-width: 0;
     background: var(--paper-2); border: 2px solid var(--ink-3); border-radius: 2px;
-    color: var(--ink); font: inherit; font-size: 0.85rem; padding: 0.38rem 0.6rem;
+    color: var(--ink); font: inherit; font-size: 0.85rem;
+    padding: 0.38rem 2.4rem 0.38rem 0.6rem;
   }
   #libFilter::placeholder { color: var(--ink-3); }
   #libFilter:focus-visible { outline: 2px solid var(--focus); outline-offset: 1px; }
+  #libFilterClear {
+    position: absolute; top: 50%; right: 0.2rem; transform: translateY(-50%);
+    width: 32px; height: 32px; padding: 0; display: grid; place-items: center;
+    border: none; border-radius: 2px; background: none; color: var(--ink-3);
+    cursor: pointer; font: inherit; font-size: 1.1rem; line-height: 1;
+  }
+  #libFilterClear:hover { color: var(--spot-ink); background: var(--spot-soft); }
+  #libFilterClear:focus-visible { outline: 2px solid var(--focus); outline-offset: 0; }
   #libTotal {
     flex: none; font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
     font-size: 0.7rem; letter-spacing: 0.05em; color: var(--ink-3);
-    font-variant-numeric: tabular-nums;
+    font-variant-numeric: tabular-nums; white-space: nowrap;
   }
+  .lib-sort { flex: none; }
+  #libSortMenu { z-index: 55; }
 
   /* Top labels only. A bar that grows without limit stops being a summary
      and becomes a second list to read. */
@@ -2105,8 +2153,102 @@
   #clipSave { font-size: 0.84rem; padding: 0.44rem 1rem; }
 
   @media (max-width: 620px) {
-    .cliprow { grid-template-columns: 34px minmax(0, 1fr) auto; }
+    #libModal { padding: 0.5rem; }
+    #libModal .modal { max-height: calc(100dvh - 1rem); }
+    #libModal .modal-head > button { width: 44px; height: 44px; }
+    #libModal .modal-actions {
+      flex-wrap: wrap; padding: 0.75rem 1rem max(0.9rem, env(safe-area-inset-bottom));
+    }
+    #libModal .modal-actions > button { min-height: 44px; }
+    .lib-tools {
+      display: grid; grid-template-columns: minmax(0, 1fr) auto;
+      gap: 0.55rem 0.7rem;
+    }
+    .lib-search { grid-column: 1 / -1; }
+    #libFilter { min-height: 44px; font-size: 1rem; }
+    #libFilterClear { width: 40px; height: 40px; right: 0.1rem; }
+    #libSortBtn { min-height: 44px; }
+    #libSortMenu { right: 0; max-width: calc(100vw - 2rem); }
+    .cliprow {
+      grid-template-columns: 44px minmax(0, 1fr) auto;
+      gap: 0.35rem 0.65rem; padding-left: 0.35rem; padding-right: 0;
+    }
+    .cliprow .cr-play { width: 44px; height: 44px; grid-row: span 4; }
+    .cliprow .cr-title { white-space: normal; }
+    .cliprow .cr-times { grid-column: 2; }
     .cliprow .cr-len { display: none; }
+    .cliprow .cr-acts { grid-column: 3; grid-row: 1 / span 2; }
+    .cliprow .cr-more, .cliprow .cr-dl {
+      width: 44px; height: 44px; border-color: var(--rule); color: var(--ink-2);
+    }
+    .cliprow .cr-meta, .cliprow .cr-labels, .cliprow .cr-scrub { grid-column: 2 / -1; }
+    .lbladd { opacity: 1; min-height: 36px; }
+  }
+
+  /* Tablet touch layout. `any-pointer` includes hybrid Windows machines whose
+     primary pointer is a mouse but whose screen is also touch-capable. The
+     visible handle stays a 3px edit mark; only its invisible hit area grows.
+     Splitting the two hit areas vertically means a very short selection never
+     leaves the later DOM handle covering the earlier one from top to bottom. */
+  @media (any-pointer: coarse) and (min-width: 768px) {
+    #clipModal {
+      padding: max(1rem, env(safe-area-inset-top))
+               max(1rem, env(safe-area-inset-right))
+               max(1rem, env(safe-area-inset-bottom))
+               max(1rem, env(safe-area-inset-left));
+    }
+    #clipModal .modal { max-height: calc(100dvh - 2rem); }
+    #clipModal .modal-head > button { width: 44px; height: 44px; }
+    #clipModal .modal-actions { flex-wrap: wrap; }
+    #clipModal .modal-actions > button { min-height: 44px; }
+
+    .pointer-fine { display: none; }
+    .pointer-coarse { display: inline; }
+
+    .zoom-ctl { gap: 0.1rem; }
+    .zoom-ctl button { width: 44px; height: 44px; }
+    .pl-play, .pl-edit { width: 44px; height: 44px; }
+    .pl-track { min-height: 44px; }
+    .tport { width: 44px; height: 44px; }
+    .tport.main { width: 48px; height: 48px; }
+    .tool { min-height: 44px; padding: 0.55rem 0.75rem; }
+    .clip-tools { gap: 0.55rem; }
+
+    .handle { width: 44px; margin-left: -22px; }
+    .handle.in { top: 0; bottom: 50%; }
+    .handle.out { top: 50%; bottom: 0; }
+    .handle::before { left: 20px; }
+    .handle.in::before { bottom: -100%; }
+    .handle.out::before { top: -100%; }
+    .handle::after { left: 14px; right: 14px; height: 16px; }
+  }
+
+  /* Keep this after every editor rule: the compact boundary must win the
+     cascade over #clipModal .modal-body's normal display:flex declaration.
+     Width catches portrait phones and genuinely narrow windows. The coarse,
+     short-viewport arm also catches a phone rotated to landscape without
+     device sniffing. At 768px the tablet editor remains available. */
+  @media (max-width: 767px), (pointer: coarse) and (max-height: 500px) {
+    #clipModal {
+      padding: max(1rem, env(safe-area-inset-top))
+               max(1rem, env(safe-area-inset-right))
+               max(1rem, env(safe-area-inset-bottom))
+               max(1rem, env(safe-area-inset-left));
+    }
+    #clipModal .modal {
+      position: absolute;
+      top: max(1rem, env(safe-area-inset-top));
+      right: max(1rem, env(safe-area-inset-right));
+      left: max(1rem, env(safe-area-inset-left));
+      width: auto;
+      max-height: calc(100dvh - 2rem);
+    }
+    #clipModal .clip-phone-warning { display: block; }
+    #clipModal .modal-body, #clipModal .modal-actions { display: none; }
+    #clipModal .modal-head { align-items: center; }
+    #clipModal .modal-head > div { min-width: 0; }
+    #clipModal .modal-head p { overflow-wrap: anywhere; }
+    #clipModal .modal-head > button { width: 44px; height: 44px; }
   }
 </style>
 </head>
@@ -2178,8 +2320,14 @@
       <button id="clipClose" aria-label="Close">&times;</button>
     </div>
 
+    <div class="clip-phone-warning" role="note">
+      <strong>Audio editing needs a larger screen.</strong>
+      <p>Open this page on a tablet or computer to trim and download clips.
+         Search, playback, transcripts and saved clips still work on this phone.</p>
+    </div>
+
     <div class="modal-body">
-      <p class="wave-label">Whole episode — click to listen, drag to move the selection</p>
+      <p class="wave-label"><span class="pointer-fine">Whole episode — click to listen, drag to move the selection</span><span class="pointer-coarse">Whole episode — tap to listen, drag sideways to move the selection</span></p>
       <canvas class="ruler" id="rulerAll"></canvas>
       <div class="wave-box"><canvas id="waveAll"></canvas></div>
 
@@ -2225,7 +2373,7 @@
              Click-to-place-the-cursor is deliberately left to the help: three
              gestures is more than a label can carry, and it is the one you
              reach for once you already know the view responds. -->
-        <p class="wave-label">Selection — drag to select, handles to trim</p>
+        <p class="wave-label"><span class="pointer-fine">Selection — drag to select, handles to trim</span><span class="pointer-coarse">Selection — drag sideways to select, red handles to trim</span></p>
         <div class="zoom-ctl">
           <button id="zoomOut" aria-label="Zoom out">&minus;</button>
           <span id="zoomLabel">6.0s</span>
@@ -2308,8 +2456,19 @@
 
     <div class="modal-body">
       <div class="lib-tools" id="libToolsRow" hidden>
-        <input id="libFilter" type="search" placeholder="Filter clips" aria-label="Filter clips">
-        <span id="libTotal"></span>
+        <div class="lib-search">
+          <input id="libFilter" type="search" placeholder="Search clips…"
+                 aria-label="Search clips" autocomplete="off" spellcheck="false"
+                 title="Search titles, shows, dates and labels. Supports phrases, AND, OR, NOT, *, title:, show:, label: and date:">
+          <button id="libFilterClear" type="button" aria-label="Clear clip search" hidden>&times;</button>
+        </div>
+        <span id="libTotal" role="status" aria-live="polite"></span>
+        <span class="sort lib-sort">
+          <button id="libSortBtn" type="button" aria-haspopup="listbox" aria-expanded="false">
+            Sort <span class="cur" id="libSortCur">Newest saved</span> <span class="caret">&#9660;</span>
+          </button>
+          <div id="libSortMenu" role="listbox" aria-label="Sort saved clips" hidden></div>
+        </span>
       </div>
 
       <div class="filter-group" id="libLabels" hidden></div>
@@ -2797,10 +2956,13 @@
 
       <section class="help-sec">
         <h3>Making a clip</h3>
-        <p class="lede">Click a timestamp to start playing, then press the
+        <p class="lede">Click or tap a timestamp to start playing, then press the
           <b>scissors</b> at the right-hand end of the player. That opens the
           audio editor on what you're listening to — the passage you clicked if
           you're still inside it, otherwise wherever you've scrubbed to.</p>
+        <p class="lede"><b>The full editor needs a tablet or computer.</b> On a
+          phone, opening it shows that boundary plainly while search, playback,
+          transcripts and saved clips remain available.</p>
         <p class="lede">The clip is copied straight out of the original file
           without re-encoding, so it is identical in quality to the broadcast,
           not a second-generation copy. Cuts land within a fortieth of a second
@@ -2813,12 +2975,12 @@
           is the whole episode; the bottom one is the selection close up, and
           it's where the work gets done.</p>
         <ul class="help-list">
-          <li><b>Click the top waveform</b> to listen from that point — for
+          <li><b>Click or tap the top waveform</b> to listen from that point — for
             finding a moment when you don't yet know where it is. <b>Drag</b> it
             instead and the selection moves there, keeping its length.</li>
-          <li><b>Click the lower waveform</b> to put the playhead exactly where
-            you clicked. It doesn't start playing — down here you're usually
-            placing a mark, so click the spot and press <kbd>I</kbd> or
+          <li><b>Click or tap the lower waveform</b> to put the playhead exactly
+            there. It doesn't start playing — down here you're usually
+            placing a mark, so choose the spot and press <kbd>I</kbd> or
             <kbd>O</kbd>. If audio is already running it carries on from the new
             point.</li>
           <li><b>Drag across the lower waveform</b> to select — both marks in
@@ -2829,8 +2991,8 @@
           <li><b>Undo</b> with <kbd>⌘</kbd><kbd>Z</kbd> if a drag, a snap or a
             mistimed <kbd>I</kbd> loses a selection you wanted. It's one step,
             and pressing it again puts back what you undid.</li>
-          <li><b>Zoom</b> with the &minus; and + buttons, or the scroll wheel
-            over the lower waveform. The readout shows how much time you're
+          <li><b>Zoom</b> with the &minus; and + buttons, or on a computer with
+            the scroll wheel over the lower waveform. The readout shows how much time you're
             looking at. While the whole selection fits it stays centred; zoom in
             closer than that and the view follows whichever handle you touched
             last, so you can work right down to a fraction of a second on one
@@ -2923,6 +3085,20 @@
       </section>
 
       <section class="help-sec">
+        <h3>Searching and sorting clips</h3>
+        <p class="lede"><b>Search clips</b> looks through their titles, shows,
+          dates and labels as you type. Plain words are combined, and the last
+          word can be unfinished. Quotes keep an exact phrase together;
+          <code>AND</code>, <code>OR</code>, <code>NOT</code>, parentheses and
+          <code>*</code> work here just as they do in the main search.</p>
+        <p class="lede">Limit a term with <code>title:</code>,
+          <code>show:</code>, <code>label:</code> or <code>date:</code> — for
+          example <code>label:promo NOT encore</code>. Sort by best match while
+          searching, or by saved date, title and clip length. Press
+          <kbd>/</kbd> to reach clip search; <kbd>Esc</kbd> clears it first.</p>
+      </section>
+
+      <section class="help-sec">
         <h3>Labels</h3>
         <p class="lede">Your own words — <i>promo</i>, <i>intro</i>,
           <i>out-cue</i>, whatever suits how you work. A clip can carry any
@@ -2956,7 +3132,7 @@
           can name the file and add a note — the note is saved inside as
           <code>clips.txt</code>, alongside a list of every clip with its show,
           date, times and labels, so the bag explains itself later.</p>
-        <p class="lede">If you've filtered by a label, the button says
+        <p class="lede">If you've searched or filtered by a label, the button says
           <b>Download these 3</b> rather than <b>Download all</b>, and the file is
           named <code>…-filtered</code>. You always know which you're getting.</p>
       </section>
@@ -3560,6 +3736,7 @@ addEventListener("keydown", e => {
   if (exportOpen()) return;                    // and the export dialog
   if (clipOpen()) return;                      // and the clip editor
   if (txOpen()) return;                        // and the transcript
+  if (libOpen()) return;                       // and the saved-clips dialog
   if (e.key === "/" && document.activeElement !== $("#q")) { e.preventDefault(); $("#q").focus(); }
   if (e.key === "Escape") {
     if (document.activeElement === $("#q") && state.q) $("#clear").click();
@@ -3714,11 +3891,43 @@ function buildPlayer(host, url, ep) {
     const ratio = Math.min(1, Math.max(0, (e.clientX - r.left) / r.width));
     if (audio.duration) audio.currentTime = ratio * audio.duration;
   };
-  track.addEventListener("mousedown", e => {
-    seekTo(e);
-    const move = ev => seekTo(ev);
-    const up = () => { removeEventListener("mousemove", move); removeEventListener("mouseup", up); };
-    addEventListener("mousemove", move); addEventListener("mouseup", up);
+  track.addEventListener("pointerdown", e => {
+    if (!isPrimaryPointer(e)) return;
+    e.preventDefault();
+    focusAfterPress(track);
+    const id = e.pointerId, x0 = e.clientX, y0 = e.clientY;
+    const slop = pointerSlop(e);
+    let dragging = false, movedAway = false, live = true;
+    try { track.setPointerCapture(id); } catch { /* tap still works */ }
+    const cleanup = () => {
+      if (!live) return;
+      live = false;
+      track.removeEventListener("pointermove", move);
+      track.removeEventListener("pointerup", up);
+      track.removeEventListener("pointercancel", cancel);
+      track.removeEventListener("lostpointercapture", cancel);
+      try { if (track.hasPointerCapture(id)) track.releasePointerCapture(id); } catch {}
+    };
+    const move = ev => {
+      if (ev.pointerId !== id || movedAway) return;
+      if (!dragging) {
+        const intent = pointerIntent(ev, x0, y0, slop);
+        if (intent === "wait") return;
+        if (intent === "vertical") { movedAway = true; return; }
+        dragging = true;
+      }
+      seekTo(ev);
+    };
+    const up = ev => {
+      if (ev.pointerId !== id) return;
+      cleanup();
+      if (!dragging && !movedAway) seekTo(ev);
+    };
+    const cancel = ev => { if (ev.pointerId === id) cleanup(); };
+    track.addEventListener("pointermove", move);
+    track.addEventListener("pointerup", up);
+    track.addEventListener("pointercancel", cancel);
+    track.addEventListener("lostpointercapture", cancel);
   });
   track.addEventListener("keydown", e => {
     const step = e.shiftKey ? 30 : 5;
@@ -4470,6 +4679,7 @@ async function openClip(ep, fromSec, toSec) {
 }
 
 function closeClip() {
+  cancelActiveClipPointer();             // release capture/frozen view first
   if (clip) {
     clip.abort.abort();                  // don't keep pulling 75 MB nobody wants
     cancelAnimationFrame(clip.raf);
@@ -4491,13 +4701,87 @@ const clipOpen = () => !clipModal.hidden;
 
 $("#clipClose").addEventListener("click", closeClip);
 $("#clipCancel").addEventListener("click", closeClip);
-clipModal.addEventListener("mousedown", e => { if (e.target === clipModal) closeClip(); });
+clipModal.addEventListener("pointerdown", e => { if (e.target === clipModal) closeClip(); });
+
+/* One pointer lifecycle for every editing surface.
+ *
+ * Mouse Events lose touch completely. Separate mouse/touch handlers are worse:
+ * a browser may synthesize a mouse event after touch, running one gesture
+ * twice. Pointer Events represent mouse, pen and touch once, and capture keeps
+ * the drag alive when a finger leaves an 11px line (or its larger tablet hit
+ * area). Cancellation is a first-class exit: iPadOS can take a pointer back
+ * for scrolling or system UI, and that must not leave clip.frozen or a pressed
+ * state behind.
+ */
+let activeClipPointer = null;
+
+function isPrimaryPointer(e) {
+  return e.isPrimary && (e.pointerType !== "mouse" || e.button === 0);
+}
+
+function beginClipPointer(el, e, { move, end, cancel = end }) {
+  if (!isPrimaryPointer(e)) return false;
+  if (activeClipPointer) activeClipPointer.cancel();
+
+  const id = e.pointerId;
+  let live = true, last = e;
+  const onMove = ev => {
+    if (!live || ev.pointerId !== id) return;
+    last = ev;
+    move?.(ev);
+  };
+  const finish = (ev, cancelled) => {
+    if (!live || ev.pointerId !== id) return;
+    live = false;
+    el.removeEventListener("pointermove", onMove);
+    el.removeEventListener("pointerup", onUp);
+    el.removeEventListener("pointercancel", onCancel);
+    el.removeEventListener("lostpointercapture", onLost);
+    if (activeClipPointer?.id === id) activeClipPointer = null;
+    try {
+      if (el.hasPointerCapture(id)) el.releasePointerCapture(id);
+    } catch { /* already released by the browser */ }
+    (cancelled ? cancel : end)?.(ev);
+  };
+  const onUp = ev => finish(ev, false);
+  const onCancel = ev => finish(ev, true);
+  const onLost = ev => finish(ev, true);
+
+  el.addEventListener("pointermove", onMove);
+  el.addEventListener("pointerup", onUp);
+  el.addEventListener("pointercancel", onCancel);
+  el.addEventListener("lostpointercapture", onLost);
+  try { el.setPointerCapture(id); } catch { /* unsupported capture degrades to tap */ }
+
+  activeClipPointer = { id, cancel: () => finish(last, true) };
+  return true;
+}
+
+function cancelActiveClipPointer() {
+  if (activeClipPointer) activeClipPointer.cancel();
+}
+
+const pointerSlop = e => e.pointerType === "touch" ? 10 : 4;
+function pointerIntent(e, x0, y0, slop) {
+  const dx = e.clientX - x0, dy = e.clientY - y0;
+  if (Math.hypot(dx, dy) < slop) return "wait";
+  // Vertical arbitration exists for a finger sharing these strips with modal
+  // scrolling. A mouse or pen does not pan the page through Pointer Events,
+  // so judging its direction would discard a diagonal drag the old desktop
+  // editor accepted. Once it clears the small movement threshold, preserve
+  // that established desktop behavior and use its horizontal position.
+  if (e.pointerType !== "touch") return "horizontal";
+  return Math.abs(dx) > Math.abs(dy) ? "horizontal" : "vertical";
+}
+function gestureActive(el, on) {
+  (el.closest(".wave-box") || el).classList.toggle("gesture-active", on);
+}
 
 /* Take the focus the prevented default would have moved.
  *
- * Every surface in the editor calls preventDefault on mousedown, and has to:
+ * Every surface in the editor calls preventDefault on pointerdown, and has to:
  * without it a drag paints a text selection across the dialogue. But
- * preventDefault on mousedown also cancels the browser's *focus transfer*, so
+ * preventDefault on pointerdown also cancels the browser's *focus transfer*, so
  * clicking the waveform moves the playhead and leaves the keyboard pointed at
  * whatever held it before — the last button pressed, or the dialogue itself.
  * The next keypress then goes somewhere the user stopped looking a click ago,
@@ -4514,31 +4798,34 @@ const focusAfterPress = el => (el || clipModal.querySelector(".modal")).focus();
 
 /* drag the handles on the zoomed view */
 function dragHandle(el, which) {
-  el.addEventListener("mousedown", e => {
-    if (!clip) return;
+  el.addEventListener("pointerdown", e => {
+    if (!clip || !isPrimaryPointer(e)) return;
+    cancelActiveClipPointer();
     e.preventDefault();
     focusAfterPress(el);              // or the arrows nudge nothing
     markUndo();                       // once per drag, not once per frame
     clip.anchor = which;              // zoom follows the edge you're working on
     const box = $("#zoomBox");
     const z = clip.frozen = computeWindow();
-    const move = ev => {
-      if (!clip) return;
-      const r = box.getBoundingClientRect();
-      let t = z.from + ((ev.clientX - r.left) / r.width) * (z.to - z.from);
-      t = Math.max(0, Math.min(clip.duration, t));
-      if (which === "in") clip.in = Math.min(t, clip.out - 0.2);
-      else clip.out = Math.max(t, clip.in + 0.2);
-      selectionEdited(which);
-      paintClip();
-    };
-    const up = () => {
-      removeEventListener("mousemove", move);
-      removeEventListener("mouseup", up);
+    el.classList.add("dragging");
+    const finish = () => {
+      el.classList.remove("dragging");
       if (clip) { clip.frozen = null; recentre(); }
     };
-    addEventListener("mousemove", move);
-    addEventListener("mouseup", up);
+    beginClipPointer(el, e, {
+      move: ev => {
+        if (!clip) return;
+        const r = box.getBoundingClientRect();
+        let t = z.from + ((ev.clientX - r.left) / r.width) * (z.to - z.from);
+        t = Math.max(0, Math.min(clip.duration, t));
+        if (which === "in") clip.in = Math.min(t, clip.out - 0.2);
+        else clip.out = Math.max(t, clip.in + 0.2);
+        selectionEdited(which);
+        paintClip();
+      },
+      end: finish,
+      cancel: finish,
+    });
   });
   // Arrow keys nudge — dragging can't land on a word boundary.
   el.addEventListener("keydown", e => {
@@ -4592,46 +4879,49 @@ function overviewSeek(clientX) {
    the "drag the band" target would be unhittable exactly when the selection is
    tightest. Distance travelled has no such failure mode, and it also stops the
    old behaviour of the selection leaping on a stray click. */
-const DRAG_SLOP = 4;                  // px before a press counts as a drag
-
 /* The ruler is part of the same surface as the waveform under it. Clicking a
    timeline and having nothing happen reads as a dead control, and the ruler is
    the obvious thing to click when you know the time you want. */
-$("#rulerAll").addEventListener("mousedown", e => {
-  if (!clip || !clip.duration) return;
-  e.preventDefault();
-  focusAfterPress();
-  playRange(overviewTime(e.clientX), null);
-});
+function bindOverviewPointer(el, draggable) {
+  el.addEventListener("pointerdown", e => {
+    // Only duration is needed here, and that arrives with the search result.
+    // Requiring peaks meant every interaction before the waveform landed did
+    // nothing at all, which reads as a broken control rather than a wait.
+    if (!clip || !clip.duration || !isPrimaryPointer(e)) return;
+    cancelActiveClipPointer();
+    e.preventDefault();
+    focusAfterPress();
+    gestureActive(el, true);
+    const x0 = e.clientX, y0 = e.clientY, slop = pointerSlop(e);
+    let dragging = false, movedAway = false;
 
-$("#waveAll").addEventListener("mousedown", e => {
-  // Only duration is needed here, and that arrives with the search result.
-  // Requiring peaks meant every interaction before the waveform landed did
-  // nothing at all, which reads as a broken control rather than a wait.
-  if (!clip || !clip.duration) return;
-  e.preventDefault();
-  focusAfterPress();
-  const x0 = e.clientX;
-  let dragging = false;
+    const finish = (ev, cancelled) => {
+      gestureActive(el, false);
+      if (cancelled || dragging || movedAway || !clip || !clip.duration) return;
+      // A tap/click: play from here to the end of the episode. There's no edit
+      // in mind yet — this is hunting for the moment, not auditioning a cut.
+      playRange(overviewTime(ev.clientX), null);
+    };
+    beginClipPointer(el, e, {
+      move: ev => {
+        if (!clip || !clip.duration || movedAway) return;
+        if (!dragging) {
+          const intent = pointerIntent(ev, x0, y0, slop);
+          if (intent === "wait") return;
+          if (intent === "vertical" || !draggable) { movedAway = true; return; }
+          markUndo();                  // once per drag, not once per frame
+          dragging = true;
+        }
+        overviewSeek(ev.clientX);
+      },
+      end: ev => finish(ev, false),
+      cancel: ev => finish(ev, true),
+    });
+  });
+}
 
-  const move = ev => {
-    if (!clip || !clip.duration) return;
-    if (!dragging && Math.abs(ev.clientX - x0) < DRAG_SLOP) return;
-    if (!dragging) markUndo();        // once per drag, not once per frame
-    dragging = true;
-    overviewSeek(ev.clientX);
-  };
-  const up = ev => {
-    removeEventListener("mousemove", move);
-    removeEventListener("mouseup", up);
-    if (dragging || !clip || !clip.duration) return;
-    // A click: play from here to the end of the episode. There's no edit in
-    // mind yet — this is hunting for the moment, not auditioning a cut.
-    playRange(overviewTime(ev.clientX), null);
-  };
-  addEventListener("mousemove", move);
-  addEventListener("mouseup", up);
-});
+bindOverviewPointer($("#rulerAll"), false);
+bindOverviewPointer($("#waveAll"), true);
 
 /* Click the zoomed view to put the playhead there.
  *
@@ -4705,8 +4995,8 @@ const zoomSeek = clientX => movePlayhead(zoomTime(clientX));
  * steps than what it replaces — it is the rare addition that makes the surface
  * simpler rather than denser.
  *
- * Click and drag are told apart by distance travelled, the same DRAG_SLOP rule
- * the overview uses. Hit-testing was rejected there for a reason that applies
+ * Click and drag are told apart by distance travelled, using the same
+ * pointer-specific slop as the overview. Hit-testing was rejected there for a reason that applies
  * here too, and there is a second reason on this surface: a press that begins
  * inside the existing selection is the *normal* way to start a new one, so any
  * rule keyed on where the press landed would have to guess.
@@ -4717,51 +5007,57 @@ const zoomSeek = clientX => movePlayhead(zoomTime(clientX));
  * measurement.
  */
 function zoomDrag(e) {
-  if (!clip || !clip.duration) return;
+  if (!clip || !clip.duration || !isPrimaryPointer(e)) return;
+  cancelActiveClipPointer();
   e.preventDefault();
   focusAfterPress();
-  const x0 = e.clientX;
-  let dragging = false, anchor = 0;
+  const el = e.currentTarget;
+  gestureActive(el, true);
+  const x0 = e.clientX, y0 = e.clientY, slop = pointerSlop(e);
+  let dragging = false, movedAway = false, anchor = 0;
 
-  const move = ev => {
-    if (!clip || !clip.duration) return;
-    if (!dragging) {
-      if (Math.abs(ev.clientX - x0) < DRAG_SLOP) return;
-      dragging = true;
-      // Freeze *before* reading the anchor, so both ends of the drag are
-      // measured against the same window.
-      clip.frozen = computeWindow();
-      anchor = zoomTime(x0);
-      markUndo();                     // one gesture, one undo step
-    }
-    const sel = dragSelection({
-      anchor, at: zoomTime(ev.clientX), duration: clip.duration, minLen: 0.2,
-    });
-    clip.in = sel.inSec;
-    clip.out = sel.outSec;
-    // Follow the edge being drawn, so zooming in after a drag keeps the end you
-    // were watching on screen rather than jumping to the other one.
-    clip.anchor = zoomTime(ev.clientX) >= anchor ? "out" : "in";
-    selectionEdited("in");            // the start moved, so the resume point is stale
-    paintClip();
-  };
-  const up = ev => {
-    removeEventListener("mousemove", move);
-    removeEventListener("mouseup", up);
+  const finish = (ev, cancelled) => {
+    gestureActive(el, false);
     if (!clip) return;
-    if (!dragging) { zoomSeek(ev.clientX); return; }
-    clip.frozen = null;
-    recentre();
+    if (dragging) { clip.frozen = null; recentre(); return; }
+    if (!cancelled && !movedAway) zoomSeek(ev.clientX);
   };
-  addEventListener("mousemove", move);
-  addEventListener("mouseup", up);
+  beginClipPointer(el, e, {
+    move: ev => {
+      if (!clip || !clip.duration || movedAway) return;
+      if (!dragging) {
+        const intent = pointerIntent(ev, x0, y0, slop);
+        if (intent === "wait") return;
+        if (intent === "vertical") { movedAway = true; return; }
+        dragging = true;
+        // Freeze *before* reading the anchor, so both ends of the drag are
+        // measured against the same window.
+        clip.frozen = computeWindow();
+        anchor = zoomTime(x0);
+        markUndo();                    // one gesture, one undo step
+      }
+      const at = zoomTime(ev.clientX);
+      const sel = dragSelection({
+        anchor, at, duration: clip.duration, minLen: 0.2,
+      });
+      clip.in = sel.inSec;
+      clip.out = sel.outSec;
+      // Follow the edge being drawn, so zooming in after a drag keeps the end
+      // being watched on screen rather than jumping to the other one.
+      clip.anchor = at >= anchor ? "out" : "in";
+      selectionEdited("in");          // the start moved; resume is stale
+      paintClip();
+    },
+    end: ev => finish(ev, false),
+    cancel: ev => finish(ev, true),
+  });
 }
 
-$("#waveZoom").addEventListener("mousedown", zoomDrag);
+$("#waveZoom").addEventListener("pointerdown", zoomDrag);
 /* Same reasoning as the overview's ruler: a timeline you can see is a timeline
    you will click, and one that does nothing reads as a dead control. The ruler
    takes the drag too — it is the same surface, a few pixels higher. */
-$("#rulerZoom").addEventListener("mousedown", zoomDrag);
+$("#rulerZoom").addEventListener("pointerdown", zoomDrag);
 
 /* ---------- transport ----------
    Judging an edit means hearing the same three seconds ten times over, so the
@@ -5610,9 +5906,18 @@ const libOpen  = () => !libModal.hidden;
 let libFilterText = "";
 let libActive     = [];      // chosen labels, ANDed
 let libShowAll    = false;   // top labels vs all
+let libSort       = "newest";
 let libAudio      = null;    // the row player — deliberately not the page player
 let libPlayingId  = null;
 const LIB_TOP     = 6;
+const LIB_SORTS   = [
+  ["relevance", "Best match"],
+  ["newest",    "Newest saved"],
+  ["oldest",    "Oldest saved"],
+  ["title",     "Title A–Z"],
+  ["longest",   "Longest first"],
+  ["shortest",  "Shortest first"],
+];
 
 /* Labels chosen in the editor persist across adds. Pulling four promos from
  * one episode means labelling once; re-typing it four times is how a labelling
@@ -5670,12 +5975,50 @@ $("#clipAddedUndo").addEventListener("click", () => clipStrip.undo());
 /* ---- rendering ---- */
 
 function libMatching() {
-  const q = libFilterText.trim().toLowerCase();
-  return Clips.list().filter(c => {
-    if (libActive.length && !libActive.every(l => (c.labels || []).includes(l))) return false;
-    if (!q) return true;
-    return `${c.title} ${c.show} ${c.date} ${(c.labels || []).join(" ")}`.toLowerCase().includes(q);
-  });
+  const q = libFilterText.trim();
+  const rows = Clips.search(Clips.list(), q).filter(({ clip }) =>
+    !libActive.length || libActive.every(l => (clip.labels || []).includes(l)));
+  const byNewest = (a, b) => (b.clip.createdAt || 0) - (a.clip.createdAt || 0) || a.index - b.index;
+  const sorts = {
+    relevance: (a, b) => b.score - a.score || byNewest(a, b),
+    newest: byNewest,
+    oldest: (a, b) => (a.clip.createdAt || 0) - (b.clip.createdAt || 0) || a.index - b.index,
+    title: (a, b) => a.clip.title.localeCompare(b.clip.title, undefined, { sensitivity: "base" }) || byNewest(a, b),
+    longest: (a, b) => (b.clip.out - b.clip.in) - (a.clip.out - a.clip.in) || byNewest(a, b),
+    shortest: (a, b) => (a.clip.out - a.clip.in) - (b.clip.out - b.clip.in) || byNewest(a, b),
+  };
+  rows.sort(sorts[libSort] || byNewest);
+  return rows.map(row => row.clip);
+}
+
+const libSortBtn = $("#libSortBtn"), libSortMenu = $("#libSortMenu");
+const libSortOpen = () => libSortBtn.getAttribute("aria-expanded") === "true";
+
+function syncLibSort() {
+  const searching = !!libFilterText.trim();
+  const avail = LIB_SORTS.filter(([key]) => key !== "relevance" || searching);
+  if (!searching && libSort === "relevance") libSort = "newest";
+  const current = avail.find(([key]) => key === libSort) || avail[0];
+  $("#libSortCur").textContent = current[1];
+  libSortMenu.innerHTML = avail.map(([key, label]) =>
+    `<button class="sort-opt" role="option" data-sort="${key}"
+       aria-selected="${key === libSort}">
+       <span class="tick">${key === libSort ? "✓" : ""}</span>
+       <span>${label}</span>
+     </button>`).join("");
+}
+
+function openLibSort() {
+  libSortBtn.setAttribute("aria-expanded", "true");
+  libSortMenu.hidden = false;
+  const selected = libSortMenu.querySelector('[aria-selected="true"]')
+                || libSortMenu.querySelector(".sort-opt");
+  if (selected) selected.focus();
+}
+
+function closeLibSort() {
+  libSortBtn.setAttribute("aria-expanded", "false");
+  libSortMenu.hidden = true;
 }
 
 function libRenderLabels() {
@@ -5698,7 +6041,9 @@ function libRenderLabels() {
 function libRender() {
   libCount();
   const all = Clips.list();
-  $("#libToolsRow").hidden = all.length < 6;   // a filter over four rows is furniture
+  $("#libToolsRow").hidden = !all.length;
+  $("#libFilterClear").hidden = !libFilterText;
+  syncLibSort();
   libRenderLabels();
 
   const list = $("#libList");
@@ -5728,9 +6073,10 @@ function libRender() {
   if (!rows.length) { list.innerHTML = `<p class="lib-none">Nothing matches that.</p>`; return; }
 
   let h = "", group = null;
+  const grouped = libSort === "newest" || libSort === "oldest";
   for (const c of rows) {
     const g = Clips.groupOf(c.createdAt);
-    if (g !== group) { group = g; h += `<span class="lib-group">${esc(g)}</span>`; }
+    if (grouped && g !== group) { group = g; h += `<span class="lib-group">${esc(g)}</span>`; }
     const labels = (c.labels || []).map(l =>
       `<button class="lblmini" type="button" data-label="${esc(l)}"${libActive.includes(l) ? ' data-active="1"' : ""}>${esc(l)}<span class="x" data-unlabel="${esc(l)}" aria-label="Remove label ${esc(l)}">×</span></button>`).join("");
     h += `<div class="cliprow${libPlayingId === c.id ? " playing" : ""}" data-id="${c.id}">
@@ -5917,7 +6263,40 @@ function refreshLabelList() {
 
 /* ---- library interactions ---- */
 
-$("#libFilter").addEventListener("input", e => { libFilterText = e.target.value; libRender(); });
+$("#libFilter").addEventListener("input", e => {
+  libFilterText = e.target.value;
+  closeLibSort();
+  libRender();
+});
+$("#libFilterClear").addEventListener("click", () => {
+  libFilterText = "";
+  $("#libFilter").value = "";
+  libRender();
+  $("#libFilter").focus();
+});
+
+libSortBtn.addEventListener("click", () => libSortOpen() ? closeLibSort() : openLibSort());
+libSortMenu.addEventListener("click", e => {
+  const option = e.target.closest(".sort-opt");
+  if (!option) return;
+  libSort = option.dataset.sort;
+  closeLibSort();
+  libRender();
+  libSortBtn.focus();
+});
+libSortMenu.addEventListener("keydown", e => {
+  const options = [...libSortMenu.querySelectorAll(".sort-opt")];
+  const i = options.indexOf(document.activeElement);
+  if (e.key === "ArrowDown") { e.preventDefault(); options[(i + 1) % options.length].focus(); }
+  if (e.key === "ArrowUp")   { e.preventDefault(); options[(i - 1 + options.length) % options.length].focus(); }
+  if (e.key === "Home")      { e.preventDefault(); options[0].focus(); }
+  if (e.key === "End")       { e.preventDefault(); options[options.length - 1].focus(); }
+  if (e.key === "Escape")    { e.preventDefault(); e.stopPropagation(); closeLibSort(); libSortBtn.focus(); }
+  if (e.key === "Tab")       closeLibSort();
+});
+document.addEventListener("pointerdown", e => {
+  if (libSortOpen() && !e.target.closest(".lib-sort")) closeLibSort();
+});
 
 $("#libLabels").addEventListener("click", e => {
   const btn = e.target.closest("button");
@@ -6281,6 +6660,7 @@ function openLib() {
   $("#libFilter").value = "";
   libActive = [];
   libShowAll = false;
+  libSort = "newest";
   refreshLabelList();
   libRender();
   libModal.hidden = false;
@@ -6290,6 +6670,7 @@ function openLib() {
 function closeLib() {
   libStopAudio();
   libStrip.hide();
+  closeLibSort();
   closeRowMenus();
   libModal.hidden = true;
   libRender();
@@ -6303,6 +6684,21 @@ addEventListener("keydown", e => {
   // The editor sits on top; it owns Escape while it's open.
   // Anything stacked above the library owns Escape while it is open.
   if (!libOpen() || clipOpen() || zipOpen()) return;
+  if (libSortOpen()) return;
+  const typing = /^(INPUT|TEXTAREA)$/.test(document.activeElement.tagName);
+  if (e.key === "/" && !typing) {
+    e.preventDefault();
+    $("#libFilter").focus();
+    return;
+  }
+  if (e.key === "Escape" && libFilterText) {
+    e.preventDefault();
+    libFilterText = "";
+    $("#libFilter").value = "";
+    libRender();
+    $("#libFilter").focus();
+    return;
+  }
   if (e.key === "Escape") { e.preventDefault(); closeLib(); }
 });
 

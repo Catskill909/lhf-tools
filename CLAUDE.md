@@ -43,11 +43,20 @@ and it is the single most common way these documents mislead their reader.
   designed but not built" are NOTEs. They become FIXes only when something
   actually breaks, and DOs only when there is a downside to name.
 
+## Own the run
+
+**When Paul asks to run, refresh, test or start something, execute it here and
+stay with it through verification.** Do not hand the command back for him to
+run and make him carry an error into another chat. Watch the output, diagnose
+and fix any in-scope failure, rerun the failed step, and verify the resulting
+application state. Hand work back only when it requires a physical-device
+action, a missing decision, or permission the tools cannot obtain.
+
 ## Hard constraints
 
 - **Stdlib only. No pip, no venv, no build step, no lockfile.** The image is the
   Python interpreter plus this repo, and the front end is one HTML file plus
-  three ES modules. This is why a redeploy cannot break in six interesting ways.
+  four ES modules. This is why a redeploy cannot break in six interesting ways.
   Adding a dependency is a decision, not a convenience.
 - **Clip export is a byte copy of MP3 frames** — bit-identical to the broadcast
   audio, and a headline client guarantee. **Fades, normalise and gain are
@@ -174,6 +183,14 @@ and it is the single most common way these documents mislead their reader.
   every `mousedown` handler rather than a kept list of them.
 - **The peaks cache is versioned (`v: 2`).** Change the format without bumping
   it and returning users get old data read as new — a silently wrong waveform.
+- **A touch drag has four exits.** `pointerup`, `pointercancel`, lost pointer
+  capture and closing the clip modal must all clear capture, pressed feedback
+  and `clip.frozen`. One shared lifecycle in `static/index.html` owns the editor
+  gestures; do not add a parallel Touch Events path (browsers can synthesize a
+  mouse event after touch and run the edit twice). Waveforms/rulers keep
+  vertical scrolling with `touch-action: pan-y`; handles alone claim the whole
+  gesture. `tests/test-touch.mjs` enforces the structure and
+  `docs/touch-dev.md` holds the real-device checklist.
 - **`schema.sql` is all `CREATE TABLE IF NOT EXISTS`**, so it does nothing to a
   database that already exists — which every deployed one does. New columns
   need a `PRAGMA table_info` guarded migration in `ingest/ingest.py`.
@@ -223,11 +240,13 @@ nothing — the shipped `[` / `]` bug passes any test that moves the playhead
 node tests/test-waveform.mjs        # pure: peaks, snap-to-silence, rulers
 node tests/test-update-prompt.mjs   # pure: the new-version reload prompt
 node tests/test-zip.mjs             # pure: the archive packager
-node tests/test-clips.mjs           # pure: the saved-clip store + labels
+node tests/test-clips.mjs           # pure: saved clips, labels + query semantics
+node tests/test-clips-ui.mjs        # structural: clip search/sort/mobile wiring
 node tests/test-palette.mjs         # pure: both themes' colour laws, in L*
 node tests/test-hidden.mjs          # pure: `hidden` actually hides
 node tests/test-keyboard.mjs        # pure: the keyboard reaches what you see
 node tests/test-overflow.mjs        # pure: data-shaped text can't outgrow the phone
+node tests/test-touch.mjs           # pure: phone boundary + tablet pointer editor
 python3 tests/test-ingest.py        # pure: feed stamping + rotated-out detection
 node tests/verify-clips.mjs 8000    # live: needs the server running + network
 ```

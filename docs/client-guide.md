@@ -102,11 +102,18 @@ the waveform, on that passage, without having scrubbed through anything.
 Or drag across a longer stretch, and the archive tells you it runs 1 minute
 6 seconds before you cut anything.
 
-**It cuts clips.** Press the scissors on the player and you get the waveform
-with that passage already selected. Drag the handles, zoom in, snap the cut to
-the gap between words, listen back, download the MP3. It's copied out of the
-original file rather than re-recorded, so it's identical to what went out, and
-the filename carries the show, date and timecode.
+**It cuts clips on a tablet or computer.** Press the scissors on the player and
+you get the waveform with that passage already selected. Drag the handles, zoom
+in, snap the cut to the gap between words, listen back, download the MP3. It's
+copied out of the original file rather than re-recorded, so it's identical to
+what went out, and the filename carries the show, date and timecode.
+
+The complete waveform editor needs at least a tablet-sized screen. On a phone,
+opening it says to continue on a tablet or computer rather than showing clipped
+controls; search, playback, transcripts and saved clips still work normally.
+Tablet controls are finger-sized, and the same gestures continue to work with a
+mouse or trackpad. This tablet work is in the current development build and
+will reach the live site after its real-iPad check.
 
 The editor is built around listening, because that's how an edit is actually
 judged:
@@ -118,7 +125,7 @@ judged:
   back if you've wandered off listening somewhere else in the episode.
 - **Repeat** keeps the selection going round while you move the handles, so you
   hear each adjustment come back without stopping and starting.
-- **Click anywhere on the top waveform** to listen from that point — for
+- **Click or tap anywhere on the top waveform** to listen from that point — for
   finding a moment when you don't yet know where it is.
 - **Hear the start** and **Hear the end** play the clip's own first and last
   three seconds. Neither ever plays outside your selection, so what you hear is
@@ -133,7 +140,7 @@ Setting the two ends, in whichever way suits what you're doing:
 
 - **Drag across the lower waveform** to select — both ends in one movement,
   rather than moving two handles in turn. Drag in either direction.
-- **Click the lower waveform** to put the cursor exactly where you clicked,
+- **Click or tap the lower waveform** to put the cursor exactly there,
   without starting playback, then press <kbd>I</kbd> or <kbd>O</kbd>.
 - **Drag the red handles** to adjust either end afterwards, or nudge a selected
   one with the **arrow keys** — 0.1 second a press, a full second with
@@ -172,6 +179,11 @@ endings.
 - **Copy link** from the **⋯** menu gives you a web address that opens the
   editor on exactly that passage — send it to someone instead of describing
   where to look
+- **Search titles, shows, dates and labels** with the same everyday behavior as
+  the main archive: words combine as you type, quotes keep a phrase together,
+  and `AND`, `OR`, `NOT`, parentheses and `*` are available. Use `title:`,
+  `show:`, `label:` or `date:` to narrow one part, then sort by best match,
+  saved date, title or length
 - **Filter by label.** The ones you use most sit across the top; pick two and you
   get only the clips carrying both
 - **Grouped by when you saved them** — today, yesterday, last week

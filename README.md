@@ -271,7 +271,7 @@ The UI is just a client — swap it for anything without touching the backend.
 | `GET /api/episode/<id>/segments?q=` | every transcript line with its timings, server-highlighted for `q` — what the transcript modal reads |
 | `GET /episode/<id>/transcript?format=txt\|srt\|vtt` | one transcript to read, print or caption with |
 | `GET /api/bundle?transcripts=1&passages=1&…` | Everything the archive package needs in one request — rows, transcripts and timed passages for the given scope, keyed on `guid`. The browser builds the `.zip` itself. |
-| `GET /api/version` | content hash of `index.html` and the two ES modules. The page re-checks this when its tab regains focus, so a browser left open across a deploy can offer a reload instead of silently running old code. Database-free and cheap on purpose. |
+| `GET /api/version` | content hash of `index.html` and all four ES modules (`mp3cut.js`, `waveform.js`, `zip.js`, `clips.js`). The page re-checks this when its tab regains focus, so a browser left open across a deploy can offer a reload instead of silently running old code. Database-free and cheap on purpose. |
 
 Every response carries an `ETag` and honours `If-None-Match`, so a reload that
 changes nothing costs a 304 with an empty body rather than the whole payload.
@@ -328,7 +328,7 @@ tags and 14 detected re-airs.
 - **Clip extraction** — the scissors at the right of the player opens a
   waveform editor on what you're listening to. Transport with play/pause,
   back-to-start and Repeat (which follows the handles as you trim); a time ruler
-  on each waveform; click the overview to listen from any point. The zoomed view
+  on each waveform; click or tap the overview to listen from any point. The zoomed view
   is drawn from **10 ms peaks** with an RMS body on a dB scale and the episode's
   own silence floor marked, so the gaps between words are visible; zoom follows
   the edge you're working, down to a half-second window. Drag across the zoomed
@@ -339,6 +339,10 @@ tags and 14 detected re-airs.
   **cut losslessly from the source** (no re-encode; within one 26 ms frame of
   the mark). Entirely in the browser — audio streams from the CDN and never
   touches this server.
+- **Touch boundary** — the complete editor is supported from 768 CSS px
+  (tablet-sized) upward. Pointer capture, cancellation cleanup and 44px targets
+  cover touch-capable tablets and laptops; phones get a clear tablet/computer
+  notice instead of a clipped editor. Real-iPad verification is still pending.
 - **Shareable links** — the address bar carries the full search state;
   `?ep=123&from=522&to=549` opens a single moment and `?help` opens the guide.
   `?q=` is the integration point for a search box on laborheritage.org.
@@ -379,7 +383,15 @@ sending notes on demand rather than up front becomes the obvious first saving.
 ```bash
 node tests/test-waveform.mjs      # pure — peak reduction, snap-to-silence
 node tests/test-update-prompt.mjs # pure — the new-version reload prompt
-node tests/test-zip.mjs           # pure — the archive packager (needs python3)
+node tests/test-zip.mjs           # pure — the archive packager
+node tests/test-clips.mjs         # pure — saved clips, labels and query semantics
+node tests/test-clips-ui.mjs      # structural — clip search/sort/mobile wiring
+node tests/test-palette.mjs       # pure — both themes' colour laws
+node tests/test-hidden.mjs        # pure — hidden elements actually hide
+node tests/test-keyboard.mjs      # pure — keyboard/focus interaction laws
+node tests/test-overflow.mjs      # pure — archive text cannot widen a phone
+node tests/test-touch.mjs         # pure — phone boundary + tablet pointer editor
+python3 tests/test-ingest.py      # pure — feed stamping and retention
 node tests/verify-clips.mjs       # live — needs the server running + network
 ```
 

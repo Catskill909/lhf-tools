@@ -5,8 +5,9 @@
 
 ## At a glance
 
-**Last updated 12 August 2026.** The editing surface is built. Phases 1–4 shipped
-and were verified; Phase 5's tests were written alongside them rather than after.
+**Last updated 14 August 2026.** The editing surface is built. Phases 1–7 shipped
+and were verified. Tablet touch support is built locally as Phase 8 and awaits a
+real-iPad producer pass before it is called shipped.
 
 | Phase | What it gave the producer | State |
 |---|---|---|
@@ -17,6 +18,7 @@ and were verified; Phase 5's tests were written alongside them rather than after
 | [5 — Verification](#phase-5--verification) | 49 pure checks in `tests/test-waveform.mjs`, plus browser suites. | ✅ done, alongside |
 | [6 — Momentary-action feedback](#phase-6--show-that-a-momentary-action-is-momentary) | The edge listens and Snap show they ran. | ✅ built |
 | [7 — Reaching the lower waveform](#phase-7--reaching-the-lower-waveform---built) | Click the zoomed view to place the playhead and drag it to select; arrows scrub; ⌘Z undoes; the edge listens stay inside the clip; ⏮︎ and the view come back together. | ✅ built |
+| [8 — Tablet touch](touch-dev.md) | The same editor gestures work through Pointer Events; tablet targets grow to 44px; phones get an honest boundary. | 🧪 built locally; real iPad pending |
 
 **Defects found by using the editor, after their phases shipped** —
 [Repeat and three others](#audit-of-phases-12-before-starting-phase-3),
@@ -45,7 +47,11 @@ recurring bug class* below.
    client directly: browser storage for v1, and shared storage is a v2 decision
    that this build deliberately does not pre-empt.
 
-**What is actually next** is no longer in this document:
+**What is actually next:**
+
+- **Real-iPad touch verification** — `docs/touch-dev.md` → Phase 4. Pointer
+  input, capture/cancellation, tablet geometry and touch guidance are built
+  locally; Paul will run the producer journey in portrait and landscape.
 
 - **The shared topic vocabulary** — `docs/ai-layer.md` → *A shared vocabulary*,
   with a ready-to-send draft at `docs/ask-vocabulary.md`. The cheapest first
@@ -71,6 +77,10 @@ recurring bug class* below.
   a later edit. Three shipped from this file. Anything the transport remembers
   needs a test that **changes the selection underneath it** — the static-case
   test will pass and prove nothing.
+- **A touch drag has four exits, not one:** `pointerup`, `pointercancel`, lost
+  pointer capture and closing the modal. All must clear capture, pressed state
+  and `clip.frozen`; otherwise the next gesture measures against a stale view.
+  The shared lifecycle and `tests/test-touch.mjs` enforce that shape.
 
 ### If you are picking this up cold
 
@@ -253,7 +263,7 @@ and out:
   normalise or gain feature forfeits the lossless guarantee — a client decision,
   not a bug fix. **Flag it; do not quietly implement it.**
 - **Zero server load.** Everything runs in the browser against the CDN.
-- **No build step, no dependencies.** Single HTML file plus two ES modules.
+- **No build step, no dependencies.** Single HTML file plus four ES modules.
 - **The first open of an episode is a 30–105 MB download.** Peaks are cached in
   IndexedDB keyed on the audio URL. Any change to the peak format must not force
   a re-download of episodes users already have — see the cache-versioning trap

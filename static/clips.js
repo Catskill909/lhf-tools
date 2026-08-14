@@ -138,6 +138,184 @@ export function canonicalLabel(input, clips = read()) {
   return found || want;
 }
 
+/* --------------------------------------------------------------- search */
+
+/* The archive search lives in SQLite FTS5; saved clips live only in this
+ * browser, so they cannot use that index. This small evaluator deliberately
+ * keeps the same everyday language: bare words are ANDed, the last word is a
+ * prefix while it is being typed, and expert syntax adds phrases, boolean
+ * operators, parentheses and explicit `*` prefixes. Clip-specific fields are
+ * title:, show:, label: and date:.
+ *
+ * It returns a score as well as a clip. That lets the UI offer Best match
+ * without teaching the storage module anything about presentation or sort
+ * menus. Title matches carry the most weight, then labels, show and date.
+ */
+const SEARCH_FIELDS = ["title", "label", "show", "date"];
+const SEARCH_WEIGHT = { title: 8, label: 5, show: 3, date: 1 };
+const SEARCH_EXPERT = /(?:^|\s)(?:AND|OR|NOT)(?=\s|$)|[()"*]|\b(?:title|show|labels?|date)\s*:/;
+
+const foldSearch = value => String(value || "")
+  .normalize("NFKD")
+  .replace(/[\u0300-\u036f]/g, "")
+  .replace(/[’‘]/g, "'")
+  .replace(/[‐‑‒–—]/g, "-")
+  .toLowerCase();
+
+// Match SQLite's unicode61 shape: punctuation separates words. In particular,
+// `people hist` must find `The People's Historian`, not treat `people's` as an
+// indivisible token that no ordinary query would ever match.
+const searchWords = value => foldSearch(value).match(/[\p{L}\p{N}_]+/gu) || [];
+
+function searchDoc(clip) {
+  return {
+    title: foldSearch(clip.title),
+    show: foldSearch(clip.show),
+    date: foldSearch(clip.date),
+    label: foldSearch((clip.labels || []).join(" ")),
+  };
+}
+
+function searchTokens(raw) {
+  const out = [];
+  for (let i = 0; i < raw.length;) {
+    if (/\s/.test(raw[i])) { i++; continue; }
+    if (raw[i] === "(") { out.push({ type: "(" }); i++; continue; }
+    if (raw[i] === ")") { out.push({ type: ")" }); i++; continue; }
+    if (raw[i] === '"') {
+      let j = ++i;
+      while (j < raw.length && raw[j] !== '"') j++;
+      out.push({ type: "term", value: raw.slice(i, j), phrase: true });
+      i = j < raw.length ? j + 1 : j;
+      continue;
+    }
+    let j = i;
+    while (j < raw.length && !/[\s()"]/.test(raw[j])) j++;
+    const value = raw.slice(i, j);
+    out.push(/^(?:AND|OR|NOT)$/.test(value)
+      ? { type: value }
+      : { type: "term", value });
+    i = j;
+  }
+  return out;
+}
+
+function searchTree(raw) {
+  const query = String(raw || "").trim();
+  if (!query) return null;
+
+  // Plain typing follows the front page: earlier words are exact and the word
+  // in progress is a prefix, so `people hist` finds `People's Historian`.
+  if (!SEARCH_EXPERT.test(query)) {
+    const words = searchWords(query);
+    return words.map((value, i) => ({
+      type: "term", value, prefix: i === words.length - 1,
+    })).reduce((left, right) => left ? { type: "AND", left, right } : right, null);
+  }
+
+  const tokens = searchTokens(query);
+  let at = 0;
+  const peek = () => tokens[at];
+  const take = () => tokens[at++];
+
+  function primary() {
+    if (!peek()) return null;
+    if (peek().type === "(") {
+      take();
+      const node = orExpr();
+      if (peek()?.type === ")") take();
+      return node;
+    }
+    const token = take();
+    if (token.type !== "term") return null;
+    let { value, phrase = false } = token;
+    let field = null;
+    const scoped = value.match(/^(title|show|labels?|date):(.*)$/i);
+    if (scoped) {
+      field = scoped[1].toLowerCase().replace("labels", "label");
+      value = scoped[2];
+      if (!value && peek()?.type === "term") {
+        const next = take();
+        value = next.value;
+        phrase = !!next.phrase;
+      }
+    }
+    const prefix = !phrase && value.endsWith("*");
+    if (prefix) value = value.slice(0, -1);
+    return { type: "term", value, phrase, prefix, field };
+  }
+
+  function unary() {
+    if (peek()?.type === "NOT") { take(); return { type: "NOT", child: unary() }; }
+    return primary();
+  }
+
+  function andExpr() {
+    let left = unary();
+    while (peek() && peek().type !== "OR" && peek().type !== ")") {
+      if (peek().type === "AND") take();
+      const right = unary();
+      if (!right) break;
+      left = left ? { type: "AND", left, right } : right;
+    }
+    return left;
+  }
+
+  function orExpr() {
+    let left = andExpr();
+    while (peek()?.type === "OR") {
+      take();
+      const right = andExpr();
+      if (right) left = left ? { type: "OR", left, right } : right;
+    }
+    return left;
+  }
+
+  return orExpr();
+}
+
+function scoreTerm(doc, node) {
+  const needle = foldSearch(node.value);
+  if (!needle) return { match: true, score: 0 };
+  const fields = node.field && SEARCH_FIELDS.includes(node.field)
+    ? [node.field]
+    : SEARCH_FIELDS;
+  let score = 0;
+  for (const field of fields) {
+    const hay = doc[field];
+    const match = node.phrase
+      ? hay.includes(needle)
+      : searchWords(hay).some(word => node.prefix ? word.startsWith(needle) : word === needle);
+    if (!match) continue;
+    score += SEARCH_WEIGHT[field];
+    if (field === "title" && hay === needle) score += 12;
+  }
+  return { match: score > 0, score };
+}
+
+function scoreTree(doc, node) {
+  if (!node) return { match: true, score: 0 };
+  if (node.type === "term") return scoreTerm(doc, node);
+  if (node.type === "NOT") {
+    const child = scoreTree(doc, node.child);
+    return { match: !child.match, score: 0 };
+  }
+  const left = scoreTree(doc, node.left);
+  const right = scoreTree(doc, node.right);
+  if (node.type === "AND") {
+    return { match: left.match && right.match, score: left.score + right.score };
+  }
+  return { match: left.match || right.match, score: Math.max(left.score, right.score) };
+}
+
+export function search(clips, query) {
+  const tree = searchTree(query);
+  return clips.map((clip, index) => {
+    const hit = scoreTree(searchDoc(clip), tree);
+    return { clip, score: hit.score, index, match: hit.match };
+  }).filter(row => row.match);
+}
+
 /* ----------------------------------------------------------------- dates */
 
 /* Grouping is derived from createdAt, never stored. "Last week" is the last

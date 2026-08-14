@@ -94,6 +94,38 @@ check("a genuinely new label keeps its own spelling", Clips.canonicalLabel("Out-
 check("empty input is not a label", Clips.canonicalLabel("   ") === null);
 check("null input is not a label", Clips.canonicalLabel(null) === null);
 
+console.log("\nclip search");
+const searchable = [
+  { id: "woody", title: "Woody Guthrie’s American Song", show: "Labor Heritage Power Hour",
+    date: "2026-08-13", labels: ["Promo", "Music"], in: 10, out: 35, createdAt: 30 },
+  { id: "zinn", title: "The People's Historian", show: "Labor History Today",
+    date: "2026-08-09", labels: ["Interview"], in: 20, out: 50, createdAt: 20 },
+  { id: "strike", title: "Organizing a General Strike", show: "Labor History Today",
+    date: "2025-12-08", labels: ["Encore", "Promo"], in: 5, out: 70, createdAt: 10 },
+  { id: "label", title: "A saved excerpt", show: "Labor Heritage Power Hour",
+    date: "2025-01-01", labels: ["Woody"], in: 0, out: 8, createdAt: 5 },
+];
+const hits = q => Clips.search(searchable, q).map(row => row.clip.id);
+check("plain words are implicitly ANDed and the last is a prefix",
+  hits("people hist").join() === "zinn");
+check("plain search handles apostrophes like the archive tokenizer",
+  hits("people's hist").join() === "zinn");
+check("quoted phrases stay together", hits('"american song"').join() === "woody");
+check("OR finds either side",
+  hits("historian OR strike").sort().join() === "strike,zinn");
+check("NOT excludes a matching clip", hits("promo NOT encore").join() === "woody");
+check("parentheses combine with boolean operators",
+  hits("(historian OR strike) NOT encore").join() === "zinn");
+check("an explicit star prefix expands a word", hits("organiz*").join() === "strike");
+check("title fields stay in the title", hits("title:woody").join() === "woody");
+check("show fields accept a phrase", hits('show:"Labor History Today"').sort().join() === "strike,zinn");
+check("label and date fields search clip metadata",
+  hits("label:promo date:2026").join() === "woody");
+const scored = Clips.search(searchable, "woody");
+check("title matches outrank the same word in a label",
+  scored.find(row => row.clip.id === "woody").score > scored.find(row => row.clip.id === "label").score);
+check("an empty search returns every clip", hits("").length === searchable.length);
+
 console.log("\nstorage is versioned, like the peaks cache");
 reset();
 add();

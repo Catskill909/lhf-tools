@@ -11,8 +11,8 @@
  *      never true of a control the app focused on their behalf.
  *
  *   2. Nothing took the focus off it. Every timeline surface calls
- *      preventDefault on mousedown — it must, or a drag paints a text
- *      selection across the dialogue — and preventDefault on mousedown also
+ *      preventDefault on pointerdown — it must, or a drag paints a text
+ *      selection across the dialogue — and preventDefault on pointerdown also
  *      cancels the browser's *focus transfer*. So clicking the waveform moved
  *      the playhead and left the keyboard on the ×.
  *
@@ -21,7 +21,7 @@
  * focused it, so the nudge had never worked at all.
  *
  * This file tests the class in both directions — no dialogue may open focused
- * on its close button, and no mousedown handler may prevent the default
+ * on its close button, and no press handler may prevent the default
  * without taking the focus that default would have moved.
  *
  * Nothing is copied: static/index.html is read and parsed at run time.
@@ -211,11 +211,11 @@ function bodyAt(src, from) {
   return "";
 }
 
-/* Every mousedown listener in the file, whether written inline or handed a
-   named function. Deliberately not a hand-kept list of the editor's surfaces:
+/* Every mousedown or pointerdown listener in the file, whether written inline
+   or handed a named function. Deliberately not a hand-kept list of the editor's surfaces:
    a list is what a newly added surface is missing from. */
 const handlers = [];
-for (const m of js.matchAll(/addEventListener\(\s*["']mousedown["']\s*,\s*/g)) {
+for (const m of js.matchAll(/addEventListener\(\s*["'](?:mouse|pointer)down["']\s*,\s*/g)) {
   const after = js.slice(m.index + m[0].length, m.index + m[0].length + 80);
   const named = /^([\w$]+)\s*\)/.exec(after);      // ..., zoomDrag)
   if (named) {
@@ -226,16 +226,16 @@ for (const m of js.matchAll(/addEventListener\(\s*["']mousedown["']\s*,\s*/g)) {
     handlers.push({ what: `index.html:${lineOf(m.index)}`, body: bodyAt(js, m.index) });
   }
 }
-check("mousedown handlers were found and parsed", handlers.length > 0 && handlers.every(h => h.body),
+check("press handlers were found and parsed", handlers.length > 0 && handlers.every(h => h.body),
       handlers.filter(h => !h.body).map(h => h.what).join(", "));
 
-/* The rule. preventDefault on mousedown cancels the focus transfer the browser
+/* The rule. preventDefault on pointerdown/mousedown cancels the focus transfer the browser
    would have done, so the handler has to do it — either by focusing the control
    pressed, or by parking focus on the dialogue when the surface cannot hold it.
    Anything else leaves the keyboard on whatever was focused a click ago. */
 const offenders = handlers.filter(h =>
   /preventDefault\s*\(/.test(h.body) && !/\.focus\(|focusAfterPress\s*\(/.test(h.body));
-check("a mousedown that prevents the default also takes the focus",
+check("a press that prevents the default also takes the focus",
       offenders.length === 0,
       offenders.length ? `${offenders.map(h => h.what).join(", ")} — ` +
         `call focusAfterPress() (the dialogue) or focusAfterPress(el) (the control)` : "");
