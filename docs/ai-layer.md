@@ -4,7 +4,7 @@
 against the archive.**
 
 The app as deployed does no AI analysis of any kind. Everything it currently
-knows — 200 episodes, 143 hours, 14,937 searchable passages, 232 tags, 14
+knows — 200 episodes, 143 hours, 15,294 searchable passages, 232 tags, 14
 detected re-airs — comes from scraping a public feed and reading structure the
 producers already created. That approach has now been taken about as far as it
 goes. What remains needs something to read the prose.
@@ -77,7 +77,7 @@ that is better than either.
 - **Free-form AI** is already rejected above, and correctly.
 - **Against a fixed list of 34**, the work splits three ways, cheapest first.
 
-**1 — Rules first, with no AI at all.** The 145 patterns run against 882,346
+**1 — Rules first, with no AI at all.** The 145 patterns run against 904,266
 words of transcript for free, deterministically, and re-runnably. This archive
 has far more text per item than the film database does — a 32-minute episode is
 roughly 5,000 spoken words against a one-paragraph synopsis — so the rules should
@@ -252,7 +252,7 @@ which halves the price and is the right shape for work nobody is waiting on.
 | Per episode | ~7,000 in, ~350 out | **$0.022** |
 | Initial run, all 200 episodes | 1.55M | **$4.35** |
 | Ongoing — 2 shows weekly, ~104/year | — | **~$2.26/year** |
-| The 55 episodes with no transcript | — | included above (notes only) |
+| The 53 episodes with no transcript | — | included above (notes only) |
 
 Two things follow from these numbers.
 

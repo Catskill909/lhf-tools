@@ -2,7 +2,10 @@
 
 **Status: built.** The first cut described at the bottom of this document is
 now in the app — a **Transcript** button on every episode that has one (144 of
-200), opening the words with the tools around them. No AI involved; this is
+200 when this was written; **147 as at 13 Aug 2026**, and rising as new episodes
+arrive with transcripts), opening the words with the tools around them. Counts
+elsewhere in this document are as at build time for the same reason. No AI
+involved; this is
 scraping, the existing index and the existing clip editor pushed as far as they
 go.
 

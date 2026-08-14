@@ -24,9 +24,21 @@ and all** — your editing software writes them, Podbean carries them, and they'
 been sitting there in public the whole time.
 
 That's exactly what the AI step was going to produce. So it isn't needed:
-**144 of 200 episodes came with a full transcript, free.** No transcription
+**147 of 200 episodes came with a full transcript, free.** No transcription
 bill, no new vendor, nothing extra for you to do, and new episodes arrive the
 same way.
+
+**And the coverage is getting better on its own**, because your production has
+got more consistent about publishing them:
+
+| | Episodes with a transcript |
+|---|---|
+| 2024 | 39% |
+| 2025 | 75% |
+| 2026 | **86%** |
+
+So the gap is almost entirely in your *older* episodes. That matters, and there's
+a section about it further down.
 
 ---
 
@@ -52,7 +64,7 @@ both** — including *Striking At Kings* and *MLK in Memphis*.
 
 ![An episode flagged as having run three times, with the dates](screenshots/03-also-ran.png)
 
-**It opens the transcript.** Every episode that has one — 144 of the 200 — has
+**It opens the transcript.** Every episode that has one — 147 of the 200 — has
 a **Transcript** button. It opens the whole thing, already marked up with
 whatever you just searched for.
 
@@ -201,8 +213,8 @@ English and shows the first couple of rows of your actual file.
 **And there's a fourth option: the archive package.** One `.zip` containing the
 spreadsheet, every transcript as a readable text file, every spoken line with
 the second it was said, and a README explaining all of it. The whole archive —
-200 episodes, 144 transcripts, 14,937 passages — comes to **under 4 MB**, small
-enough to email.
+200 episodes, 147 transcripts, 15,294 passages — comes to **a few megabytes**,
+small enough to email.
 
 It's worth knowing what that file is, because it's more than a download:
 
@@ -452,6 +464,32 @@ Once something is reading the episodes, the same pass could also give you:
 None of it is decided, none of it is running, and it's all worth a conversation
 rather than an email — the six things above differ a lot in usefulness and
 hardly at all in price.
+
+### The 53 episodes with no transcript — the one job with a deadline
+
+Everything above reads text you already have. **This is the only piece that
+needs the audio**, and it's the only one where waiting costs you something.
+
+**53 episodes have no transcript**, because Podbean was never given one for
+them. Sixteen are encores. Machine transcription would cost **about $9 for all
+53** — a one-off, and the cheapest item on this entire page.
+
+Two things make it different from the rest:
+
+**It gets cheaper on its own.** Look at the coverage table near the top: 86% of
+2026 episodes arrive with a transcript against 39% of 2024's. The untranscribed
+ones are nearly all old, and old episodes are the ones dropping off the feed. Do
+nothing and the percentage keeps improving.
+
+**But it's also the only job that can expire.** Transcribing needs the
+recording. Those 53 are your oldest episodes — the ones closest to the feed's
+edge. Today their audio still works; we checked. If Podbean ever *deletes* an
+old file rather than just unlisting it, the chance to transcribe that episode
+goes with it, permanently.
+
+Everything else on this page can wait indefinitely and lose nothing. This one
+can't. It's nine dollars, so if the answer is "yes eventually", it may as well
+be yes now.
 
 ### A thought before any of that: use the tag list you already have
 

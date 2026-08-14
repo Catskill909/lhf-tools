@@ -1,6 +1,9 @@
 # Transcripts — phased plan
 
-> **Status: Phases 1–4 shipped.** 144 transcripts, 14,937 passages, 882,346
+> **Status: Phases 1–4 shipped.** *(Figures below are as at shipping. Live on
+> 13 Aug 2026: 147 transcripts, 15,294 passages, 904,266 words, and the gap now
+> 53 episodes at ~$9 — coverage rises on its own as new episodes arrive with
+> transcripts.)* 144 transcripts, 14,937 passages, 882,346
 > words, with jump-to-timestamp playback. Phases 5–6 remain: the 55-episode
 > gap (~$9.52) and AI enrichment over the transcripts — now **written and
 > tested but never run**, and measured at **$4.35** for the archive rather than

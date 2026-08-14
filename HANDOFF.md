@@ -91,7 +91,7 @@ individually unless you know why — skipping enrichment leaves the API erroring
 on a missing `mentions` table.
 
 Stdlib only — no pip, no venv, no build step. A full rebuild from nothing takes
-~2½ minutes (most of it fetching 144 transcripts), so don't be precious about
+~2½ minutes (most of it fetching ~147 transcripts), so don't be precious about
 the database — delete `data/` and re-run whenever it's easier than debugging.
 
 > A test server may still be running on port **8765** from the last session.
@@ -128,7 +128,8 @@ decision, and an admin screen to run it from. See `docs/ai-layer.md`.
 - Filters: show, year, encores-only, and by tag — with All / Reset to clear
 
 **Transcripts** *(free — pulled from the feed, no AI, no vendor)*
-- 144 of 200 episodes carry full transcripts: **14,937 passages, 882,346 words**
+- 147 of 200 episodes carry full transcripts: **15,294 passages, 904,266 words**
+  (measured live 13 Aug 2026; rising as new episodes arrive with transcripts)
 - Search reaches spoken audio; hits are marked "Heard in this episode" and the
   excerpt is the spoken line
 - **Jump to the moment** — up to 3 timestamps per result; click one and an
@@ -157,7 +158,7 @@ decision, and an admin screen to run it from. See `docs/ai-layer.md`.
 - **"What's in the file, exactly"** lists every column and shows the first two
   rows of the real file, fetched through the same endpoint as the download via
   `?limit=` — a preview assembled separately could disagree with the file
-- **Archive package (.zip)** — the catalogue, every transcript, all 14,937
+- **Archive package (.zip)** — the catalogue, every transcript, all 15,294
   timed passages and a README that explains the lot. **12 MB of content, 3.8 MB
   zipped**, built in the browser by `static/zip.js` with no dependency. Named
   `-complete` or `-filtered` so a partial export can never be mistaken for a
@@ -293,7 +294,12 @@ Exposes" must be 8000**; it defaults to 3000.
   rather than a build. See `docs/ai-layer.md`.
 - **An admin interface** → the blocker for the above, and for staff notes, tag
   corrections and `replayed_at`, all of which have schema and no UI. Needs auth.
-- The 55 episodes with no feed transcript (~$9.52 via Google STT)
+- The 53 episodes with no feed transcript (~$9 via Google STT). **Was 55**;
+  measured live 13 August 2026 at 147/200 covered, and the count keeps falling
+  on its own — 86% of 2026 episodes arrive with a transcript against 39% of
+  2024's, so the gap is nearly all old episodes ageing off the feed. It is also
+  the only outstanding job that needs the *audio*, so it is the only one that
+  can expire if Podbean ever deletes rather than unlists.
 - One broken transcript link on Podbean's side ("MLK in Memphis" 404s);
   `python3 ingest/transcripts.py --retry` will pick it up if they fix it
 - ~~**Somewhere to keep the backups.**~~ ✅ **Resolved** — confirmed 9 August
@@ -323,7 +329,7 @@ Exposes" must be 8000**; it defaults to 3000.
 
 | | |
 |---|---|
-| Search what was *said* on air | 144 transcripts, 882k words, pulled from the feed |
+| Search what was *said* on air | 147 transcripts, 904k words, pulled from the feed |
 | Jump to the exact moment | Click a timestamp, hear it — no Podbean cooperation needed |
 | Spreadsheet export | Whatever's on screen, ready for Sheets or Excel |
 | **Cut a broadcast-ready clip** | Waveform, drag handles, snap to silence, lossless MP3 out |
@@ -389,6 +395,14 @@ run it from.
 > Also: the podcast feed only hands out the most recent 100 episodes per show,
 > so this covers roughly the last two years. Going further back means pulling
 > from Podbean's back-end.
+
+**The quote above is the message as sent — left exactly as it went out, so the
+figures in it are the figures Harold was given.** Two have since moved: the
+transcript gap is **53 episodes, not 55** (coverage rises on its own as new
+episodes arrive with transcripts), and the 100-episode limit stopped being
+theoretical — three episodes have now dropped off, and their recordings still
+play. `docs/client-guide.md` carries the current numbers and is the document to
+send.
 
 ## Files
 
@@ -462,7 +476,7 @@ support. Checked before designing around it.
 
 **7. 145 of 200 episodes already publish full transcripts in the RSS feed**
 (Podcast 2.0 `<podcast:transcript>` tags → `.srt` files, timestamped to the
-millisecond, free). Only 55 episodes need machine transcription — about $9.52,
+millisecond, free). Only 53 episodes need machine transcription — about $9,
 not $102. Descript turns out to be largely irrelevant: Chris already publishes
 those exports to Podbean as part of his normal workflow, so we read the feed,
 not their API. See `docs/transcripts-plan.md`.
@@ -543,7 +557,8 @@ The natural next moves, in order of value:
 3. **The AI pass** ($4.35 for the archive, ~2¢/episode after) — topics,
    un-hyperlinked guests, interviewers. Written and tested, never run; now a
    client decision rather than a build. See `docs/ai-layer.md`.
-4. **The 55-episode transcript gap** (~$9.52).
+4. **The 53-episode transcript gap** (~$9) — the only job that needs the audio,
+   so the only one that can expire.
 
 ---
 
@@ -558,7 +573,7 @@ Everything is stored locally, nothing is re-fetched at query time:
 | | |
 |---|---|
 | `episodes.transcript_text` | 144 episodes, 4 MB |
-| `segments` (timestamped passages) | 14,937 rows, 4 MB |
+| `segments` (timestamped passages) | 15,294 rows, ~4 MB |
 | `description_html` + `description_text` | all 200 episodes |
 | Audio | **not stored** — only the URL |
 

@@ -107,7 +107,7 @@ Or in Coolify: point it at **https://github.com/Catskill909/lhf-tools**, add a
 **The first deploy serves immediately and fills in behind itself.** The volume
 starts empty, so the container creates an empty database (well under a second),
 starts the server, and fetches the archive in the background — about 143
-seconds for 200 episodes, 14,937 passages, 701 tags and 28 re-air links. The
+seconds for 200 episodes, 15,294 passages, 701 tags and 28 re-air links. The
 site is up throughout; it just has nothing in it for the first minute or two.
 
 **This is the shape it has to be.** The first version built the archive *before*
@@ -294,7 +294,7 @@ swap in FastAPI behind the same two routes; the front end won't know.
 | Transcripts | 77 | 67 |
 
 200 episodes, 143.1 hours. **144 carry full transcripts** pulled free from the
-feed — 14,937 searchable passages, 882,346 words. Plus 232 producer-linked
+feed — 15,294 searchable passages, 904,266 words. Plus 232 producer-linked
 tags and 14 detected re-airs.
 
 ## Features
@@ -469,4 +469,4 @@ FTS5 syntax worth knowing: `"exact phrase"`, `labor NOT history`,
   `ingest/extract.py` is written and its output path is tested end to end, but
   it has never touched the live API — there is no key on the dev machine.
   `--dry-run` prices it at $4.35. See [docs/ai-layer.md](docs/ai-layer.md).
-- The 55 episodes with no feed transcript (~$9.52)
+- The 53 episodes with no feed transcript (~$9)
