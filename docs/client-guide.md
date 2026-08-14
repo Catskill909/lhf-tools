@@ -274,6 +274,29 @@ an episode leaves Podbean and the file goes with it, then in here that episode
 becomes readable and searchable but **no longer playable**, and clips can't be
 cut from it.
 
+**Good news, and we tested it rather than assumed it.** Three episodes have now
+dropped off the end of the feed:
+
+| Show | Date | Title |
+|---|---|---|
+| Power Hour | 12 Sep 2024 | The power of our stories |
+| Power Hour | 19 Sep 2024 | Shift Happens |
+| Labor History Today | 22 Sep 2024 | The Disney Revolt (Encore) |
+
+**All three still play, and clips can still be cut from them.** Checked
+13 August 2026. Falling off the feed does not delete the recording — Podbean
+stops *listing* the episode, but the file stays where it was, and the address we
+saved still reaches it.
+
+So the thing to worry about isn't an episode ageing out. It's an episode being
+**deleted**, which is a different event and one only Podbean can tell you about.
+
+**One consequence worth being plain about:** those three episodes are no longer
+listed anywhere on Podbean, so this archive is now the only place that still
+knows where their audio lives. The recordings are fine; the *addresses* exist
+here and nowhere else. That is a good argument for keeping a copy of the archive
+package — see above — quite apart from the question below.
+
 ### The question
 
 **Do you keep your own copies of the finished episodes?**
@@ -287,10 +310,19 @@ soon, because it changes what this software should be doing. We would want to
 start keeping the audio here as well as the catalogue — technically simple, but
 a real change in what the archive is, and one worth deciding on purpose.
 
+It is less urgent than it looked, now that we know ageing out of the feed leaves
+the recording intact. It is still the question that decides what this software
+should become.
+
 Two related things while you're asking Podbean:
 
-- **Does anything survive an episode being removed** — the file, the transcript,
-  any AI work you've paid for? Worth knowing exactly, rather than assuming.
+- **What happens when an episode is actually deleted** — does the file go with
+  it? We know now that *ageing off the feed* leaves the audio in place; deletion
+  is the case still worth asking about, along with whether the transcript and any
+  AI work you've paid for survive it.
+- **How long do unlisted files stay?** The three above are still served but no
+  longer listed. Whether that lasts indefinitely is Podbean's policy, not
+  something we can measure from outside.
 - **The older backlog.** Everything before September 2024 was already out of
   reach of the feed. If you want it in here, it's a one-time job through
   Podbean's back-end, and it gets no easier with time.

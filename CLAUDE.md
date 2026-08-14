@@ -235,8 +235,17 @@ Chrome, a server and the network. Their coverage is listed at the end of
 
 ## Where the thinking lives
 
+**`docs/INDEX.md` is the routing table** — which document to read for which
+subject, and the rule that you read it *before* answering questions about
+status, behaviour, or anything client-facing. It is injected into every session
+by `.claude/hooks/inject-task-box.py`, along with `HANDOFF.md`'s task box,
+because two separate failures on 13 August 2026 came from answering out of the
+code when a document already held the answer. Add new documents to that table
+or they will not be found.
+
 | | |
 |---|---|
+| `docs/INDEX.md` | **Read-this-when routing for everything below** |
 | `HANDOFF.md` | Everything: state, deployment, backups, open threads |
 | `docs/audio-editor-dev.md` | The editor rebuild — opens with a status summary |
 | `docs/export-dev.md` | Export as the client's full archive package |
