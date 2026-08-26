@@ -27,7 +27,7 @@ episodes?" is a status question, and the answer was already written down.
 | If the conversation touches… | Read first |
 |---|---|
 | **Anything the client sees, is told, or was promised** | `docs/client-guide.md` — the client-facing description, written for them. Check here **before** framing any client conversation. |
-| **What was actually said to Harold, in his words and ours** | `docs/reply-descript.md` and `docs/reply-with-site.md` — real correspondence, not drafts. These are the promises of record; the guide describes the product, these describe the commitment. |
+| **What was actually said to Harold, in his words and ours** | `docs/reply-descript.md` and `docs/reply-with-site.md` — real correspondence, not drafts. These are the promises of record; the guide describes the product, these describe the commitment. `docs/reply-backlog.md` is a **draft, not sent** — the back-catalogue announcement and the new URL. |
 | **What's done, what's open, what's blocked, current status** | `HANDOFF.md` — the task box at the top, then *Open threads*. The four buckets are 🔥 DO / 🐞 FIX / ❓ ASK / 💭 NOTE. |
 | **Feeds, ingest, the update loop, episodes leaving the feed, retention** | `HANDOFF.md` → *Keeping the archive current* and *Backups*; then `docs/feed-update-audit.md` for the measured update state. For the complete pre-feed backlog, read `docs/feed-backfill-investigation.md`. |
 | **AI, topics, guests, interviewers, what it would cost** | `docs/ai-layer.md`. Nothing AI has ever been run. Costs are measured, not guessed. |
