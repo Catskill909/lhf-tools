@@ -40,8 +40,14 @@ EXPOSE 8000
 # and fetches the archive in the background, so there is no long window where
 # the container is alive but silent. (Coolify overrides this with its own check
 # anyway — this one is for plain `docker run` and compose.)
+#
+# It must read $PORT rather than a literal. Coolify injects PORT from its
+# "Ports Exposes" field and that overrides the ENV above — measured 26 August
+# 2026, where the container had PORT=3000 while this line probed 8000 and could
+# only ever fail. Harmless there because Coolify substitutes its own check, but
+# a health check that cannot pass is worse than none.
 HEALTHCHECK --interval=30s --timeout=5s --start-period=30s --retries=3 \
-  CMD curl -fsS http://127.0.0.1:8000/api/facets -o /dev/null || exit 1
+  CMD curl -fsS "http://127.0.0.1:${PORT:-8000}/api/facets" -o /dev/null || exit 1
 
 ENTRYPOINT ["/app/docker-entrypoint.sh"]
 CMD ["serve"]
