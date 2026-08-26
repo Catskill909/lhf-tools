@@ -1,7 +1,8 @@
 # Labor Heritage Media Archive — Handoff
 
-**Status:** **deployed and live on Coolify**, real data, checking the feeds every
-15 minutes.
+**Status:** **deployed and live**, real data, checking the feeds every 15
+minutes. **Now at <https://lhf-media.supersoul.top>** — moved from
+`lhf-tools.supersoul.top` on 26 August 2026; the old address is retired.
 Feature-complete for everything achievable without AI.
 **Local, not deployed:** tablet touch support for the audio editor and the
 tap-safe hover-disclosure pass are built. The compact phone transcript is also
@@ -25,16 +26,23 @@ on purpose and easily mistaken for a backlog. See *How to report work here* in
 
 ### 🔥 DO — something bad happens if ignored
 
-1. **Deploy and run the complete-archive backfill in production.** The importer
-   and renamed *Labor Heritage Media Archive* are built and verified locally:
-   785 unique episodes across *Labor Heritage Power Hour* (181), *Your Rights at
-   Work* (185), and *Labor History Today* (419); 17,316 transcript passages; no
-   duplicate GUIDs or permalinks; a second pass makes zero updates. Production
-   still has the old 200-episode state, so the client request remains incomplete
-   until deployment and the one-time command run. Take a verified snapshot
-   first, then run backfill, the normal refresh, and one explicit enrichment
-   rebuild. See
-   `docs/feed-backfill-investigation.md`.
+1. **Update `docs/client-guide.md`'s framing of the transcript gap before
+   sending it.** The backfill quadrupled the archive and **the transcript
+   percentage fell with it: 174 of 785, 22%** — where the guide as written says
+   *147 of 200* and prices filling the gap at **"about $9 for all 53"**. The
+   same job is now **611 episodes**, so that figure is out by roughly an order
+   of magnitude. The numbers elsewhere in the guide have been refreshed; **this
+   one is a judgement about what to tell the client, not an arithmetic
+   correction**, which is why it is here rather than done.
+
+~~**Deploy and run the complete-archive backfill in production.**~~ ✅ **Done
+26 August 2026.** Deployed to a new resource and verified live: **785 episodes,
+546.9 hours, 43 encores** across *Labor Heritage Power Hour* (181), *Labor
+History Today* (419) and *Your Rights at Work* (185) — a **third show the
+production archive never carried**. Coverage now runs **2017–2026** against
+2024–2026 before. Backfill ran automatically on the empty volume via
+`docker-entrypoint.sh`, so no one-time command was needed. See
+`docs/feed-backfill-investigation.md`.
 
 **Backups are handled** — confirmed by Paul, 9 August 2026: the VPS takes
 snapshots *and* full backups on a two-week retention, and the archive package
@@ -129,9 +137,11 @@ decision, and an admin screen to run it from. See `docs/ai-layer.md`.
 ### Working now
 
 **Search**
-- Production: 200 episodes, 143.1 hours, both shows, updating automatically
-  from the feeds. Local retained archive: 203 episodes, 145.4 hours; the three
-  extra rows are the restoration task at the top of this file.
+- Production: **785 episodes, 546.9 hours, three shows**, 2017–2026, updating
+  automatically from the feeds. Verified live 26 August 2026 after the
+  complete-archive backfill. *Your Rights at Work* (185) joins *Power Hour*
+  (181) and *Labor History Today* (419); production carried only the first two
+  and 203 episodes before.
 - Full-text with ranked results and highlighted excerpts
 - As-you-type prefix matching (`carsie bla` finds Carsie Blanton)
 - Query syntax: `"exact phrase"`, `AND`/`OR`/`NOT`, `(grouping)`, `organiz*`
@@ -144,9 +154,12 @@ decision, and an admin screen to run it from. See `docs/ai-layer.md`.
   uses the complete matching set rather than only the loaded cards.
 
 **Transcripts** *(free — pulled from the feed, no AI, no vendor)*
-- Production is 147 of 200; the retained local archive is 147 of 203 because
-  the three restored rows have no transcript: **15,294 passages, 904,266 words**
-  (verified 14 Aug 2026)
+- **174 of 785 (22%)**, measured live 26 August 2026 by paging the whole
+  archive. The *count* rose (147 → 174) while the *percentage* fell hard, because
+  the backfill added 585 mostly pre-2024 episodes and Podbean carries transcripts
+  for almost none of them. **611 episodes now have no transcript, against 53
+  before** — see the first DO in the task box, which is about what to tell the
+  client rather than about the number.
 - Search reaches spoken audio; hits are marked "Heard in this episode" and the
   excerpt is the spoken line
 - **Jump to the moment** — up to 3 timestamps per result; click one and an
@@ -157,9 +170,13 @@ decision, and an admin screen to run it from. See `docs/ai-layer.md`.
 - **Re-air detection** — 14 relationships: 5 programmes that ran on *both*
   shows, 8 encores of an earlier episode. Shown inline as "Also ran".
   This is Chris's "have we already run this" problem, solved.
-- **232 tags** — people, bands, museums and books the producers hyperlinked in
-  their own show notes. Click one to see every episode featuring it.
-- 22 encores flagged automatically from title convention
+- **224 tags** — people, bands, museums and books the producers hyperlinked in
+  their own show notes. Click one to see every episode featuring it. (Live count
+  26 Aug 2026; it was 232 against the 200-episode archive. Enrichment rebuilds
+  from scratch and the frequency filter re-decides what counts as furniture over
+  a four-times-larger corpus, so a *smaller* number over *more* episodes is
+  expected, not a regression.)
+- **43 encores** flagged automatically from title convention (was 22)
 
 **Export**
 - **Choose the scope** — this search, or the whole archive. Both counts are
@@ -312,8 +329,16 @@ check rather than the Dockerfile's, it shells out to `curl` which
 `python:3.12-slim` does not ship, and building the archive *before* starting the
 server means nothing is listening during the build, so the container is killed
 as unhealthy and the build restarts for ever. The container now opens the port
-in **1 second** and fetches the archive behind itself. **Coolify's "Ports
-Exposes" must be 8000**; it defaults to 3000.
+in **1 second** and fetches the archive behind itself.
+
+**Correction, 26 August 2026 — "Ports Exposes must be 8000" was wrong.**
+Measured on the running container: the orchestrator **injects `PORT` from that
+field and overrides the Dockerfile's `ENV PORT`**, and generates the proxy's
+routing rule from the same value, so the two can never disagree. The live
+deployment runs on **3000** with no environment variables set at all. The number
+does not matter; matching it to the Dockerfile does not either. The Dockerfile's
+`HEALTHCHECK` now reads `$PORT` rather than a literal, because hardcoding 8000
+meant it probed a dead port and could only fail.
 
 ### Not built yet
 
@@ -575,12 +600,25 @@ decides they want.
 
 ## Where we stopped
 
-Production is deployed. The current touch work—tablet editor support, tap-safe
-hover disclosure and the compact phone transcript—is complete locally, with
-core iPad use confirmed and the remaining Phase 4 device matrix recorded in
-`docs/touch-dev.md`. The task box at the top of this file is the authoritative
-next-work list; older design and correspondence sections below are historical
-context, not a second backlog.
+**26 August 2026.** The archive was redeployed to
+<https://lhf-media.supersoul.top> and the complete-archive backfill ran on the
+fresh volume: **785 episodes, 546.9 hours, three shows, 2017–2026**, verified
+live. That closes the standing DO and adds *Your Rights at Work*, a show
+production had never carried.
+
+Two bugs found and fixed on the way: the Dockerfile health check probed a
+hardcoded port the container was not listening on, and gzip's timestamp header
+made every ETag unstable so no browser ever received a 304. Both have tests.
+
+**The one thing left to decide is the client guide's transcript framing** — see
+the first DO. The numbers in `docs/client-guide.md` are refreshed, but "$9 to
+fill the gap" was written against 53 missing episodes and there are now 611.
+
+The current touch work — tablet editor support, tap-safe hover disclosure and
+the compact phone transcript — is complete locally, with core iPad use confirmed
+and the remaining Phase 4 device matrix in `docs/touch-dev.md`. The task box at
+the top of this file is the authoritative next-work list; older design and
+correspondence sections below are historical context, not a second backlog.
 
 ---
 
@@ -964,6 +1002,23 @@ time. Every response now carries an `ETag`, and a conditional request gets a
 The hash is taken after compression, so a gzipped body and a plain one are
 different ETags, which is what `Vary: Accept-Encoding` already implied.
 
+**…and then they still weren't happening — fixed 26 August 2026.** Hashing the
+*compressed* body is correct for `Vary`, but `gzip.compress()` writes the
+current time into the GZIP header's MTIME field (RFC 1952, bytes 4–8). So the
+same content produced **a different ETag every second**, and `If-None-Match`
+almost never matched. Every browser sends `Accept-Encoding: gzip`, so **no real
+client was getting a 304** — the exact failure the ETag was added to fix,
+surviving inside the fix for it, undetected for as long as nobody measured it
+twice in the same second.
+
+Measured on production before the fix: three consecutive requests for one
+resource, two different ETags across a one-second boundary, while an
+identity-encoded request was stable. `gzip_bytes()` now passes `mtime=0`, which
+makes the output a pure function of the input. `tests/test-server.py` covers it
+by **deliberately crossing a second boundary** — a test that compresses twice
+within the same second passes while the bug is live, which is precisely how this
+would ship a second time. Swept the rest of the Python: one instance.
+
 **2. None of that reaches a tab that is already open**, which is the case that
 actually cost time here. A bug fixed and deployed appeared **unfixed locally**
 because one tab held a stale `index.html`; twenty minutes went into debugging
@@ -1012,10 +1067,12 @@ the code — and `git log -S'some string from the screen'` will date it exactly.
   container can bind `0.0.0.0` (verified both ways: `0.0.0.0` answers on the
   LAN address, the default refuses it). Threaded and fine for this traffic, but
   it is not a hardened server — keep it behind Coolify's proxy.
-- Repo: **https://github.com/Catskill909/lhf-tools** (`origin/main`). Check its
-  visibility — it was pushed to an existing empty repo and nobody has confirmed
-  whether it is public or private. Nothing sensitive is tracked (no database,
-  no keys) but it is a client project.
+- Repo: **https://github.com/Catskill909/lhf-tools** (`origin/main`).
+  **Confirmed PUBLIC on 26 August 2026** — the open question here is now
+  answered. Nothing sensitive is tracked (no database, no keys), and
+  infrastructure notes are deliberately gitignored rather than committed. Keep
+  it that way: **anything about how the server is configured stays out of this
+  repository.**
 - The Docker image has never been built. The entrypoint's branching was tested
   with a stubbed `python3` (all four paths, including the first-run bootstrap
   and the worker's wait-for-database), and Python 3.12 compatibility was checked

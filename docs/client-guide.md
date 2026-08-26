@@ -1,14 +1,17 @@
 # Labor Heritage Media Archive
 
-**https://lhf-tools.supersoul.top**
+**https://lhf-media.supersoul.top**
+
+> **New address.** The archive has moved from `lhf-tools.supersoul.top` to the
+> one above. Please update any bookmark — the old address no longer works.
 
 Harold's email asked for a catalogue of the guests, topics and interviewers
-across both shows — pulled from what you've already published as well as what's
+across your shows — pulled from what you've already published as well as what's
 coming — searchable, so you can find an older show worth replaying, check
 whether something is already in the can, and eventually put a search box on
 laborheritage.org.
 
-That's what this is. One discovery along the way changed the plan.
+That's what this is. Two discoveries along the way changed the plan.
 
 ---
 
@@ -23,29 +26,55 @@ Then I looked properly at your feed. **It already publishes transcripts, timings
 and all** — your editing software writes them, Podbean carries them, and they've
 been sitting there in public the whole time.
 
-That's exactly what the AI step was going to produce. So it isn't needed:
-**147 of 200 episodes came with a full transcript, free.** No transcription
-bill, no new vendor, nothing extra for you to do, and new episodes arrive the
-same way.
+That's exactly what the AI step was going to produce. So for recent episodes it
+isn't needed — they arrive with a transcript, free. No transcription bill, no
+new vendor, nothing extra for you to do.
 
-**And the coverage is getting better on its own**, because your production has
-got more consistent about publishing them:
+**And the coverage keeps improving on its own**, because your production has got
+more consistent about publishing them. Recent years are well covered; the older
+material largely isn't.
 
-| | Episodes with a transcript |
-|---|---|
-| 2024 | 39% |
-| 2025 | 75% |
-| 2026 | **86%** |
+So the gap is almost entirely in your *older* episodes — and the second
+discovery, below, made that gap a great deal bigger.
 
-So the gap is almost entirely in your *older* episodes. That matters, and there's
-a section about it further down.
+---
+
+## The second discovery: the whole back catalogue was reachable
+
+The archive originally went back to September 2024, because that is as far as
+the podcast feed reaches. **A closer look at Podbean's own public pages found
+the complete published catalogue sitting there**, and it has now all been
+brought in.
+
+| | Before | Now |
+|---|---|---|
+| Episodes | 200 | **785** |
+| Hours | 143 | **547** |
+| Earliest | Sep 2024 | **2017** |
+| Shows | 2 | **3** |
+
+**The third show is *Your Rights at Work*** — 185 episodes that were never in
+the archive at all.
+
+This is the single biggest change since you last saw it, and it is worth
+knowing what it does *not* include: those older episodes were published before
+transcripts were routine, so **most of them arrive with no transcript.** See
+*The episodes with no transcript* below — the shape of that job changed with
+them.
 
 ---
 
 ## What it does
 
-**200 episodes · 143.1 hours · both shows**, checking for new episodes every 15
-minutes. The footer tells you when it last looked.
+**785 episodes · 546.9 hours · three shows**, spanning 2017 to today and
+checking for new episodes every 15 minutes. The footer tells you when it last
+looked.
+
+| Show | Episodes |
+|---|---|
+| Labor History Today | 419 |
+| Your Rights at Work | 185 |
+| Labor Heritage Power Hour | 181 |
 
 ![The archive — both shows, filters and sorting](screenshots/01-search.png)
 
@@ -59,13 +88,14 @@ timestamp and the episode plays from that second.
 ![A player opened at the spoken moment, cued to 10:21, with the scissors alongside it](screenshots/audio-position-play.png)
 
 **It spots repeats.** The archive works out when a programme has aired more than
-once and says so under the episode: **8 repeated on the same show, 5 that ran on
-both** — including *Striking At Kings* and *MLK in Memphis*.
+once and says so under the episode. With the full back catalogue in, it now
+flags **43 encores** — double what it could see before, because it can finally
+compare against the years the feed never reached.
 
 ![An episode flagged as having run three times, with the dates](screenshots/03-also-ran.png)
 
-**It opens the transcript.** Every episode that has one — 147 of the 200 — has
-a **Transcript** button. It opens the whole thing, already marked up with
+**It opens the transcript.** Every episode that has one — **174 of the 785** —
+has a **Transcript** button. It opens the whole thing, already marked up with
 whatever you just searched for.
 
 ![The transcript modal — timestamped lines, find-in-transcript, the player, and print and download controls](screenshots/transcript.png)
@@ -168,7 +198,7 @@ down to a fraction of a second on one edge.
 
 ![The clip editor — the passage selected on the waveform, in and out points, the controls for hearing the start and end of the clip and snapping a cut to silence, and the MP3 download](screenshots/audio-edit-modal.png)
 
-**It remembers the clips you make.** Finding a moment in 143.1 hours is the hard
+**It remembers the clips you make.** Finding a moment in 546.9 hours is the hard
 part, and it used to be work you did again every time — cut a clip, and the only
 record you ever found it was a file in a downloads folder.
 
@@ -214,14 +244,14 @@ your browsing data removes them. The audio is never at risk, only the record of
 what you found, and a downloaded MP3 is a normal file that outlives all of it.
 See **Where things are kept** below.
 
-**Tags** — 232 people, bands, museums and books, taken from the links in your
-own show notes rather than guessed. Click one to see every episode featuring it.
+**Tags** — **224** people, bands, museums and books, taken from the links in
+your own show notes rather than guessed. Click one to see every episode featuring it.
 (These are different from the **labels** on your clips: tags come from your show
 notes and are the same for everyone; labels are yours.)
 
 **Export** — a spreadsheet of the archive, with links back to each episode, its
 transcript and the audio. You choose how much: **this search** gives you exactly
-what's on screen, filters and all; **everything** gives you all 200 episodes.
+what's on screen, filters and all; **everything** gives you all 785 episodes.
 Both counts are shown, so you always know which file you're about to get. CSV
 for Sheets or Excel, straight to the clipboard, or JSON.
 
@@ -233,8 +263,8 @@ English and shows the first couple of rows of your actual file.
 **And there's a fourth option: the archive package.** One `.zip` containing the
 spreadsheet, every transcript as a readable text file, every spoken line with
 the second it was said, and a README explaining all of it. The whole archive —
-200 episodes, 147 transcripts, 15,294 passages — comes to **a few megabytes**,
-small enough to email.
+785 episodes and 174 transcripts — still comes to **a few megabytes**, small
+enough to email.
 
 It's worth knowing what that file is, because it's more than a download:
 
@@ -248,8 +278,8 @@ It's worth knowing what that file is, because it's more than a download:
   note inside saying so. A partial export is perfectly useful, but it isn't a
   backup, and a year later nothing else would tell you which one you had.
 
-Audio isn't inside it — only links to it. All 143.1 hours would be 8–12 GB, which
-is a download rather than a file. That's worth holding alongside the
+Audio isn't inside it — only links to it. All 546.9 hours would be tens of
+gigabytes, which is a download rather than a file. That's worth holding alongside the
 **100-episode limit** section above: this package preserves everything *except*
 the recordings.
 
@@ -290,9 +320,16 @@ yourself, independent of this software entirely.
 This is the one thing on this page worth reading twice, and it's a question for
 you rather than a problem with the archive.
 
-**Podbean carries the most recent 100 episodes per show.** Both shows are now
-sitting at exactly that number. So from the next episode each of you publishes,
-the oldest one drops off the end.
+> **Largely resolved, 26 August 2026.** The complete published back catalogue —
+> 785 episodes across three shows, back to 2017 — has now been brought in and is
+> held permanently here. The section below still matters, because it explains
+> **what the archive holds and what it doesn't**, and the question at the end is
+> unchanged. But the immediate worry that older shows were slipping out of reach
+> has been dealt with.
+
+**Podbean's feed carries the most recent 100 episodes per show**, which is why
+the archive originally reached back only to September 2024. Each time you
+publish, the oldest one drops off the end of that feed.
 
 **What the archive keeps, permanently:** the episode, its description, its full
 transcript, every timestamped line, the tags, the re-air detection, and any
@@ -323,10 +360,12 @@ So the thing to worry about isn't an episode ageing out. It's an episode being
 **deleted**, which is a different event and one only Podbean can tell you about.
 
 **One consequence worth being plain about:** those three episodes are no longer
-listed in RSS, but a later full audit found them on Podbean's public paginated
-archive pages along with the older catalogue. That gives us a recovery route;
-it does not replace keeping a copy of the archive package, because a public
-website can change and does not contain our catalogue work.
+listed in RSS, but they were found on Podbean's public archive pages along with
+the rest of the older catalogue — which is how the full import was possible.
+That gives us a recovery route; **it does not replace keeping a copy of the
+archive package**, because a public website can change without notice and does
+not contain any of our catalogue work: the re-air detection, the tags, the
+timings.
 
 ### The question
 
@@ -354,14 +393,15 @@ Two related things while you're asking Podbean:
 - **How long do files outside RSS stay?** The three above are still served and
   remain on Podbean's public archive pages. Whether that lasts indefinitely is
   Podbean's policy, not something we can measure from outside.
-- **The older backlog.** Everything before September 2024 is out of reach of
-  the RSS feed, but a 26 August audit found the complete published catalogue on
-  Podbean's public archive pages. Bringing it in is now a one-time recovery we
-  can do without Podbean credentials.
+- ~~**The older backlog.**~~ ✅ **Done.** Everything before September 2024 was
+  out of reach of the RSS feed, but the complete published catalogue was found
+  on Podbean's public archive pages and imported on 26 August 2026 — no
+  credentials needed. **785 episodes, back to 2017, three shows.**
 
-The complete backfill was requested on 26 August 2026 and is now the next
-archive task. The first question above still decides whether Podbean or LHF is
-the long-term home of the recordings themselves.
+**The first question above is now the one that matters**, and the import
+sharpens rather than settles it: the archive holds nine years of catalogue and
+none of the recordings. Whether Podbean or LHF is the long-term home of the
+audio is still yours to answer.
 
 ---
 
@@ -370,7 +410,7 @@ the long-term home of the recordings themselves.
 Short section, but it decides what's shareable and what isn't, so it's worth
 being plain about.
 
-**The archive itself is on the server.** The 200 episodes, the transcripts, the
+**The archive itself is on the server.** The 785 episodes, the transcripts, the
 tags, the search — one copy, the same for all of you, wherever you open it from.
 That's the part being backed up.
 
@@ -462,11 +502,16 @@ What it would cost, measured against your actual archive rather than guessed:
 
 | | |
 |---|---|
-| Reading the current archive once | **about $4** |
+| Reading the current archive once | **roughly $15–20** |
 | Each new episode from then on | **about 2 cents** |
-| Which, at two shows a week, is | **about $2 a year** |
+| Which, at two to three shows a week, is | **about $3 a year** |
 
-Those numbers are small enough that cost isn't really the question. The
+**The first figure has changed.** It was measured at about $4 when the archive
+held 200 episodes; it now holds 785, so the one-off pass costs proportionally
+more. The per-episode and per-year figures are unaffected — those depend on how
+often you publish, not on how much history is stored.
+
+Even so, the numbers are small enough that cost isn't really the question. The
 question is whether you want the archive to make judgements at all, and how
 much you want it to make.
 
@@ -487,31 +532,50 @@ None of it is decided, none of it is running, and it's all worth a conversation
 rather than an email — the six things above differ a lot in usefulness and
 hardly at all in price.
 
-### The 53 episodes with no transcript — the one job with a deadline
+### The episodes with no transcript — the one job with a deadline
 
 Everything above reads text you already have. **This is the only piece that
 needs the audio**, and it's the only one where waiting costs you something.
 
-**53 episodes have no transcript**, because Podbean was never given one for
-them. Sixteen are encores. Machine transcription would cost **about $9 for all
-53** — a one-off, and the cheapest item on this entire page.
+**This is also the item the back-catalogue import changed most.** Before, the
+archive held 200 episodes and 53 of them lacked a transcript. Now it holds 785,
+and **611 have no transcript** — because the older material was published before
+transcripts were routine, and Podbean was never given one.
 
-Two things make it different from the rest:
+| | Before | Now |
+|---|---|---|
+| Episodes in the archive | 200 | 785 |
+| With a transcript | 147 | 174 |
+| **Without** | **53** | **611** |
 
-**It gets cheaper on its own.** Look at the coverage table near the top: 86% of
-2026 episodes arrive with a transcript against 39% of 2024's. The untranscribed
-ones are nearly all old, and old episodes are the ones dropping off the feed. Do
-nothing and the percentage keeps improving.
+The number *with* went up. The proportion went down hard, and that is simply
+what bringing in nine years of older shows looks like.
+
+**What this means for the cost.** The $9 figure quoted previously was for 53
+episodes. **It no longer applies** — the same job is now more than ten times
+larger, and the older episodes have different running times, so it needs
+re-estimating properly rather than scaling on the back of an envelope. We will
+put a real number in front of you before anything is spent.
+
+**It is also worth asking whether you want all of it.** Filling every gap back
+to 2017 and transcribing only, say, the last three years are very different
+jobs at very different prices, and only you can say which older material is
+worth being able to search inside.
+
+Two things still make this different from everything else on this page:
+
+**It gets cheaper on its own** for *new* episodes. Your recent output arrives
+with transcripts already, so the gap stops growing — it only ever shrinks from
+the front.
 
 **But it's also the only job that can expire.** Transcribing needs the
-recording. Those 53 are your oldest episodes — the ones closest to the feed's
-edge. Today their audio still works; we checked. If Podbean ever *deletes* an
-old file rather than just unlisting it, the chance to transcribe that episode
-goes with it, permanently.
+recording. Those 611 are your oldest episodes. Today their audio still works;
+we checked. If Podbean ever *deletes* an old file rather than just unlisting it,
+the chance to transcribe that episode goes with it, permanently.
 
 Everything else on this page can wait indefinitely and lose nothing. This one
-can't. It's nine dollars, so if the answer is "yes eventually", it may as well
-be yes now.
+can't — which is an argument for deciding the *scope* soon, even if the work
+itself waits.
 
 ### A thought before any of that: use the tag list you already have
 

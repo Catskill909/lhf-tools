@@ -39,7 +39,7 @@ episodes?" is a status question, and the answer was already written down.
 | **Transcripts, segments, passages** | `docs/transcripts-plan.md`, `docs/transcript-modal.md`. |
 | **Colour, theme, contrast, "make it darker", legibility** | `CLAUDE.md` → the palette traps. They are counter-intuitive and enforced by `tests/test-palette.mjs`. |
 | **Deployment, Docker, Coolify, the volume, health checks** | `README.md` → *Coolify settings that matter*; `HANDOFF.md` → *Keeping the archive current*. |
-| **Shared vs private storage, bind mounts, the deployment volume** | `cooify-volume-fix.md` — **kept out of git deliberately** (this repo is public and it contains server detail). It lives in the working copy only. **Read it before changing Persistent Storage on any deployment.** |
+| **Deployment storage configuration** | `cooify-volume-fix.md` — **deliberately not in git** (this repository is public). It lives in the working copy only. **Read it before changing anything under Coolify → Persistent Storage, and never summarise it into a tracked file.** |
 | **Backups and recovery-source status** | `HANDOFF.md` → *Backups*; then `docs/feed-backfill-investigation.md`. |
 
 ---
