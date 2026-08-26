@@ -26,14 +26,26 @@ on purpose and easily mistaken for a backlog. See *How to report work here* in
 
 ### 🔥 DO — something bad happens if ignored
 
-1. **Update `docs/client-guide.md`'s framing of the transcript gap before
-   sending it.** The backfill quadrupled the archive and **the transcript
-   percentage fell with it: 174 of 785, 22%** — where the guide as written says
-   *147 of 200* and prices filling the gap at **"about $9 for all 53"**. The
-   same job is now **611 episodes**, so that figure is out by roughly an order
-   of magnitude. The numbers elsewhere in the guide have been refreshed; **this
-   one is a judgement about what to tell the client, not an arithmetic
-   correction**, which is why it is here rather than done.
+1. **Decide the scope of the transcription job, then price it.** The archive
+   quadrupled and the gap went from 53 episodes to **611**, so the guide's old
+   *"about $9"* is out by more than an order of magnitude. The guide now states
+   the new count and says plainly that the old price no longer applies — but it
+   deliberately quotes **no replacement figure**, because the number depends
+   entirely on a decision only the client can make.
+
+   **The 26 August audit makes that decision concrete.** No transcript exists
+   before 2022, so this is commissioning new work, not recovering lost work, and
+   it splits cleanly:
+
+   | Scope | Episodes needing one | Character |
+   |---|---|---|
+   | 2022–2024 | ~316 | Recent enough to replay; some transcripts already exist alongside |
+   | Before 2022 | 259 | Oldest, least likely to be re-aired, none exist at all |
+
+   Price whichever they choose against real durations rather than scaling the
+   old per-episode figure — the older shows differ in length. **This is a
+   judgement about what to offer, not an arithmetic correction**, which is why
+   it is still here.
 
 ~~**Deploy and run the complete-archive backfill in production.**~~ ✅ **Done
 26 August 2026.** Deployed to a new resource and verified live: **785 episodes,
@@ -154,8 +166,37 @@ decision, and an admin screen to run it from. See `docs/ai-layer.md`.
   uses the complete matching set rather than only the loaded cards.
 
 **Transcripts** *(free — pulled from the feed, no AI, no vendor)*
-- **174 of 785 (22%)**, measured live 26 August 2026 by paging the whole
-  archive. The *count* rose (147 → 174) while the *percentage* fell hard, because
+- **174 of 785 (22%)** — and **audited against Podbean itself on 26 August
+  2026, not merely counted in our own database.** Every one of the 785 episode
+  pages was re-fetched independently: **Podbean offers 175 transcripts, we hold
+  174.** The single gap is *MLK in Memphis* (2025-01-26), whose advertised
+  `.srt` URL returns **404 from Podbean** — the broken link already recorded
+  under *Known rough edges*, not a fetch we missed. `transcripts.py --retry`
+  picks it up if they ever fix it.
+
+  **Nothing was missed.** The audit matches per year exactly:
+
+  | Year | Episodes | Podbean offers | We hold |
+  |---|---|---|---|
+  | 2026 | 68 | 59 | 59 |
+  | 2025 | 107 | 81 | **80** |
+  | 2024 | 107 | 18 | 18 |
+  | 2023 | 126 | 13 | 13 |
+  | 2022 | 118 | 4 | 4 |
+  | 2021–2017 | 259 | **0** | 0 |
+
+  **No transcript exists anywhere before 2022.** The 611 without one are not a
+  scraping failure — Podbean has never held them. That turns the client question
+  from "did we get everything?" into "do you want to *create* transcripts that
+  have never existed?"
+
+  ⚠️ **A trap for anyone re-running this audit:** the `power-hour` and
+  `your-rights-at-work` RSS feeds are **byte-identical** — 100 shared GUIDs out
+  of 100. Summing `<podcast:transcript>` counts across the three feeds gives
+  230 and counts the same 80 episodes twice. Count unique episodes, not feed
+  items.
+
+  Originally measured live by paging the whole archive. The *count* rose (147 → 174) while the *percentage* fell hard, because
   the backfill added 585 mostly pre-2024 episodes and Podbean carries transcripts
   for almost none of them. **611 episodes now have no transcript, against 53
   before** — see the first DO in the task box, which is about what to tell the

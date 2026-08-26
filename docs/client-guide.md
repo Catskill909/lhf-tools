@@ -551,16 +551,45 @@ transcripts were routine, and Podbean was never given one.
 The number *with* went up. The proportion went down hard, and that is simply
 what bringing in nine years of older shows looks like.
 
+**We checked this properly rather than assuming it.** On 26 August we went back
+to Podbean and re-examined all 785 episode pages independently of our own
+records, to be sure nothing had simply been missed. It hadn't:
+
+| Year | Episodes | Transcripts Podbean has | We hold |
+|---|---|---|---|
+| 2026 | 68 | 59 | 59 |
+| 2025 | 107 | 81 | 80 |
+| 2024 | 107 | 18 | 18 |
+| 2023 | 126 | 13 | 13 |
+| 2022 | 118 | 4 | 4 |
+| 2021 and earlier | 259 | **none** | — |
+
+**We hold 174 of the 175 that exist.** The one exception is *MLK in Memphis*,
+where Podbean advertises a transcript but the file itself returns "not found" —
+a broken link on their side. It will be picked up automatically if they fix it.
+
+**And there are no transcripts at all before 2022.** That is the important
+finding: the older episodes aren't missing transcripts we failed to collect,
+they're episodes for which a transcript was never made. So filling that gap
+means *creating* something new, not recovering something lost.
+
 **What this means for the cost.** The $9 figure quoted previously was for 53
 episodes. **It no longer applies** — the same job is now more than ten times
 larger, and the older episodes have different running times, so it needs
 re-estimating properly rather than scaling on the back of an envelope. We will
 put a real number in front of you before anything is spent.
 
-**It is also worth asking whether you want all of it.** Filling every gap back
-to 2017 and transcribing only, say, the last three years are very different
-jobs at very different prices, and only you can say which older material is
-worth being able to search inside.
+**It is also worth asking whether you want all of it.** The gap divides quite
+naturally, and the two halves are worth very different amounts to you:
+
+| | Episodes without a transcript | Worth thinking about |
+|---|---|---|
+| **2022–2024** | about 316 | Recent enough to replay, and sits alongside episodes that already have transcripts |
+| **Before 2022** | 259 | Your oldest material, least likely to be re-aired |
+
+Doing the recent half and leaving the rest is a perfectly reasonable answer, and
+roughly half the cost. Only you can say whether the older material is worth
+being able to search inside.
 
 Two things still make this different from everything else on this page:
 
