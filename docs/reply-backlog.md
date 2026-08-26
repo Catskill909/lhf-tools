@@ -53,6 +53,19 @@ shows.
 Those episodes are still fully searchable by title, description, guests, tags
 and date. You just can't search the spoken audio for them.
 
+I added something while looking at this. Every episode now has an Edit audio
+button that opens the clip editor straight onto the full show, so you can cut
+from any of the 785 whether it has a transcript or not. Nothing is locked away.
+
+But it's worth being honest about the difference, because it's the real argument
+for transcripts. With one, you search for a phrase, read down to the moment and
+click - the words take you there. Without one, you're scrubbing a waveform
+listening for something you half remember. Both get you a clip. One takes a
+minute and the other can take twenty.
+
+So the Edit audio route is the floor, not the goal. Transcribing the older shows
+would replace it with the fast path everywhere.
+
 611 episodes have no transcript - 316 of them from 2022-2024, and 295 older
 than that.
 
