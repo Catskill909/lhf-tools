@@ -63,9 +63,12 @@ there may cost you nothing. Anything that ends up on Podbean flows into the
 archive by itself, the same way your current transcripts do - I don't need to
 touch it. The same is true of anything you re-export from Descript.
 
-So: worth asking Podbean what your plan covers. If it turns out they won't do
-the older ones, I can have them transcribed instead - just tell me how far back
-is worth it and I'll price that stretch rather than quoting for all 611.
+So: worth asking Podbean what your plan covers. If it won't stretch to the older
+ones, I can have them machine-transcribed instead. To be clear about what that
+costs - it's the transcription service itself, charged by the minute of audio,
+not my time. Setting it up and running it is part of the project. Tell me how
+far back is worth it and I'll get you a figure for that stretch rather than
+quoting for all 611.
 
 Still on my list: topic tagging, and the guests who weren't linked in the show
 notes. I'll send a draft list of topics to react to.
