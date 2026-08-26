@@ -605,7 +605,7 @@
      accent. Opening a transcript is a way in, not an action with a
      consequence — in the accent colour it read as the most urgent thing on
      a card whose actual subject is the episode. Hover does the persuading. */
-  .tx-open {
+  .tx-open, .clip-open {
     display: inline-flex; align-items: center; gap: 0.32rem;
     background: none; border: 1px solid var(--rule); border-radius: 2px;
     color: var(--ink-2);
@@ -613,8 +613,23 @@
     padding: 0.16rem 0.52rem; cursor: pointer; white-space: nowrap;
   }
   .tx-open::before { content: "¶"; opacity: 0.55; }
-  .tx-open:hover { color: var(--spot-ink); border-color: var(--spot); }
-  .tx-open:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+  .clip-open::before { content: "✂"; opacity: 0.55; }
+  .tx-open:hover, .clip-open:hover { color: var(--spot-ink); border-color: var(--spot); }
+  .tx-open:focus-visible, .clip-open:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+
+  /* Same control, different verb. Edit audio is the one every card carries, so
+     it sits rightmost and lands in the same place whether or not the episode
+     has a transcript beside it. */
+  .row-actions { display: flex; gap: 0.4rem; align-items: center; flex-wrap: wrap; }
+
+  /* Not on phones. The editor is guarded below 768px and answers with a
+     "continue on a tablet" notice, so a button on all 785 cards would be 785
+     taps that go nowhere. This follows the phone transcript, which drops its
+     per-line Edit for the same reason: the small screen is for finding,
+     listening and reading, not for production. */
+  @media (max-width: 767px) {
+    .clip-open { display: none; }
+  }
 
   /* Re-air notice — the "have we run this already" answer, stated inline. */
   /* The ground is what carries this on paper. Dark resolves --gold-wash to
@@ -3819,10 +3834,23 @@ async function run({ append = false } = {}) {
                 aria-controls="notes-${r.id}">${browsing ? "More" : "Show full notes"}</button>
       </div>` : "";
 
-    // Only offered where there is one — 56 of 200 episodes have no transcript,
+    // Only offered where there is one — 611 of 785 episodes have no transcript,
     // and a button that opens an apology is worse than no button.
     const txBtn = r.has_transcript
       ? `<button class="tx-open" data-tx="${r.id}">Transcript</button>` : "";
+
+    // Every episode can be edited, transcript or not. Until this existed the
+    // editor was reachable only from a spoken-word search hit — so 611 of 785
+    // episodes had no route to their own audio, and *no* episode had one while
+    // browsing, because `moments` are only built when a query matched. The
+    // audio itself was never the constraint: every row has an `audio_url`.
+    //
+    // Wrapped with the transcript button because `.title-row > :not(h2)` sets
+    // `margin-left: auto`, which on two loose children pushes them apart.
+    const clipBtn = r.audio_url
+      ? `<button class="clip-open" data-clip="${r.id}">Edit audio</button>` : "";
+    const rowActions = (txBtn || clipBtn)
+      ? `<div class="row-actions">${txBtn}${clipBtn}</div>` : "";
 
     const ents = (r.mentions && r.mentions.length) ? `
       <div class="ents"><span class="lbl">Tags</span>${r.mentions.slice(0, 8).map(m =>
@@ -3868,7 +3896,7 @@ async function run({ append = false } = {}) {
         </div>
         <div class="title-row">
           <h2><a href="${esc(r.episode_url)}" target="_blank" rel="noopener">${esc(r.title)}</a></h2>
-          ${txBtn}
+          ${rowActions}
         </div>
         ${blurb}${notes}
         ${people}
@@ -3923,6 +3951,17 @@ async function run({ append = false } = {}) {
     b.addEventListener("click", () => {
       const ep = loadedResults.find(r => String(r.id) === b.dataset.tx);
       if (ep) openTranscript(ep);
+    }));
+
+  // Opens on the whole episode: no passage chose this, so there is nothing to
+  // seed a selection with. `clipSeed` picks the span rather than hardcoding it
+  // here, so the rule lives in one place and the tests can state it.
+  newRows.flatMap(row => [...row.querySelectorAll(".clip-open")]).forEach(b =>
+    b.addEventListener("click", () => {
+      const ep = loadedResults.find(r => String(r.id) === b.dataset.clip);
+      if (!ep || !ep.audio_url) return;
+      const [from, to] = clipSeed(ep.duration_sec);
+      openClip(ep, from, to);
     }));
 
   // Expand the show notes. Two modes, set at render time: clamped-and-visible
@@ -4853,6 +4892,22 @@ function clipSay(msg, pct) {
   $("#clipStatus").innerHTML = msg
     ? msg + (pct != null ? `<span class="bar"><i style="width:${pct}%"></i></span>` : "")
     : "";
+}
+
+// Where a clip starts when nothing chose it. Opening from a transcript passage
+// or a spoken-word hit seeds the selection from that passage; the card button
+// has no passage, so it needs a rule rather than an arbitrary literal at the
+// call site.
+//
+// Zero to thirty seconds, clamped to the episode. Not the whole episode: the
+// lower waveform *is* the selection, so selecting everything makes the zoomed
+// view identical to the overview and the detail it exists for disappears. A
+// short span at the start leaves the editor showing what it is for, and the
+// producer moves it by listening.
+const CLIP_SEED_SEC = 30;
+function clipSeed(durationSec) {
+  const dur = Number(durationSec) > 0 ? Number(durationSec) : 0;
+  return dur ? [0, Math.min(CLIP_SEED_SEC, dur)] : [0, CLIP_SEED_SEC];
 }
 
 async function openClip(ep, fromSec, toSec) {
