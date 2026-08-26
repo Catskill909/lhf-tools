@@ -53,10 +53,19 @@ shows.
 Those episodes are still fully searchable by title, description, guests, tags
 and date. You just can't search the spoken audio for them.
 
-We can have them transcribed if that's worth it. Roughly 316 episodes covers
-2022-2024, or 259 more takes it back to 2017. No rush at all, and doing just the
-recent half is a perfectly good answer - let me know how far back it's worth
-going and I'll price that rather than quoting for all of it.
+611 episodes have no transcript - 316 of them from 2022-2024, and 295 older
+than that.
+
+Worth checking one thing before spending anything: Podbean generates transcripts
+automatically on its paid plans, and has an AI assistant that does the same. If
+you're already on a plan that includes it, running it over the back catalogue
+there may cost you nothing. Anything that ends up on Podbean flows into the
+archive by itself, the same way your current transcripts do - I don't need to
+touch it. The same is true of anything you re-export from Descript.
+
+So: worth asking Podbean what your plan covers. If it turns out they won't do
+the older ones, I can have them transcribed instead - just tell me how far back
+is worth it and I'll price that stretch rather than quoting for all 611.
 
 Still on my list: topic tagging, and the guests who weren't linked in the show
 notes. I'll send a draft list of topics to react to.
