@@ -38,8 +38,10 @@ episodes?" is a status question, and the answer was already written down.
 | **Export, the archive package, the zip** | `docs/export-dev.md`; `docs/export-spec.md` is the spec (built). |
 | **Transcripts, segments, passages** | `docs/transcripts-plan.md`, `docs/transcript-modal.md`. |
 | **Colour, theme, contrast, "make it darker", legibility** | `CLAUDE.md` → the palette traps. They are counter-intuitive and enforced by `tests/test-palette.mjs`. |
+| **The original plan, tiers, or what was pitched** | `docs/lhf-podcast-spec.html` — **client-facing** planning memo (shared with them), tier ladder, no cost-of-work talk. `docs/build-plan.html` — the **internal** build plan. Both predate the build; read as history, not status. |
 | **Deployment, Docker, Coolify, the volume, health checks** | `README.md` → *Coolify settings that matter*; `HANDOFF.md` → *Keeping the archive current*. |
 | **Deployment storage configuration** | `cooify-volume-fix.md` — **deliberately not in git** (this repository is public). It lives in the working copy only. **Read it before changing anything under Coolify → Persistent Storage, and never summarise it into a tracked file.** |
+| **Transcripts: the gap, what it would cost, how to fill it** | `docs/transcription-options.md` — measured sizing (611 episodes, 25,661 minutes), Podbean's own transcription as the first route to check, and the Gemini 3.5 Transcribe assessment. **Nothing decided or built.** |
 | **Backups and recovery-source status** | `HANDOFF.md` → *Backups*; then `docs/feed-backfill-investigation.md`. |
 
 ---

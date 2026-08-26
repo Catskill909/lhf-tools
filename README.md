@@ -263,7 +263,7 @@ Measured cost, batched, against the real archive:
 | | Tokens | Cost |
 |---|---|---|
 | Per episode | ~7,000 in, ~350 out | **$0.022** |
-| Initial run, 200 episodes | 1.55M | **$4.35** |
+| Initial run, 200 episodes *(historical — the archive is now 785)* | 1.55M | **$4.35** |
 | Ongoing, ~104 episodes/year | — | **~$2.26/year** |
 
 Two things make the output a catalogue rather than a pile of strings:
@@ -319,10 +319,18 @@ swap in FastAPI behind the same two routes; the front end won't know.
 | Encores | 7 | 15 |
 | Transcripts | 79 | 68 |
 
-203 episodes, 145.4 hours. **147 carry full transcripts** pulled free from the
-feed — 15,294 searchable passages, 904,266 words. Plus 232 producer-linked
-tags and 14 detected re-airs. Production currently shows 200 episodes/143.1
-hours until the three retained rows are restored; see `HANDOFF.md`.
+**785 episodes, 546.9 hours, three shows, 2017–2026** — verified live
+26 August 2026 after the complete-archive backfill. **174 carry full
+transcripts** pulled free from the feed, plus **224** producer-linked tags and
+**43** detected encores and cross-overs.
+
+⚠️ **The per-show table above is pre-backfill** and describes the two-show,
+203-episode archive. It has not been re-measured. `HANDOFF.md` → *Working now*
+carries the current figures, and the live `/api/facets` is always the truth.
+
+**611 episodes have no transcript, and none exists before 2022** — that is a gap
+in what was ever made, not in what we collected. See
+`docs/transcription-options.md`.
 
 ## Features
 
@@ -342,7 +350,7 @@ hours until the three retained rows are restored; see `HANDOFF.md`.
   duration, in/out times and out-cue before anything is cut. Phones use a
   compact find/listen/read layout that withholds those production-only tools.
 - **Re-air detection** — flags encores and programmes that ran on both shows
-- **Tags** — 232 people/orgs/books from the producers' own hyperlinks
+- **Tags** — 224 people/orgs/books from the producers' own hyperlinks
 - **Topics** *(built, no data until the extraction pass is run)* — what each
   episode is *about*, from a seeded labor-history vocabulary; click one to see
   everything on that subject
@@ -453,7 +461,7 @@ Fallback routes if Podbean changes those public pages:
 - **Podbean API** (OAuth, has an episode-list endpoint) — the automatable option
 - **Podbean dashboard export** — the manual one-off option
 
-The retained local archive currently has 203 episodes even though a fresh feed
+*(Historical, pre-backfill.)* The retained local archive had 203 episodes even though a fresh feed
 pull can expose only 200. RSS remains the ongoing update source; the public
 pages are a recovery source, not part of the 15-minute poll.
 
@@ -518,4 +526,6 @@ FTS5 syntax worth knowing: `"exact phrase"`, `labor NOT history`,
   `ingest/extract.py` is written and its output path is tested end to end, but
   it has never touched the live API — there is no key on the dev machine.
   `--dry-run` prices it at $4.35. See [docs/ai-layer.md](docs/ai-layer.md).
-- The 56 episodes with no feed transcript (~$9)
+- The episodes with no feed transcript — **611 as of 26 Aug 2026**, not 56;
+  the ~$9 figure was priced against the old archive and is void. See
+  `docs/transcription-options.md`

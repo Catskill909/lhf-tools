@@ -4,11 +4,12 @@
 minutes. **Now at <https://lhf-media.supersoul.top>** — moved from
 `lhf-tools.supersoul.top` on 26 August 2026; the old address is retired.
 Feature-complete for everything achievable without AI.
-**Local, not deployed:** tablet touch support for the audio editor and the
-tap-safe hover-disclosure pass are built. The compact phone transcript is also
-built after real-phone review. Paul confirmed the core editor touch interaction
-and first-tap transcript playback on a real iPad; the broader device/rotation
-matrix remains open (`docs/touch-dev.md`).
+**Touch support is now DEPLOYED** — verified live 26 August 2026: the
+coarse-pointer rules and the compact phone transcript are serving. Paul
+confirmed the core editor touch interaction and first-tap transcript playback on
+a real iPad; the broader device/rotation matrix remains open
+(`docs/touch-dev.md`). *This section said "local, not deployed" until 26 August;
+it shipped with the move to `lhf-media`.*
 **Last worked:** 26 August 2026. Built from nothing on 3 August.
 **Client:** Labor Heritage Foundation — Harold Phillips (producer), Chris Garlock
 and Elise Bryant (hosts), Patrick Dixon.
@@ -22,7 +23,7 @@ documents is reasoning — parked ideas, rejected options, trade-offs — record
 on purpose and easily mistaken for a backlog. See *How to report work here* in
 `CLAUDE.md` for the four buckets and why they are kept apart.
 
-**Last reviewed: 14 August 2026.**
+**Last reviewed: 26 August 2026.**
 
 ### 🔥 DO — something bad happens if ignored
 
@@ -208,8 +209,9 @@ decision, and an admin screen to run it from. See `docs/ai-layer.md`.
   so this needs nothing from Podbean.
 
 **Cataloguing** *(deterministic — no AI)*
-- **Re-air detection** — 14 relationships: 5 programmes that ran on *both*
-  shows, 8 encores of an earlier episode. Shown inline as "Also ran".
+- **Re-air detection** — shown inline as "Also ran". **43 encores and
+  cross-overs live (26 Aug 2026)**, against 22 before the backfill: the count
+  doubled because it can finally compare against the years RSS never reached.
   This is Chris's "have we already run this" problem, solved.
 - **224 tags** — people, bands, museums and books the producers hyperlinked in
   their own show notes. Click one to see every episode featuring it. (Live count
@@ -311,7 +313,7 @@ decision, and an admin screen to run it from. See `docs/ai-layer.md`.
   action. The phone transcript is a separate find/listen/read surface with its
   editing routes and large selection lesson removed; a 390×844 emulated-touch
   render gives its prose 76% of the viewport. The broader Phase 4 matrix is
-  still open. This is not deployed yet.
+  still open. **Deployed and verified live 26 August 2026.**
 
 **Clip library** *(built 9 August 2026 — `docs/clip-library.md`)*
 - **`＋ Add to library`** in the editor opens a **save dialogue**: the span, an
@@ -320,7 +322,7 @@ decision, and an admin screen to run it from. See `docs/ai-layer.md`.
   trips. Nudge a handle and save again for a second version of the same quote.
 - **Labels** are free text, many-to-many, derived (no registry). `promo` folds
   into an existing `Promo`. They persist across saves in a session.
-  **"Labels", not "tags"** — `Tags` already means the 232 hyperlinked entities.
+  **"Labels", not "tags"** — `Tags` already means the hyperlinked entities (224).
 - The **Clips** counter in the masthead opens the list: play in place with a
   **scrubber on the live row**, rename inline, download a single clip from a row
   icon, `⋯` for Edit/Remove, ten-second undo and date grouping. Every non-empty
@@ -385,17 +387,21 @@ meant it probed a dead port and could only fail.
 
 - **Topics, un-hyperlinked guests, interviewer roles** → the code is written
   and tested (`ingest/extract.py` + full API/UI path) but **has never been
-  run**: no key, no data, nothing live. $4.35 for the archive, ~2¢ per new
-  episode. The one remaining gap in Harold's original ask, now a decision
+  run**: no key, no data, nothing live. **$4.35 was measured against 200
+  episodes and is now understated roughly fourfold** — the archive is 785. ~2¢
+  per new episode still holds, since that scales with publishing rate rather
+  than history. The one remaining gap in Harold's original ask, now a decision
   rather than a build. See `docs/ai-layer.md`.
 - **An admin interface** → the blocker for the above, and for staff notes, tag
   corrections and `replayed_at`, all of which have schema and no UI. Needs auth.
-- Production has 53 episodes with no feed transcript; the retained local
-  archive has 56 (~$9 via Google STT) because its three restored rows have no
-  transcript. Production is 147/200 covered and local is 147/203 as verified
-  14 August 2026. The gap is nearly all old episodes. It is also
-  the only outstanding job that needs the *audio*, so it is the only one that
-  can expire if Podbean ever deletes rather than unlists.
+- **611 of 785 episodes have no transcript** (174 held, 22% covered), verified
+  against Podbean 26 August 2026 — **none exists before 2022**, so this is
+  commissioning new work rather than recovering lost work. **25,661 minutes of
+  audio.** The old "~$9 via Google STT" was priced against 53 episodes and is
+  void. Options, sizing and the Gemini 3.5 Transcribe assessment are in
+  `docs/transcription-options.md`. Still the only outstanding job that needs the
+  *audio*, so still the only one that can expire if Podbean ever deletes rather
+  than unlists.
 - One broken transcript link on Podbean's side ("MLK in Memphis" 404s);
   `python3 ingest/transcripts.py --retry` will pick it up if they fix it
 - ~~**Somewhere to keep the backups.**~~ ✅ **Resolved** — confirmed 9 August
@@ -410,14 +416,16 @@ meant it probed a dead port and could only fail.
 
 ## Scorecard against Harold's original email
 
+**Re-measured 26 August 2026 after the complete-archive backfill.**
+
 | Ask | Status | Notes |
 |---|---|---|
-| Scrape existing + future episodes | ✅ **Done** | 203 retained episodes, re-runnable weekly. Last ~2 years — see the feed cap. |
+| Scrape existing + future episodes | ✅ **Done** | **785 episodes, three shows, 2017–2026**, re-runnable weekly. The feed cap no longer limits coverage — the public-page backfill cleared it. |
 | Searchable database | ✅ **Done** | Full-text, boolean, fielded, six sorts, filters. |
 | Find older shows to replay | ✅ **Done** | Search, filter, sort by duration for a slot of a given length. |
 | Check if a segment is "in the can" | ✅ **Done** | Re-air detection incl. cross-show. Better than asked. |
-| Catalogue **guests** | 🟡 **Partial** | 232 names — but only those the producers hyperlinked. |
-| Catalogue **topics** | 🟡 **Built, not run** | Needs AI + a client decision. Hashtags were tested and are too repetitive to classify subjects. $4.35 for the archive. |
+| Catalogue **guests** | 🟡 **Partial** | **224 names** — but only those the producers hyperlinked. |
+| Catalogue **topics** | 🟡 **Built, not run** | Needs AI + a client decision. Hashtags were tested and are too repetitive to classify subjects. The $4.35 estimate was for 200 episodes; re-price against 785. |
 | Catalogue **interviewers** | 🟡 **Built, not run** | Same pass. It's a two-host show — a small job once it runs. |
 | Public search box on laborheritage.org | 🟡 **Works, not deployed** | `?q=` deep links make a plain search box work already; needs hosting. |
 
@@ -425,7 +433,7 @@ meant it probed a dead port and could only fail.
 
 | | |
 |---|---|
-| Search what was *said* on air | 147 transcripts, 904k words, pulled from the feed |
+| Search what was *said* on air | **174 transcripts** pulled from the feed, free |
 | Jump to the exact moment | Click a timestamp, hear it — no Podbean cooperation needed |
 | Spreadsheet export | Whatever's on screen, ready for Sheets or Excel |
 | **Cut a broadcast-ready clip** | Waveform, drag handles, snap to silence, lossless MP3 out |
@@ -435,7 +443,8 @@ meant it probed a dead port and could only fail.
 some. The one genuine gap is **topics** (and the guests who weren't
 hyperlinked) — everything deterministic has been mined, and that last piece
 needs a model reading prose. That pass is now written and wired end to end but
-**never run**: $4.35 for the whole archive, ~2¢ per new episode.
+**never run**: $4.35 was measured against 200 episodes, so re-price it against
+785; ~2¢ per new episode still holds.
 
 Don't tell the client it's finished. Tell them the archive works, the re-air
 problem is solved, search now reaches the audio — and topics are the next
@@ -492,19 +501,23 @@ run it from.
 > so this covers roughly the last two years. Going further back means pulling
 > from Podbean's back-end.
 
-**The quote above is the message as sent — left exactly as it went out, so the
-figures in it are the figures Harold was given.** The retained archive is now
-203 episodes with a **56-episode transcript gap**: the three restored rows add
-to the retained total but do not carry transcripts. The 100-episode limit also
-stopped being theoretical when those episodes dropped off; their recordings
-still play. `docs/client-guide.md` carries the current numbers and is the
-document to send.
+⚠️ **The quote above is HISTORICAL — the message exactly as sent, so its figures
+are the figures Harold was given at the time. Do not update it and do not quote
+from it.** Every number in it has since been superseded: 200 episodes → **785**,
+143 hours → **547**, two shows → **three**, 147 transcripts → **174**, 232 tags
+→ **224**, 21 encores → **43**, and the 53-episode transcript gap → **611**.
+
+**`docs/client-guide.md` carries the current numbers and is the document to
+send.** `docs/reply-backlog.md` is the drafted follow-up announcing the complete
+runs and the new address.
 
 ## Files
 
 | Path | What it is |
 |---|---|
+| `docs/INDEX.md` | **The routing table.** Which document answers which question. Injected into every session. Add new documents here or they will not be found. |
 | `ingest/ingest.py` | RSS → SQLite. Idempotent, keys on `<guid>`. Also the weekly-cron path. |
+| `ingest/backfill.py` | **One-time public-page importer.** Reads Podbean's `window.__INITIAL_STATE__` off the paginated archive pages to recover everything RSS never reached. Ran 26 Aug 2026: 200 → 785 episodes. Idempotent; reconciles with RSS rows by permalink. |
 | `ingest/transcripts.py` | Podcast 2.0 `.srt` → `segments`. Idempotent; `--retry` re-attempts failures. |
 | `refresh.py` | Runs all three pipeline steps in order; `--loop 15m` schedules itself. Skips enrichment when the feeds brought nothing. |
 | `CLAUDE.md` | The constraints and traps that are easy to break without knowing them, for whoever (or whatever) picks this up. Read `HANDOFF.md` first. |
@@ -526,11 +539,14 @@ document to send.
 | `static/mp3cut.js` | Lossless MP3 clip extraction. `probeMp3()` measures each file; `cutClip()` copies frames. |
 | `static/zip.js` | ZIP writer, CSV writer and filename slug for the archive package. No dependency — `CompressionStream` does the deflating. Deterministic output so two exports can be diffed. |
 | `static/waveform.js` | Peaks at 8 kHz, IndexedDB cache, canvas rendering, snap-to-silence. |
-| `static/index.html` | The whole interface — single file, no build step. |
 | `README.md` | Run instructions, API reference, useful SQL. |
 | `docs/lhf-podcast-spec.html` | **Client-facing** planning memo (shared with them). Tier ladder, no cost-of-work talk. |
 | `docs/build-plan.html` | **Internal** build plan. Google setup walkthrough, VPS sizing, phases, risks. |
-| `docs/reply-descript.md` | The short email reply about Descript transcripts (sent). |
+| `docs/reply-descript.md` | The short email reply about Descript transcripts (**sent**). |
+| `docs/reply-with-site.md` | The email introducing the working site (**sent**). Its figures are historical — do not update them. |
+| `docs/reply-backlog.md` | **Draft, not sent.** The reply to Chris confirming the rename, the complete runs and the new address. |
+| `docs/transcription-options.md` | **Filling the 611-episode transcript gap** — measured sizing, Podbean's own transcription as the first route, and the Gemini 3.5 Transcribe assessment. Nothing decided. |
+| `docs/feed-backfill-investigation.md` | How the complete back catalogue was found and imported without credentials. |
 | `docs/ask-vocabulary.md` | **Draft, not sent.** Asks LHF whether the podcast archive should share the Labor Arts & Culture Database's 34-term topic vocabulary. Reasoning lives in `docs/ai-layer.md`. |
 | `docs/transcripts-plan.md` | **Phased plan for transcripts.** Read before touching this area. |
 
@@ -539,7 +555,15 @@ if edited and republished.
 
 ---
 
-## What we learned today (the useful part)
+## What we learned along the way (historical — figures are pre-backfill)
+
+⚠️ **These were written against the 200-episode archive and are kept as the
+reasoning of record, not as current figures.** Where a number here disagrees
+with *Working now* above, **the section above wins.** The findings themselves
+still hold; only the counts moved.
+
+*(Numbered 1–8 below in the order they were discovered, which is why 6, 7 and 8
+appear out of sequence.)*
 
 **1. The RSS feed caps at 100 episodes per channel.** Feed pagination parameters
 are ignored. A later full audit on 26 August found that the public website's
@@ -673,17 +697,20 @@ Everything is stored locally, nothing is re-fetched at query time:
 
 | | |
 |---|---|
-| `episodes.transcript_text` | 147 episodes, 4 MB |
-| `segments` (timestamped passages) | 15,294 rows, ~4 MB |
-| `description_html` + `description_text` | all 203 episodes |
+| `episodes.transcript_text` | **174 episodes** |
+| `segments` (timestamped passages) | grew with the backfill; re-measure before quoting |
+| `description_html` + `description_text` | **all 785 episodes** |
 | Audio | **not stored** — only the URL |
+
+*Row counts above were 147 / 15,294 / 203 before the 26 August backfill. The
+database size below was measured then too and is now larger.*
 
 Database is 56 MB. Podbean's transcript URLs and audio URLs are recorded but
 never depended on after ingest, so CDN link rot can't take the archive down. If
 both feeds vanished tomorrow, everything searchable still works.
 
-Audio deliberately isn't stored — ~12–24 GB, and streaming from their CDN is
-free and fast. Worth revisiting only if clip export gets built.
+Audio deliberately isn't stored — **546.9 hours is tens of gigabytes** — and
+streaming from their CDN is free and fast. Worth revisiting only if clip export gets built.
 
 #### What lives in the browser instead — verified 9 August 2026
 
@@ -898,7 +925,7 @@ node tests/test-overflow.mjs        # pure: archive text cannot widen a phone
 node tests/test-touch.mjs           # pure: phone transcript/guard + tablet pointer + hover safety
 node tests/test-pagination.mjs      # structural: paged search + request cancellation
 python3 tests/test-ingest.py        # pure: feed stamping + rotated-out detection
-python3 tests/test-backfill.py      # pure: page parsing + identity + reruns
+python3 tests/test-backfill.py      # pure: public-page parsing + RSS identity + reruns
 python3 tests/test-server.py        # pure: search pages + complete export path
 node tests/verify-clips.mjs         # live: needs the server running + network
 ```
@@ -959,9 +986,12 @@ redeploy, so each deploy silently reset the archive to whatever the feeds held
 that day. Confirmed by Paul on 13 August 2026 — there was no volume configured
 in Coolify at all. One is mounted now, and from here the archive accumulates.
 
-They are retained in `~/Desktop/lhf-BACKUP-2026-08-13.sqlite` on Paul's machine
-and were also confirmed on Podbean's public archive pages on 26 August. The full
-backfill will restore them to production along with the older catalogue.
+⚠️ **That backup file is gone.** This said they were retained in
+`~/Desktop/lhf-BACKUP-2026-08-13.sqlite`; it is **not on disk as of 26 August
+2026**. Nothing is at risk — **the backfill restored all three to production**,
+and they were separately confirmed on Podbean's public archive pages the same
+day. Recorded because a document asserting a backup exists is worse than one
+that never mentioned it.
 
 **The standing check** — worth running after any deploy — is whether the live
 site reports **more than 100** episodes for either show. Both shows are weekly,
