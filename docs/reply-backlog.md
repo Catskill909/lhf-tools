@@ -1,73 +1,83 @@
-# Reply — the full back catalogue is in (draft, not sent)
+# Reply to Chris — the complete runs are in (draft, not sent)
 
-Answers the question left open at the end of `reply-with-site.md`: *"Is there a
-way to pull the older episodes out of the Podbean back-end?"*
+Answers Chris's request: rename to *Labor Heritage Media Archive*, and expand to
+the complete runs of all three programs, with a named first episode for each.
 
-Figures verified live 26 August 2026. **Update them if this sits unsent for
-long** — the archive grows on its own.
+**All four asks verified live on 26 August 2026**, by searching the deployed
+site for the exact episodes he named:
+
+| Chris asked for | Verified |
+|---|---|
+| Rename to *Labor Heritage Media Archive* | `<title>` on the live site |
+| Power Hour back to *Working Class Giant*, 14 Apr 2023 | earliest of 181 |
+| Add *Your Rights at Work* back to *Coronavirus and worker rights*, 5 Mar 2020 | earliest of 185 |
+| Labor History Today back to *Our First Show: Black Tuesday…*, 27 Oct 2017 | earliest of 419 |
+
+**Re-verify the figures if this sits unsent** — the archive grows on its own.
 
 ---
 
-Hi Harold,
+Hi Chris,
 
-Remember the last thing I asked — whether there was a way to get at the older
-episodes behind Podbean? Turns out there was, and it didn't need any credentials
-or help from them. It's done.
+All of it is done. Taking your list in order:
 
-**The archive has moved to a new address:**
+**Renamed.** It's the *Labor Heritage Media Archive* now, throughout.
+
+**It's also moved to a new address:**
 
 https://lhf-media.supersoul.top
 
-Please use that one from now on — the old link no longer works. Same site, and
-everything you already had is still there.
+Please use that one from now on — the old link no longer works.
 
-**What's new is how much is in it:**
+**Labor Heritage Power Hour** now goes back to *Working Class Giant*,
+14 April 2023 — the first show, as you said. **181 episodes.**
 
-|  | Before | Now |
-|---|---|---|
-| Episodes | 200 | **785** |
-| Hours | 143 | **547** |
-| Goes back to | Sep 2024 | **2017** |
-| Shows | 2 | **3** |
+**Your Rights at Work** is in, back to *Coronavirus and worker rights*,
+5 March 2020. **185 episodes**, none of which were in the archive before.
 
-The third one is **Your Rights at Work** — 185 episodes that weren't in the
-archive at all before. Everything works across all three: the search, the
-transcripts, the timestamps, the clip editor, the export.
+**Labor History Today** now goes back to *Our First Show: Black Tuesday,
+Philly's General Strike & Debs Gets a Million Votes*, 27 October 2017.
+**419 episodes.**
 
-**And the repeat detection got a lot more useful.** It now finds **43** encores
-and cross-overs against the 22 I mentioned last time — not because it got
-cleverer, but because it can finally compare against the years the feed never
-reached. That's Chris's "have we run this already?" question, answered properly
-for the first time.
+That's **785 episodes and 547 hours**, against 200 and 143 before. Everything
+works across all three programs — the search, the timestamps, the export, the
+clip editor.
 
-**One thing to be straight about, because the number looks worse than it is.**
-When the archive held 200 episodes, 147 had transcripts. It now holds 785 and
-174 have transcripts. The count went up; the percentage went down a lot.
+**One thing that got noticeably better as a result.** The archive spots when a
+programme has aired more than once, and it now finds **43** encores and
+cross-overs where it previously found 22. Not because it got cleverer, but
+because it can finally compare against the years the feed never reached. That's
+the "have we already run this?" question, working properly for the first time.
+
+**And one thing to be straight about, because the number looks worse than it
+is.** Search reaches inside the audio for episodes that have a transcript. When
+the archive held 200 episodes, 147 did. It now holds 785 and 174 do — the count
+went up, the proportion went down a lot.
 
 That's because transcripts only became routine in your production a couple of
 years ago. I checked all 785 episodes against Podbean directly rather than
-assume it — we hold every transcript that exists bar one, where Podbean's own
-link is broken. **But there are none at all before 2022.**
+assume it: we hold every transcript that exists bar one, where Podbean's own
+link is broken. But **there are none at all before 2022.**
 
 So the older episodes are fully searchable by title, description, guests, tags
-and dates — you just can't search inside the audio for them, because nobody ever
+and dates. You just can't search inside the audio for them, because nobody ever
 wrote down what was said.
 
-**Which raises a question for you.** We can have the missing ones transcribed.
-It splits about evenly:
+**If that matters, we can have them transcribed** — it's the one job that needs
+the recordings rather than the text. It divides fairly naturally:
 
-- **2022 to 2024** — roughly 316 episodes. Recent enough that you might replay
-  them, and they sit alongside episodes that already have transcripts.
-- **Before 2022** — 259 episodes. Your oldest material, and the least likely to
-  come round again.
+- **2022–2024**, about 316 episodes — recent enough that you might replay them,
+  and they sit alongside episodes that already have transcripts.
+- **Before 2022**, 259 episodes — the oldest material, least likely to come
+  round again.
 
-Doing just the recent half is a perfectly good answer and about half the cost.
-I'd rather price whichever you actually want than quote you for all of it out of
-habit — so have a think about how far back it's genuinely worth being able to
-search inside the audio.
+No rush on this at all, and doing only the recent half is a perfectly good
+answer. I'd rather price whichever you actually want than quote for all of it
+out of habit — so have a think about how far back it's genuinely worth being
+able to search the spoken audio.
 
-Still on my list is the topic tagging and picking up the guests who weren't
-linked in the show notes. I'll send you a draft list of topics to react to
-rather than asking you to start from nothing.
+Still on my list is the topic tagging, and picking up the guests who weren't
+linked in the show notes. I'll send a draft list of topics to react to rather
+than asking anyone to start from a blank page.
 
 Paul
