@@ -741,6 +741,25 @@ def app_version():
     return _VERSION["value"]
 
 
+
+def gzip_bytes(payload):
+    """Deterministic gzip: the same bytes in must give the same bytes out.
+
+    `gzip.compress()` writes the current time into the GZIP header's MTIME
+    field (RFC 1952, bytes 4-8), so compressing identical input a second apart
+    produces different output. That is harmless for transport and fatal for a
+    validator: `_send` hashes the *compressed* body to build the ETag, so the
+    ETag changed every second and a browser's `If-None-Match` almost never
+    matched. 304s were not happening for any real client - every browser sends
+    `Accept-Encoding: gzip` - which is the exact failure the ETag was added to
+    fix, surviving inside the fix for it.
+
+    mtime=0 makes the output a pure function of the input. Nothing reads the
+    field; gzip stores it only so `gunzip` can restore a filename's date.
+    """
+    return gzip.compress(payload, 6, mtime=0)
+
+
 class Handler(BaseHTTPRequestHandler):
     def log_message(self, fmt, *args):        # quieter console
         pass
@@ -756,7 +775,7 @@ class Handler(BaseHTTPRequestHandler):
         # outweigh anything saved.
         gz = len(payload) > 1024 and "gzip" in self.headers.get("Accept-Encoding", "")
         if gz:
-            payload = gzip.compress(payload, 6)
+            payload = gzip_bytes(payload)
 
         # An ETag is what makes `no-cache` cheap. Without a validator the
         # browser has nothing to revalidate *with*, so "check before you reuse

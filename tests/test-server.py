@@ -76,6 +76,33 @@ exported, error = serve.export_rows(conn, "https://archive.example")
 check("the actual export path has no search error", error, None)
 check("the actual export contains all 785 episodes", len(exported), 785)
 
+# --- Validators must be stable across time -------------------------------
+#
+# The class of bug: anything hashed to build an ETag has to be a pure function
+# of the resource. `gzip.compress()` is not - it stamps the current time into
+# the GZIP header - so hashing the compressed body gave a new ETag every
+# second and `If-None-Match` never matched for any client that accepts gzip,
+# which is all of them. A test that compresses twice in the same second passes
+# while the bug is live, so this one crosses a second boundary deliberately.
+
+import hashlib  # noqa: E402
+import time  # noqa: E402
+
+body = b"the same resource, byte for byte" * 200
+first = serve.gzip_bytes(body)
+time.sleep(1.1)
+second = serve.gzip_bytes(body)
+
+check("compressing identical bytes gives identical bytes a second later",
+      first, second)
+check("and therefore the ETag derived from them is unchanged",
+      hashlib.blake2b(first, digest_size=16).hexdigest(),
+      hashlib.blake2b(second, digest_size=16).hexdigest())
+check("the compressed body still decompresses to the original",
+      __import__("gzip").decompress(second), body)
+check("different bodies still get different validators",
+      serve.gzip_bytes(body) != serve.gzip_bytes(body + b"!"), True)
+
 print()
 if failures:
     print(f"{len(failures)} FAILED: {', '.join(failures)}")
