@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-LHF Digital Asset Manager — run the whole pipeline, in order.
+Labor Heritage Media Archive — run the whole pipeline, in order.
 
     python3 refresh.py                 # once, now
     python3 refresh.py --loop 24h      # now, then every 24h (stays running)

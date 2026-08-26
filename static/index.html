@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>LHF Digital Asset Manager</title>
+<title>Labor Heritage Media Archive</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%231b1a17'/%3E%3Cg fill='%23d8503a'%3E%3Crect x='6' y='13' width='3' height='6' rx='1.5'/%3E%3Crect x='11.5' y='9' width='3' height='14' rx='1.5'/%3E%3Crect x='17' y='5.5' width='3' height='21' rx='1.5'/%3E%3Crect x='22.5' y='11' width='3' height='10' rx='1.5'/%3E%3C/g%3E%3C/svg%3E">
 <style>
   /* ---------------------------------------------------------------
@@ -468,6 +468,23 @@
   .status b { color: var(--ink); font-weight: 600; }
 
   ol.results { list-style: none; margin: 0; padding: 0; }
+  .results-more {
+    display: flex; flex-direction: column; align-items: center; gap: 0.45rem;
+    padding: 1.4rem 0 0.2rem;
+  }
+  .results-more button {
+    min-width: 10rem; min-height: 44px;
+    background: var(--paper-2); border: 1px solid var(--ink-2); border-radius: 2px;
+    color: var(--ink); cursor: pointer; font: inherit; font-weight: 600;
+    padding: 0.55rem 1rem;
+  }
+  .results-more button:hover { border-color: var(--spot); color: var(--spot-ink); }
+  .results-more button:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+  .results-more button:disabled { cursor: progress; opacity: 0.65; }
+  .results-more .page-status {
+    color: var(--ink-3); font-size: 0.72rem; letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
   .row {
     display: grid;
     grid-template-columns: 6.5rem 1fr;
@@ -531,7 +548,7 @@
      line and put a real ellipsis on it. */
   .row .notes {
     margin: 0; font-size: 0.895rem; color: var(--ink-2);
-    max-width: 68ch; white-space: pre-line;
+    white-space: pre-line;
   }
   .row .notes.clamp {
     display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical;
@@ -543,7 +560,10 @@
   .row .excerpt + .notes { margin-top: 0.55rem; }
   .row .excerpt + .more  { margin-top: 0.45rem; }
 
-  .notes-wrap { position: relative; max-width: 68ch; }
+  /* The wrapper and notes use the full result width. More reserves only its
+     own small slot at the end of the clamped line; there is no empty action
+     column between the episode description and the controls. */
+  .notes-wrap { position: relative; }
 
   /* Two failed extremes: --ink-3 (the original) sat below the body text and
      got missed entirely; the accent colour shouted louder than the title.
@@ -561,10 +581,10 @@
   .more:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
   .more[hidden] { display: none; }
 
-  /* Clamped: sit at the end of the last visible line, immediately after the
-     browser's ellipsis, so it reads as "…  More" rather than as a separate
-     control. The gradient stops a long word colliding with it. Once expanded
-     the wrapper drops .is-clamped and the button returns to normal flow. */
+  /* Clamped: More occupies the row's action gutter, directly below Transcript.
+     On a narrower row it naturally comes back beside the final line; the paper
+     background and reserved text space stop a long word colliding with it.
+     Once expanded the wrapper drops .is-clamped and Less stays on that edge. */
   .notes-wrap.is-clamped .more {
     position: absolute; right: 0; bottom: 0; margin: 0;
     padding-left: 0.55rem;
@@ -575,12 +595,10 @@
      button overlaps the "…" and the line reads "…Columbia w  More". */
   .notes-wrap.is-clamped .notes.clamp { padding-right: 3.6rem; }
 
-  /* Expanded, .is-clamped is gone and the button falls back into normal flow
-     — which left-aligns it, so "More" sat after the ellipsis and "Less"
-     appeared at the bottom left, reading as two unrelated controls. Holding
-     it on the wrapper's right edge means opening a note moves the button
-     down, never sideways. Clamp mode only: "Show full notes" in search
-     results is a standalone control and stays left where it reads better. */
+  /* Expanded, .is-clamped is gone and the button falls back into normal flow.
+     Keep Less in the same action gutter so opening a note moves it down, never
+     sideways. Clamp mode only: Show full notes in search results is a
+     standalone control and stays left where it reads better. */
   .more[data-mode="clamp"] { display: block; margin-left: auto; }
 
   /* Deliberately quiet, and matched to the Tags chips rather than to the
@@ -2081,7 +2099,7 @@
   }
 
   /* The scope of a bulk download is never implied. The archive export already
-     shows both counts so "a file quietly holding 78 of 200" can't happen by
+     shows both counts so a partial file can't masquerade as the whole archive
      accident; the same rule applies to a bag of clips. */
   #libZip { margin-right: 0.4rem; }
   #libZip:disabled { opacity: 0.5; cursor: default; }
@@ -2416,7 +2434,7 @@
   <header class="masthead">
     <div class="brand">
       <span class="rule-mark"></span>
-      <h1 class="display">LHF Digital Asset Manager</h1>
+      <h1 class="display">Labor Heritage Media Archive</h1>
     </div>
     <div style="display:flex;align-items:center;gap:0.5rem;">
       <button class="mast-btn" id="libBtn" title="Your saved clips" aria-haspopup="dialog" data-empty="1">Clips<span class="n" id="libCount">0</span></button>
@@ -2455,6 +2473,11 @@
   </div>
 
   <ol class="results" id="results"></ol>
+
+  <div class="results-more" id="resultsMore" hidden>
+    <button id="loadMore" type="button" aria-describedby="pageStatus">Load more</button>
+    <span class="page-status" id="pageStatus" aria-live="polite"></span>
+  </div>
 
   <footer>
     <b>Searching titles, show notes and transcripts</b>, with topics, guests and
@@ -2759,10 +2782,10 @@
       <!-- "Exactly what's on screen" was the whole principle, and it is still
            the right default. But it made the whole archive unreachable without
            first clearing every filter, and — worse — a file quietly containing
-           78 of 200 episodes is a mistake found much later. Both counts are
+           only part of the archive is a mistake found much later. Both counts are
            always visible, so the choice cannot be made without being seen.
 
-           With nothing filtered both options are the same 200 rows, and two
+           With nothing filtered both options are the same complete set, and two
            identical counts read as a difference the reader has to hunt for.
            The group is then hidden outright and the count moves to the
            subhead — one statement, no chooser. -->
@@ -3070,7 +3093,7 @@
       <section class="help-sec">
         <h3><span class="swatch" style="background:var(--gold)"></span>Also ran</h3>
         <p class="lede">A gold line under an episode means the same programme
-          aired more than once — as an encore, or on both shows. That's the
+          aired more than once — as an encore, or across programs. That's the
           quick answer to "have we run this already?"</p>
       </section>
 
@@ -3475,7 +3498,9 @@ import * as Clips from "./clips.js";
 
 const $  = s => document.querySelector(s);
 const state = { q: "", show: null, year: null, encore: false, person: null, personLabel: "", topic: null, topicLabel: "", sort: "newest" };
-let timer, lastReq = 0;
+const SEARCH_PAGE_SIZE = 50;
+let timer, lastReq = 0, searchController = null;
+let loadedResults = [], nextSearchOffset = 0, loadedSearchKey = "";
 const CORPUS = { episodes: 0, hours: 0 };
 
 /* ---------- theme ---------- */
@@ -3620,7 +3645,12 @@ function resetAll() {
 }
 
 /* ---------- search ---------- */
-async function run() {
+async function run({ append = false } = {}) {
+  // A second request for the same page can only duplicate cards. This guard
+  // matters for the IntersectionObserver/button race near the end of a page.
+  const moreBtn = $("#loadMore");
+  if (append && moreBtn.disabled) return;
+
   const p = new URLSearchParams();
   if (state.q)      p.set("q", state.q);
   if (state.show)   p.set("show", state.show);
@@ -3629,29 +3659,69 @@ async function run() {
   if (state.person) p.set("person", state.person);
   if (state.topic)  p.set("topic", state.topic);
   p.set("sort", state.sort);
+  const searchKey = p.toString();
+
+  // State changes as soon as somebody types or presses a filter, before the
+  // debounced replacement search begins. Do not let an observer callback in
+  // that short window append page N from the new query onto the old cards.
+  if (append && searchKey !== loadedSearchKey) return;
 
   syncChips();
 
   // Mirror the search into the address bar. Two reasons: a result set can be
   // sent to a colleague, and laborheritage.org can link straight in with ?q=
   // from its own search box — the external entry point Harold asked for.
-  history.replaceState(null, "", p.toString() ? "?" + p : location.pathname);
+  if (!append) history.replaceState(null, "", p.toString() ? "?" + p : location.pathname);
+
+  const api = new URLSearchParams(p);
+  api.set("limit", SEARCH_PAGE_SIZE);
+  api.set("offset", append ? nextSearchOffset : 0);
 
   const req = ++lastReq;
-  const data = await (await fetch("/api/search?" + p)).json();
+  // Sequence numbers keep stale responses from painting; AbortController also
+  // stops the browser downloading and parsing work that a newer keystroke made
+  // irrelevant.
+  searchController?.abort();
+  searchController = new AbortController();
+  if (append) { moreBtn.disabled = true; moreBtn.textContent = "Loading…"; }
+  let data;
+  try {
+    const response = await fetch("/api/search?" + api, { signal: searchController.signal });
+    data = await response.json();
+  } catch (error) {
+    if (error.name === "AbortError") return;
+    if (req !== lastReq) return;
+    $("#statusText").textContent = "Search is temporarily unavailable.";
+    moreBtn.disabled = false;
+    return;
+  }
   if (req !== lastReq) return;          // a newer keystroke already won
 
   if (data.error) {
     $("#statusText").textContent = data.error;
     $("#results").innerHTML = "";
+    $("#resultsMore").hidden = true;
+    loadedResults = [];
     return;
   }
+
+  let pageResults;
+  if (append) {
+    const seen = new Set(loadedResults.map(r => r.id));
+    pageResults = data.results.filter(r => !seen.has(r.id));
+    loadedResults.push(...pageResults);
+  } else {
+    pageResults = [...data.results];
+    loadedResults = [...pageResults];
+    loadedSearchKey = searchKey;
+  }
+  nextSearchOffset = data.next_offset ?? ((data.offset || 0) + data.count);
 
   // A shared ?person= link carries only the normalised (lowercased) name.
   // Recover the display spelling from the results before anything is painted —
   // syncChips() doesn't own this chip, the status line below does.
   if (state.person && !state.personLabel) {
-    for (const r of data.results) {
+    for (const r of pageResults) {
       const hit = (r.mentions || []).find(m => m.norm_text === state.person)
                || (r.people || []).find(p => p.normalized_name === state.person);
       if (hit) { state.personLabel = hit.text || hit.name; break; }
@@ -3660,14 +3730,15 @@ async function run() {
   // Same for ?topic= — the URL carries the normalised form, the pill shows
   // the spelling the catalogue uses.
   if (state.topic && !state.topicLabel) {
-    for (const r of data.results) {
+    for (const r of pageResults) {
       const hit = (r.topics || []).find(t => t.normalized_name === state.topic);
       if (hit) { state.topicLabel = hit.name; break; }
     }
   }
 
   const n = data.total ?? data.count;
-  const shown = data.truncated ? ` <span style="opacity:.6">(showing ${data.count})</span>` : "";
+  const shown = loadedResults.length < n
+    ? ` <span style="opacity:.6">(showing ${loadedResults.length})</span>` : "";
   const person = state.person
     ? ` <span class="active-person">tagged ${esc(state.personLabel || state.person)}<button id="dropPerson" aria-label="Remove this filter">&times;</button></span>`
     : "";
@@ -3692,16 +3763,17 @@ async function run() {
   });
 
   if (!data.count) {
-    $("#results").innerHTML = `<div class="empty">
+    if (!append) $("#results").innerHTML = `<li class="empty">
         <div class="big">Nothing matched that.</div>
         <div>Try a broader term, or <code>"an exact phrase"</code> in quotes.</div>
-      </div>`;
+      </li>`;
+    $("#resultsMore").hidden = true;
     return;
   }
 
   const shortShow = s => s.replace("Labor Heritage ", "").replace("Labor History ", "History ");
 
-  $("#results").innerHTML = data.results.map(r => {
+  const cards = pageResults.map(r => {
     const d = dateParts(r.published_at);
 
     const reair = (r.reairs && r.reairs.length) ? `
@@ -3737,9 +3809,8 @@ async function run() {
       ${r.excerpt_from === "transcript" ? `<div class="from-tx">Heard in this episode</div>` : ""}
       <p class="excerpt${r.excerpt_from === "transcript" ? " spoken" : ""}">${r.excerpt || ""}</p>`;
 
-    // The wrapper exists so "More" can sit on the last clamped line, right
-    // after the browser's ellipsis, instead of on a line of its own where it
-    // reads as unrelated furniture and gets missed.
+    // The wrapper and notes span the result row so the description flows up to
+    // More instead of leaving an empty column between copy and controls.
     const notes = noteText ? `
       <div class="notes-wrap${browsing ? " is-clamped" : ""}">
         <p class="notes ${browsing ? "clamp" : "hidden"}" id="notes-${r.id}">${esc(noteText)}</p>
@@ -3787,7 +3858,7 @@ async function run() {
         ${guests.length ? `<span class="lbl">${askers.length ? "with" : "Featuring"}</span> ${guests.map(nameBtn).join(", ")}` : ""}
       </p>` : "";
 
-    return `<li class="row">
+    return `<li class="row" data-result-id="${r.id}">
       <div class="when mono"><span>${d.md}</span><span class="yr">${d.yr}</span></div>
       <div>
         <div class="meta">
@@ -3809,10 +3880,16 @@ async function run() {
     </li>`;
   }).join("");
 
+  const template = document.createElement("template");
+  template.innerHTML = cards;
+  const newRows = [...template.content.querySelectorAll(".row")];
+  if (!append) $("#results").innerHTML = "";
+  $("#results").append(template.content);
+
 
   // Play from a spoken moment. One player at a time; reuse it if the same
   // episode is already loaded so seeking within an episode doesn't restart.
-  document.querySelectorAll(".moment").forEach(b =>
+  newRows.flatMap(row => [...row.querySelectorAll(".moment")]).forEach(b =>
     b.addEventListener("click", () => {
       const url = b.dataset.audio, t = +b.dataset.t, host = $("#player-" + b.dataset.ep);
       if (!url || !host) return;
@@ -3820,7 +3897,7 @@ async function run() {
       document.querySelectorAll(".player audio").forEach(a => {
         if (a.parentElement !== host) { a.pause(); a.parentElement.innerHTML = ""; }
       });
-      const ep = data.results.find(r => String(r.id) === b.dataset.ep);
+      const ep = loadedResults.find(r => String(r.id) === b.dataset.ep);
       let audio = host.querySelector("audio");
       if (!audio) { host.innerHTML = ""; audio = buildPlayer(host, url, ep); }
       // Remember which passage opened the player, so Edit audio starts there.
@@ -3833,7 +3910,7 @@ async function run() {
 
   // Tag chips and the guest/interviewer names in the people line are the same
   // filter, so they share a handler — a name is a name however it was found.
-  document.querySelectorAll(".ent[data-person], .who").forEach(b => {
+  newRows.flatMap(row => [...row.querySelectorAll(".ent[data-person], .who")]).forEach(b => {
     b.addEventListener("click", () => {
       state.person = state.person === b.dataset.person ? null : b.dataset.person;
       state.personLabel = b.textContent.trim();
@@ -3842,16 +3919,16 @@ async function run() {
     });
   });
 
-  document.querySelectorAll(".tx-open").forEach(b =>
+  newRows.flatMap(row => [...row.querySelectorAll(".tx-open")]).forEach(b =>
     b.addEventListener("click", () => {
-      const ep = data.results.find(r => String(r.id) === b.dataset.tx);
+      const ep = loadedResults.find(r => String(r.id) === b.dataset.tx);
       if (ep) openTranscript(ep);
     }));
 
   // Expand the show notes. Two modes, set at render time: clamped-and-visible
   // when browsing, hidden-behind-a-button when searching.
   const LABELS = { clamp: ["More", "Less"], hidden: ["Show full notes", "Hide notes"] };
-  document.querySelectorAll(".more").forEach(b => {
+  newRows.flatMap(row => [...row.querySelectorAll(".more")]).forEach(b => {
     const p = $("#notes-" + b.dataset.notes), mode = b.dataset.mode;
     if (!p) return;
     const wrap = b.closest(".notes-wrap");
@@ -3874,7 +3951,7 @@ async function run() {
     });
   });
 
-  document.querySelectorAll(".ent.topic").forEach(b => {
+  newRows.flatMap(row => [...row.querySelectorAll(".ent.topic")]).forEach(b => {
     b.addEventListener("click", () => {
       state.topic = state.topic === b.dataset.topic ? null : b.dataset.topic;
       state.topicLabel = b.textContent.trim();
@@ -3882,6 +3959,30 @@ async function run() {
       scrollTo({ top: 0, behavior: "smooth" });
     });
   });
+
+  const remaining = Math.max(0, n - loadedResults.length);
+  const more = $("#resultsMore");
+  more.hidden = remaining === 0;
+  moreBtn.disabled = false;
+  moreBtn.textContent = remaining
+    ? `Load ${Math.min(SEARCH_PAGE_SIZE, remaining)} more`
+    : "All episodes loaded";
+  $("#pageStatus").textContent = `${loadedResults.length} of ${n} shown`;
+}
+
+$("#loadMore").addEventListener("click", () => run({ append: true }));
+
+// Mouse/touch readers get seamless progressive loading near the end of the
+// list. The real button remains present for keyboard users, screen readers,
+// older browsers and anyone with JavaScript observer support disabled.
+if ("IntersectionObserver" in window) {
+  const moreObserver = new IntersectionObserver(entries => {
+    if (entries.some(entry => entry.isIntersecting)
+        && !$("#resultsMore").hidden && !$("#loadMore").disabled) {
+      run({ append: true });
+    }
+  }, { rootMargin: "500px 0px" });
+  moreObserver.observe($("#resultsMore"));
 }
 
 $("#q").addEventListener("input", e => {
@@ -4293,9 +4394,9 @@ async function loadPreview() {
 
 function packageReadme(meta) {
   const { complete, scopeText, count, when, hasTx, hasPass } = meta;
-  return `# ${complete ? "LHF Archive" : "LHF Archive — partial export"}
+  return `# ${complete ? "Labor Heritage Media Archive" : "Labor Heritage Media Archive — partial export"}
 
-Exported ${when} from the LHF Digital Asset Manager.
+Exported ${when} from the Labor Heritage Media Archive.
 
 **This package contains ${count} episode${count === 1 ? "" : "s"} — ${
     complete
@@ -5557,7 +5658,7 @@ $("#clipGo").addEventListener("click", async () => {
       meta: {
         title: `${clip.title} (${fmt(clip.in)}–${fmt(clip.out)})`,
         artist: clip.show,
-        album: "LHF Digital Asset Manager",
+        album: "Labor Heritage Media Archive",
         comment: `Clip from ${clip.title}, ${(clip.date || "").slice(0, 10)}`,
       },
     });
@@ -6592,7 +6693,7 @@ function cutMeta(c) {
   return {
     title: `${c.title} (${fmt(c.in)}–${fmt(c.out)})`,
     artist: c.show,
-    album: "LHF Digital Asset Manager",
+    album: "Labor Heritage Media Archive",
     comment: `Clip from ${c.title}, ${(c.date || "").slice(0, 10)}`,
   };
 }
@@ -6628,7 +6729,7 @@ async function libDownload(c, btn) {
  * which is the guarantee the whole export path exists to protect.
  *
  * The button says what it will actually take. The archive export already shows
- * both counts so that "a file quietly holding 78 of 200" cannot happen by
+ * both counts so that a partial file cannot masquerade as the whole archive
  * accident; a filtered bag of clips is the same trap, so the filtered zip is
  * both named and labelled differently.
  */
@@ -6741,7 +6842,7 @@ async function libZipAll() {
   files.push({
     name: "clips.txt",
     data: [
-      "LHF Digital Asset Manager — saved clips",
+      "Labor Heritage Media Archive — saved clips",
       `Exported ${stamp}`,
       filtered
         ? `This is a FILTERED selection: ${n} of ${Clips.count()} saved clips.`

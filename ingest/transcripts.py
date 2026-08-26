@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
 """
-LHF Digital Asset Manager — transcript ingest from the podcast feed.
+Labor Heritage Media Archive — Podbean-published transcript ingest.
 
-145 of 200 episodes publish a full .srt via the Podcast 2.0
-<podcast:transcript> tag. This fetches and parses them into `segments`.
+Podbean publishes full `.srt` transcripts for part of the catalogue, exposed
+through either the Podcast 2.0 feed tag or the public archive page. This fetches
+and parses them into `segments`.
 
 Descript is a *source*, never a dependency: we read the feed, store the parsed
 text locally, and never touch a vendor API. If LHF changes editors, nothing
@@ -129,7 +130,7 @@ def coverage(conn):
     for r in rows:
         print(f"  {r['name']}")
         print(f"    {r['done'] or 0}/{r['total']} transcribed "
-              f"({r['has_url'] or 0} available in feed"
+              f"({r['has_url'] or 0} available from Podbean"
               f"{', ' + str(r['failed']) + ' failed' if r['failed'] else ''})")
     seg = conn.execute("SELECT COUNT(*) c FROM segments").fetchone()["c"]
     words = conn.execute(

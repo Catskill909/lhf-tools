@@ -48,7 +48,7 @@ for (const ep of await pickEpisodes()) {
     const probe = await probeMp3(ep.audio_url);
     const { blob, duration, frames } = await cutClip(ep.audio_url, inSec, outSec, {
       probe,
-      meta: { title: ep.title, artist: ep.show_name, album: "LHF Digital Asset Manager" },
+      meta: { title: ep.title, artist: ep.show_name, album: "Labor Heritage Media Archive" },
     });
     console.log(`    ${probe.bitrate} kbps, audio starts at byte ${probe.audioStart}, `
               + `${frames} frames, ${(blob.size / 1024).toFixed(0)} KB`);

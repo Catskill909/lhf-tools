@@ -1,4 +1,4 @@
-# LHF Digital Asset Manager
+# Labor Heritage Media Archive
 #
 # No dependencies to install: the app is Python standard library only, and the
 # front end has no build step. So there is nothing to compile, nothing to pin,

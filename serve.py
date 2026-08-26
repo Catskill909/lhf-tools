@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-LHF Digital Asset Manager — local search server.
+Labor Heritage Media Archive — local search server.
 
 Stdlib only. No pip install, no venv:
 
@@ -27,6 +27,13 @@ from urllib.parse import parse_qs, urlparse
 ROOT = os.path.dirname(os.path.abspath(__file__))
 DB_PATH = os.environ.get("DATABASE_PATH", os.path.join(ROOT, "data", "lhf.sqlite"))
 STATIC = os.path.join(ROOT, "static")
+
+# Search cards are deliberately paged. Fifty keeps the first response and DOM
+# small even when a blank search matches the complete archive. The public API
+# accepts a somewhat larger page for integrations, but never the old 1,000-row
+# browser payload; export calls search() directly with its own 5,000-row limit.
+SEARCH_PAGE_SIZE = 50
+SEARCH_LIMIT = 200
 
 
 EPISODE_SQL = """SELECT e.id, e.title, e.published_at, e.duration_sec,
@@ -215,17 +222,20 @@ def decorate(conn, rows, match=None):
 # Sort keys the UI offers. "relevance" only means anything with a query, so
 # it silently falls back to newest when browsing.
 SORTS = {
-    "relevance": "rank",
-    "newest":    "e.published_at DESC",
-    "oldest":    "e.published_at ASC",
-    "title":     "e.title COLLATE NOCASE ASC",
-    "longest":   "e.duration_sec DESC NULLS LAST",
-    "shortest":  "e.duration_sec ASC NULLS LAST",
+    # Every order ends in a unique key. Without that tie-breaker two episodes
+    # sharing a date/title/duration can drift between OFFSET pages and appear
+    # twice (or not at all) as the reader loads more.
+    "relevance": "rank, e.published_at DESC, e.id DESC",
+    "newest":    "e.published_at DESC, e.id DESC",
+    "oldest":    "e.published_at ASC, e.id ASC",
+    "title":     "e.title COLLATE NOCASE ASC, e.id ASC",
+    "longest":   "e.duration_sec DESC NULLS LAST, e.id DESC",
+    "shortest":  "e.duration_sec ASC NULLS LAST, e.id ASC",
 }
 
 
 def search(conn, q="", show=None, year=None, encore=None, person=None,
-           topic=None, role=None, sort=None, limit=200):
+           topic=None, role=None, sort=None, limit=SEARCH_PAGE_SIZE, offset=0):
     where, params = [], []
 
     match = fts_query(q)
@@ -313,14 +323,19 @@ def search(conn, q="", show=None, year=None, encore=None, person=None,
         total = conn.execute(
             f"SELECT COUNT(*) FROM ({sql})", params
         ).fetchone()[0]
-        rows = conn.execute(f"{sql} {order} LIMIT ?", params + [limit]).fetchall()
+        rows = conn.execute(
+            f"{sql} {order} LIMIT ? OFFSET ?", params + [limit, offset]
+        ).fetchall()
     except sqlite3.OperationalError as exc:
         return {"error": f"search error: {exc}", "results": [], "count": 0, "total": 0}
 
     return {
         "count": len(rows),
         "total": total,
-        "truncated": total > len(rows),
+        "offset": offset,
+        "truncated": offset + len(rows) < total,
+        "has_more": offset + len(rows) < total,
+        "next_offset": offset + len(rows),
         "query": q,
         "sort": key,
         "results": decorate(conn, rows, match),
@@ -803,6 +818,11 @@ class Handler(BaseHTTPRequestHandler):
         if path == "/api/search":
             conn = connect()
             try:
+                try:
+                    limit = int(one("limit") or SEARCH_PAGE_SIZE)
+                    offset = int(one("offset") or 0)
+                except ValueError:
+                    limit, offset = SEARCH_PAGE_SIZE, 0
                 data = search(
                     conn,
                     q=one("q") or "",
@@ -813,7 +833,8 @@ class Handler(BaseHTTPRequestHandler):
                     topic=one("topic"),
                     role=one("role"),
                     sort=one("sort"),
-                    limit=min(int(one("limit") or 200), 1000),
+                    limit=max(1, min(limit, SEARCH_LIMIT)),
+                    offset=max(0, offset),
                 )
             finally:
                 conn.close()
@@ -1088,7 +1109,7 @@ def main():
     conn.close()
 
     shown = "localhost" if args.host in ("127.0.0.1", "0.0.0.0") else args.host
-    print(f"LHF Digital Asset Manager — {n} episodes")
+    print(f"Labor Heritage Media Archive — {n} episodes")
     print(f"  http://{shown}:{args.port}  (bound to {args.host})")
     print("  ctrl-c to stop")
     ThreadingHTTPServer((args.host, args.port), Handler).serve_forever()

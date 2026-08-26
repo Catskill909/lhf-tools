@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
 """
-LHF Digital Asset Manager — deterministic enrichment. NO AI.
+Labor Heritage Media Archive — deterministic enrichment. NO AI.
 
 Everything here is extracted from structure the producers already created,
 so it's exact rather than inferred:
 
   1. Re-airs      — episodes whose titles normalise to the same thing,
-                    within a show (encores) or across the two shows
-                    (a segment that ran on both). This is the
+                    within a show (encores) or across programs
+                    (a segment that ran on more than one). This is the
                     "have we already run this?" question, answered.
 
   2. Mentions     — text and URL of every hyperlink in the show notes.
@@ -196,7 +196,7 @@ def main():
     for kind in ("cross_show", "encore", "repeat"):
         n = conn.execute(
             "SELECT COUNT(*)/2 c FROM reairs WHERE kind = ?", (kind,)).fetchone()["c"]
-        label = {"cross_show": "ran on both shows",
+        label = {"cross_show": "ran on multiple programs",
                  "encore": "encore of an earlier episode",
                  "repeat": "repeated within one show"}[kind]
         print(f"  {n:3}  {label}")

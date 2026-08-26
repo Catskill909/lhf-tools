@@ -1,4 +1,4 @@
-# LHF Digital Asset Manager
+# Labor Heritage Media Archive
 
 Search interface over both Labor Heritage Foundation podcast feeds. Tier 1 of
 the build plan: no AI, no API keys, no dependencies.
@@ -17,6 +17,7 @@ then enrichment. Run them individually only if you know why:
 
 ```bash
 python3 ingest/ingest.py        # feeds      -> episodes (+ transcript URLs)
+python3 ingest/backfill.py      # one-time complete Podbean public archive
 python3 ingest/transcripts.py   # .srt       -> segments, transcript_text
 python3 ingest/enrich.py        # links      -> tags, re-air detection
 ```
@@ -39,6 +40,28 @@ DATABASE_PATH=/tmp/x.sqlite python3 serve.py   # point at another database
 Re-running is safe any time — everything keys on the RSS `<guid>`, so a second
 run updates rows in place rather than duplicating them. With no new episodes
 it's a ~2 second no-op.
+
+### Importing the complete historical archive
+
+RSS is the ongoing update source, but Podbean caps it at 100 episodes per
+channel. The public archive pages expose the complete published catalogue. Run
+the resumable backfill once against the persistent database, then run the two
+normal downstream passes:
+
+```bash
+python3 ingest/backfill.py
+python3 refresh.py
+python3 ingest/enrich.py
+```
+
+The importer reads 84 public pages, matches existing RSS rows by episode
+permalink, adds *Your Rights at Work* as a separate program, and stores metadata
+plus transcript URLs — never MP3 audio. It is safe to rerun after interruption.
+`refresh.py` immediately reconciles current RSS GUIDs and downloads the new
+transcripts. The final explicit enrichment is required because RSS correctly
+matches those rows rather than reporting them as new. RSS remains responsible
+for future episodes; its 15-minute loop deliberately does not scrape all 84
+historical pages.
 
 **The server binds to `127.0.0.1` by default** — running it on a laptop should
 not quietly put the archive on the café wifi. `--host 0.0.0.0` opens it up, and
@@ -85,9 +108,10 @@ ssh HOST 'docker exec CONTAINER python3 /app/backup.py --stdout' > lhf-$(date +%
 ```
 
 This matters more than it used to. Podbean serves only the most recent 100
-episodes per show and **both shows are now at exactly that number**, so from
-here on an episode rotates out of the feed every week while the database keeps
-it. Re-scraping no longer recovers everything. See `HANDOFF.md`, "Backups".
+episodes per channel, so an RSS-only rebuild loses the historical catalogue.
+The full published backlog is recoverable from Podbean's public archive pages,
+but that website is not a substitute for a backup of our database and derived
+catalogue data. See `HANDOFF.md`, "Backups".
 
 ## Deploying
 
@@ -106,9 +130,10 @@ Or in Coolify: point it at **https://github.com/Catskill909/lhf-tools**, add a
 
 **The first deploy serves immediately and fills in behind itself.** The volume
 starts empty, so the container creates an empty database (well under a second),
-starts the server, and fetches the archive in the background — about 143
-seconds for 200 episodes, 15,294 passages, 701 tags and 28 re-air links. The
-site is up throughout; it just has nothing in it for the first minute or two.
+starts the server, and fetches the complete public archive in the background:
+785 episodes across three programs, followed by published transcripts and
+enrichment. The site is up throughout; it fills progressively for the first few
+minutes.
 
 **This is the shape it has to be.** The first version built the archive *before*
 starting the server, and it would not deploy: nothing is listening during the
@@ -146,6 +171,7 @@ docker-compose.yml     web + refresh worker, sharing one volume
 docker-entrypoint.sh   serve | refresh | once — and the first-run bootstrap
 refresh.py             run the whole pipeline in order
 ingest/ingest.py       feed → SQLite
+ingest/backfill.py     one-time full public Podbean archive → SQLite
 ingest/transcripts.py  Podcast 2.0 .srt → segments
 ingest/enrich.py       deterministic enrichment (tags, re-airs) — no AI
 ingest/extract.py      the one AI step: topics, guests, interviewers
@@ -262,7 +288,7 @@ The UI is just a client — swap it for anything without touching the backend.
 
 | Endpoint | Returns |
 |---|---|
-| `GET /api/search?q=&show=&year=&encore=&limit=` | ranked results with highlighted snippets |
+| `GET /api/search?q=&show=&year=&encore=&limit=&offset=` | ranked, paged results with highlighted snippets, total count and next offset |
 | `GET /api/facets` | shows, years, and totals for the filter chips |
 | `GET /api/topics` | the subject vocabulary, commonest first |
 | `GET /api/people?role=guest\|interviewer\|host` | guests and interviewers with episode counts |
@@ -358,28 +384,30 @@ Responses are gzipped (level 6) when the client asks, and everything sends
 
 | | raw | sent |
 |---|---|---|
-| `/` (whole UI, no build step) | 100 KB | **28 KB** |
-| `/api/search` — all 200 episodes | 386 KB | **90 KB** |
-| `/api/search?q=labor` — worst case | 510 KB | **121 KB** |
+| `/` (whole UI, no build step) | 318 KB | **92 KB** |
+| `/api/search` — first 50 of 785 | 103 KB | **24 KB** |
+| `/api/search?q=labor` — first 50 | 111 KB | **26 KB** |
+| former one-shot 785-result response | 1.36 MB | **308 KB** |
 
-A first visit is roughly **118 KB**, and a full 200-row render is about 3,500
-DOM elements — comfortable on a phone.
+A first visit against the complete archive is now roughly **116 KB**. The first
+search page took 0.04 seconds locally and cut the API transfer by about 92%
+against the former one-shot response. Each next page contains at most 50 cards.
 
 **The search response grew by ~40 KB gzipped when full show notes replaced a
 240-character substring.** That substring truncated 100% of episodes — the
 median note is 1,064 characters — mid-word and without an ellipsis, so cards
 read as corrupted rather than shortened. The notes are now sent whole and
-clamped in the browser, which is the same trade this project already makes
-against pagination: shipping the data is cheaper than the machinery to avoid
-shipping it, and it keeps find-in-page working across every note on screen.
+clamped in the browser. Pagination now limits that cost to the current 50-card
+page instead of shipping every note in the archive at once.
 
-**There is no pagination or infinite scroll, deliberately.** At this size the
-whole result set is cheaper to send than the machinery to avoid sending it, and
-having every result present means find-in-page and Export match what's on
-screen. Revisit if the Podbean backlog triples the archive: at the current
-per-episode weight ~600 episodes would be ~270 KB gzipped and ~10,000 elements,
-which is the point where it starts to be worth measuring again — and where
-sending notes on demand rather than up front becomes the obvious first saving.
+**Search uses progressive pagination.** It paints 50 results, automatically
+loads the next 50 near the end of the list, and always retains an accessible
+**Load more** button. The status says “50 of 785 shown”; every sort has a stable
+tie-breaker, and a new query aborts the obsolete request. Find-in-page covers
+the cards loaded so far, while archive search still searches all 785 episodes.
+Export remains separate and exports the complete matching set, not merely the
+cards currently in the DOM. The public API caps an individual page at 200;
+the internal export path retains its 5,000-row ceiling.
 
 ## Tests
 
@@ -394,7 +422,10 @@ node tests/test-hidden.mjs        # pure — hidden elements actually hide
 node tests/test-keyboard.mjs      # pure — keyboard/focus interaction laws
 node tests/test-overflow.mjs      # pure — archive text cannot widen a phone
 node tests/test-touch.mjs         # pure — phone transcript/guard + tablet pointer + hover safety
+node tests/test-pagination.mjs    # structural — 50-card paging, cancellation, progressive loading
 python3 tests/test-ingest.py      # pure — feed stamping and retention
+python3 tests/test-backfill.py    # pure — page parsing, identity and reruns
+python3 tests/test-server.py      # pure — page boundaries, totals and full export path
 node tests/verify-clips.mjs       # live — needs the server running + network
 ```
 
@@ -406,22 +437,25 @@ offset proves the cut is both correctly positioned and genuinely lossless —
 duration alone would not, since a clip can be the right length and come from
 the wrong place.
 
-## ⚠️ The feed only returns 100 episodes per show
+## ⚠️ The feed only returns 100 episodes per channel
 
-Podbean caps the RSS feed at the 100 most recent and **ignores every
+Podbean caps each RSS feed at the 100 most recent and **ignores every feed
 pagination parameter** (`?paged=`, `?page=`, etc. — all tested, all return the
-same 100). The website's "Load More" is JavaScript-driven, so there's nothing
-to scrape from the raw HTML either.
+same 100).
 
-So this covers roughly the last two years. Anything older needs a different
-route:
+The public Podbean website is different: its server-rendered `/page/N/` archive
+pages expose the complete published catalogue and the metadata needed for a
+one-time backfill. A 26 August 2026 audit found **785 episodes** across the three
+requested programs. See `docs/feed-backfill-investigation.md`.
+
+Fallback routes if Podbean changes those public pages:
 
 - **Podbean API** (OAuth, has an episode-list endpoint) — the automatable option
 - **Podbean dashboard export** — the manual one-off option
 
-Worth settling before the transcription backfill, since it determines what
-"the whole archive" actually means. The retained local archive currently has
-203 episodes even though a fresh feed pull can expose only 200.
+The retained local archive currently has 203 episodes even though a fresh feed
+pull can expose only 200. RSS remains the ongoing update source; the public
+pages are a recovery source, not part of the 15-minute poll.
 
 ## Schema notes
 

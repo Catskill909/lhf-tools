@@ -29,7 +29,7 @@ episodes?" is a status question, and the answer was already written down.
 | **Anything the client sees, is told, or was promised** | `docs/client-guide.md` — the client-facing description, written for them. Check here **before** framing any client conversation. |
 | **What was actually said to Harold, in his words and ours** | `docs/reply-descript.md` and `docs/reply-with-site.md` — real correspondence, not drafts. These are the promises of record; the guide describes the product, these describe the commitment. |
 | **What's done, what's open, what's blocked, current status** | `HANDOFF.md` — the task box at the top, then *Open threads*. The four buckets are 🔥 DO / 🐞 FIX / ❓ ASK / 💭 NOTE. |
-| **Feeds, ingest, the update loop, episodes leaving the feed, retention** | `HANDOFF.md` → *Keeping the archive current* and *Backups*; then `docs/feed-update-audit.md` for the measured state. |
+| **Feeds, ingest, the update loop, episodes leaving the feed, retention** | `HANDOFF.md` → *Keeping the archive current* and *Backups*; then `docs/feed-update-audit.md` for the measured update state. For the complete pre-feed backlog, read `docs/feed-backfill-investigation.md`. |
 | **AI, topics, guests, interviewers, what it would cost** | `docs/ai-layer.md`. Nothing AI has ever been run. Costs are measured, not guessed. |
 | **The controlled vocabulary / 34 terms / tag names** | `docs/ask-vocabulary.md` and `docs/ai-layer.md` → *A shared vocabulary*. Blocked on the client. |
 | **Saved clips, the clip library, labels** | `docs/clip-library.md`. |
@@ -39,7 +39,8 @@ episodes?" is a status question, and the answer was already written down.
 | **Transcripts, segments, passages** | `docs/transcripts-plan.md`, `docs/transcript-modal.md`. |
 | **Colour, theme, contrast, "make it darker", legibility** | `CLAUDE.md` → the palette traps. They are counter-intuitive and enforced by `tests/test-palette.mjs`. |
 | **Deployment, Docker, Coolify, the volume, health checks** | `README.md` → *Coolify settings that matter*; `HANDOFF.md` → *Keeping the archive current*. |
-| **Backups, what is the only copy of what** | `HANDOFF.md` → *Backups*. |
+| **Shared vs private storage, bind mounts, the deployment volume** | `cooify-volume-fix.md` — **kept out of git deliberately** (this repo is public and it contains server detail). It lives in the working copy only. **Read it before changing Persistent Storage on any deployment.** |
+| **Backups and recovery-source status** | `HANDOFF.md` → *Backups*; then `docs/feed-backfill-investigation.md`. |
 
 ---
 

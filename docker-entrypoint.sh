@@ -44,7 +44,13 @@ refresh_loop_in_background() {
 
 build_in_background() {
   (
-    if python3 /app/refresh.py; then
+    # A fresh volume should become the complete archive, not merely the latest
+    # 100 items from each RSS channel. Backfill first; refresh then lets RSS
+    # claim the current rows by permalink, fetches every published transcript,
+    # and rebuilds enrichment. The web server is already answering throughout.
+    if python3 /app/ingest/backfill.py \
+       && python3 /app/refresh.py \
+       && python3 /app/ingest/enrich.py; then
       touch "$MARK"
       echo "First build complete — the archive is now populated."
     else
@@ -90,8 +96,19 @@ case "${1:-serve}" in
     ;;
   once)
     init_schema
+    python3 /app/ingest/backfill.py
     python3 /app/refresh.py
+    # RSS matches the page-first rows rather than inserting them, so refresh's
+    # "only when new" gate correctly sees zero. Enrichment still needs one
+    # explicit complete-archive rebuild after this historical import.
+    python3 /app/ingest/enrich.py
     touch "$MARK"
+    ;;
+  backfill)
+    init_schema
+    python3 /app/ingest/backfill.py
+    python3 /app/refresh.py
+    python3 /app/ingest/enrich.py
     ;;
   *)
     exec "$@"

@@ -1,4 +1,4 @@
-# LHF Digital Asset Manager — Handoff
+# Labor Heritage Media Archive — Handoff
 
 **Status:** **deployed and live on Coolify**, real data, checking the feeds every
 15 minutes.
@@ -8,7 +8,7 @@ tap-safe hover-disclosure pass are built. The compact phone transcript is also
 built after real-phone review. Paul confirmed the core editor touch interaction
 and first-tap transcript playback on a real iPad; the broader device/rotation
 matrix remains open (`docs/touch-dev.md`).
-**Last worked:** 14 August 2026. Built from nothing on 3 August.
+**Last worked:** 26 August 2026. Built from nothing on 3 August.
 **Client:** Labor Heritage Foundation — Harold Phillips (producer), Chris Garlock
 and Elise Bryant (hosts), Patrick Dixon.
 
@@ -25,17 +25,16 @@ on purpose and easily mistaken for a backlog. See *How to report work here* in
 
 ### 🔥 DO — something bad happens if ignored
 
-1. **Restore the three rotated-off episodes into production** from
-   `~/Desktop/lhf-BACKUP-2026-08-13.sqlite` (Paul's machine). Podbean no longer
-   serves them, so a rebuild cannot bring them back and no future ingest will
-   ever produce them. **That single file is currently the only copy in
-   existence** — if it goes, the episodes go. See **Backups** for the three
-   titles and how they were lost.
-
-2. **Get that backup off one laptop.** It is now load-bearing for the archive
-   and lives in exactly one place, un-versioned, on a machine that could fail
-   tonight. `backup.py` is the tool; the VPS snapshot schedule covers the
-   *volume*, not this file.
+1. **Deploy and run the complete-archive backfill in production.** The importer
+   and renamed *Labor Heritage Media Archive* are built and verified locally:
+   785 unique episodes across *Labor Heritage Power Hour* (181), *Your Rights at
+   Work* (185), and *Labor History Today* (419); 17,316 transcript passages; no
+   duplicate GUIDs or permalinks; a second pass makes zero updates. Production
+   still has the old 200-episode state, so the client request remains incomplete
+   until deployment and the one-time command run. Take a verified snapshot
+   first, then run backfill, the normal refresh, and one explicit enrichment
+   rebuild. See
+   `docs/feed-backfill-investigation.md`.
 
 **Backups are handled** — confirmed by Paul, 9 August 2026: the VPS takes
 snapshots *and* full backups on a two-week retention, and the archive package
@@ -54,9 +53,9 @@ verified snapshot by hand.
    archive should share the Labor Arts & Culture Database's 34-term topic
    vocabulary. Their answer unlocks **topics, guests, interviewers and the admin
    screen** — all built or designed, all waiting on this one reply.
-2. **The five open threads below** (Descript formats, speaker names, how far the
-   projects go back, Podbean credentials, what happens to episodes that fall off
-   the feed). Slow-moving; nothing is blocked on them.
+2. **The four open threads below** (Descript formats, speaker names, how far the
+   projects go back, and what happens to episodes that fall off the feed).
+   Slow-moving; nothing is blocked on them.
 3. **Finish the touch release matrix before making a broad device-support
    claim.** Real-iPad use confirmed the core editor interaction and the
    transcript first-tap fix. Rotation/loading/download edge cases plus Android
@@ -78,9 +77,10 @@ Here so they are not mistaken for the lists above.
 ---
 
 **Two things a new reader should know before anything else:**
-1. **The archive is no longer disposable.** Both shows sit at Podbean's
-   100-episode feed cap, so the database is becoming the only reachable copy of
-   anything that rotates out. `backup.py` exists; see **Backups**.
+1. **The archive is not disposable.** RSS is capped at 100 episodes per channel,
+   while the public-page recovery source is an undocumented website surface and
+   does not reproduce corrections or derived catalogue data. `backup.py` exists;
+   see **Backups**.
    `episodes.last_seen_in_feed` records what the feed still carries, and
    `python3 ingest/ingest.py --stats` names anything it no longer does.
 2. **The audio editor was rebuilt** — playhead, transport, 10 ms waveform,
@@ -138,6 +138,10 @@ decision, and an admin screen to run it from. See `docs/ai-layer.md`.
   truncation, `title:strike` field search, `NEAR(coal mine, 5)` proximity
 - Six sort orders: best match, newest, oldest, title A–Z, longest, shortest
 - Filters: show, year, encores-only, and by tag — with All / Reset to clear
+- Browser-safe results: 50 cards at a time, automatic progressive loading plus
+  an accessible Load more button, accurate “shown of total” status, stable page
+  boundaries, and cancellation of obsolete as-you-type requests. Export still
+  uses the complete matching set rather than only the loaded cards.
 
 **Transcripts** *(free — pulled from the feed, no AI, no vendor)*
 - Production is 147 of 200; the retained local archive is 147 of 203 because
@@ -471,12 +475,12 @@ if edited and republished.
 
 ## What we learned today (the useful part)
 
-**1. The RSS feed caps at 100 episodes per show.** Every pagination parameter
-is ignored; the website's "Load More" is JavaScript. So we have roughly the
-last two years (Sept 2024 → Aug 2026). Anything older needs the **Podbean API**
-(OAuth, has an episode-list endpoint) or a dashboard export. This is the real
-answer to "how do we get the whole archive" — more useful than the episode
-count itself.
+**1. The RSS feed caps at 100 episodes per channel.** Feed pagination parameters
+are ignored. A later full audit on 26 August found that the public website's
+server-rendered `/page/N/` routes do expose the whole published catalogue and
+all fields needed for a one-time backfill: **785 episodes** across three
+programs. The authenticated Podbean API or a dashboard export is now a fallback,
+not a prerequisite. See `docs/feed-backfill-investigation.md`.
 
 **2. Their problem is real and measurable.** 22 of 200 episodes are encores
 (11%), and 5 programmes ran on *both* shows. That's evidence to show them, not just
@@ -524,21 +528,20 @@ project most depends on. Schema already handles the hybrid via
 2. **Have speakers been named** in the Descript projects, or left as
    "Speaker 1"? Named speakers would give attribution for free.
 3. **How far back do the Descript projects go** — they've deleted some over time.
-4. **Podbean API credentials**, if we want the pre-2024 archive.
-
-5. **What happens to episodes that fall off the feed — on their side?** Raised
+4. **What happens to episodes that fall off the feed — on their side?** Raised
    9 August 2026, when both shows were measured at exactly the 100-episode cap
    (see Backups). We know what *our* archive does: it keeps them, permanently,
-   and becomes the only copy we can reach. What we do not know is what they
-   have, and it changes what this product is:
+   and retains it independently of RSS. The 26 August audit found that Podbean's
+   public archive pages still list the full backlog, but what they retain behind
+   those pages still changes what this product is:
 
    - **Do they hold their own masters** for everything back to the start of
      each show, or is Podbean their archive too? If the latter, this database
      is closer to a system of record than anyone has treated it as.
    - **Has anything already been lost** — episodes deleted from Podbean, or
      predating it entirely?
-   - **Do they want the pre-feed backlog ingested**, which is thread 4 and a
-     one-time recovery, or is the rolling window genuinely all they need?
+   - **They do want the pre-feed backlog ingested.** Confirmed by the client on
+     26 August 2026; it is now the first DO in the task box.
    - **Do they expect the app to hold shows the feed no longer carries** as a
      feature — i.e. "this is where the whole archive lives" — or as a side
      effect nobody has thought about?
@@ -548,7 +551,7 @@ project most depends on. Schema already handles the hybrid via
    nice-to-haves, and that is the same shell `docs/ai-layer.md` is blocked on.
    **Their answer is expected soon; capture it here when it arrives.**
 
-6. **Should topics use the vocabulary LHF already owns?** Raised 9 August 2026.
+5. **Should topics use the vocabulary LHF already owns?** Raised 9 August 2026.
    The Labor Arts & Culture Database
    (<https://labor-database.supersoul.top>) carries **34 canonical tags in three
    facets**, already classifying ~5,954 entries, plus 145 regex auto-tagging
@@ -683,10 +686,11 @@ Deliberately **not** `episodes.last_seen_in_feed` — that only moves when a fee
 actually changed, and on a weekly show it is days old almost always, so a footer
 built on it would report a perfectly healthy updater as dead.
 
-An earlier version of this section said to back up first because "the feeds are
-re-scrapeable for free". **That is no longer true** — see Backups above. Both
-shows are at Podbean's 100-episode cap, so the database is now the only reachable
-copy of anything that has rotated out.
+An earlier version of this section said the database was the only reachable
+copy of anything that rotated out of RSS. The 26 August audit corrected that:
+the public Podbean archive pages still expose the published backlog. Backups
+remain necessary because that page format is undocumented and cannot reproduce
+our corrections, retained feed state, or derived catalogue data.
 
 ### 3. Export — ✅ mostly built
 
@@ -813,7 +817,10 @@ node tests/test-hidden.mjs          # pure: hidden elements actually hide
 node tests/test-keyboard.mjs        # pure: keyboard/focus interaction laws
 node tests/test-overflow.mjs        # pure: archive text cannot widen a phone
 node tests/test-touch.mjs           # pure: phone transcript/guard + tablet pointer + hover safety
+node tests/test-pagination.mjs      # structural: paged search + request cancellation
 python3 tests/test-ingest.py        # pure: feed stamping + rotated-out detection
+python3 tests/test-backfill.py      # pure: page parsing + identity + reruns
+python3 tests/test-server.py        # pure: search pages + complete export path
 node tests/verify-clips.mjs         # live: needs the server running + network
 ```
 
@@ -842,17 +849,18 @@ The loop waits for the first build to finish before its first tick.
 
 ### Backups — this gets more important with time, not less
 
-**The database is no longer disposable, and three episodes have already been
-lost proving it.** An earlier version of this section said losing the volume
-cost two and a half minutes of re-scraping. That was true when written and is
-now the most expensive stale line this repo has produced — see below.
+**The database is not disposable.** An earlier version of this section said
+three episodes had become recoverable only from a laptop backup. A complete
+audit on 26 August corrected that: Podbean's public paginated archive still
+exposes those episodes and the entire published backlog. The backup remains
+valuable, but is not their only reachable source.
 
-Podbean serves only the most recent 100 episodes per show, so every week the
-oldest episode in each feed falls out of reach. Anything already ingested stays
-in the database, because `episodes` rows are never deleted — there is no
-`DELETE FROM episodes` anywhere in `ingest/`. But once an episode has left the
-feed it cannot be fetched again, and a database rebuilt from the feeds comes
-back **without it**.
+Podbean serves only the most recent 100 episodes per channel, so every week the
+oldest episode in each RSS feed falls out of that source. Anything already
+ingested stays in the database, because `episodes` rows are never deleted —
+there is no `DELETE FROM episodes` anywhere in `ingest/`. An RSS-only rebuild
+comes back **without it**; the separate public-page recovery route is documented
+in `docs/feed-backfill-investigation.md`.
 
 **Measured 13 August 2026 — the first measurement ever taken against
 production.** The 9 August figures previously printed here were the *local dev*
@@ -872,17 +880,20 @@ redeploy, so each deploy silently reset the archive to whatever the feeds held
 that day. Confirmed by Paul on 13 August 2026 — there was no volume configured
 in Coolify at all. One is mounted now, and from here the archive accumulates.
 
-They survive only in `~/Desktop/lhf-BACKUP-2026-08-13.sqlite` on Paul's machine.
-**That file is the only copy of those three episodes that exists anywhere.**
+They are retained in `~/Desktop/lhf-BACKUP-2026-08-13.sqlite` on Paul's machine
+and were also confirmed on Podbean's public archive pages on 26 August. The full
+backfill will restore them to production along with the older catalogue.
 
 **The standing check** — worth running after any deploy — is whether the live
 site reports **more than 100** episodes for either show. Both shows are weekly,
 so the count should now grow by one per show per week and never reset. A count
 of exactly 100 after a deploy means the volume is not holding.
 
-Nothing prior to September 2024 was ever reachable by scraping; the shows are
-older than that. The Podbean back-end export remains the only route to the
-pre-feed backlog, and it is a one-time recovery.
+Nothing prior to September 2024 is reachable through RSS, but a 26 August 2026
+audit confirmed the full published catalogue on Podbean's public paginated
+archive pages. That makes the pre-feed backlog a one-time public-page recovery;
+the authenticated API or back-end export is the supported fallback. See
+`docs/feed-backfill-investigation.md`.
 
 So: back up the Coolify volume, and start before it matters rather than after.
 
@@ -930,8 +941,9 @@ corruption and a bad migration, and against nothing at all if the volume is
 lost, which is the failure that matters here. The script says so in its own
 output when it detects that it has written one.
 
-The other half of the same problem is the Podbean back-end export, which would
-recover the pre-September-2024 backlog once — see Open threads.
+The other half of the same problem is the one-time public-page backfill, which
+can recover the pre-September-2024 published backlog without credentials. See
+`docs/feed-backfill-investigation.md`.
 
 ### Deploys and stale browsers
 

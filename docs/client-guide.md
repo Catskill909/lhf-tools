@@ -1,4 +1,4 @@
-# LHF Digital Asset Manager
+# Labor Heritage Media Archive
 
 **https://lhf-tools.supersoul.top**
 
@@ -316,18 +316,17 @@ dropped off the end of the feed:
 | Labor History Today | 22 Sep 2024 | The Disney Revolt (Encore) |
 
 **All three still play, and clips can still be cut from them.** Checked
-13 August 2026. Falling off the feed does not delete the recording — Podbean
-stops *listing* the episode, but the file stays where it was, and the address we
-saved still reaches it.
+13 August 2026. Falling off the RSS feed does not delete the recording. A later
+audit also found the episodes on Podbean's paginated public archive pages.
 
 So the thing to worry about isn't an episode ageing out. It's an episode being
 **deleted**, which is a different event and one only Podbean can tell you about.
 
 **One consequence worth being plain about:** those three episodes are no longer
-listed anywhere on Podbean, so this archive is now the only place that still
-knows where their audio lives. The recordings are fine; the *addresses* exist
-here and nowhere else. That is a good argument for keeping a copy of the archive
-package — see above — quite apart from the question below.
+listed in RSS, but a later full audit found them on Podbean's public paginated
+archive pages along with the older catalogue. That gives us a recovery route;
+it does not replace keeping a copy of the archive package, because a public
+website can change and does not contain our catalogue work.
 
 ### The question
 
@@ -352,15 +351,17 @@ Two related things while you're asking Podbean:
   it? We know now that *ageing off the feed* leaves the audio in place; deletion
   is the case still worth asking about, along with whether the transcript and any
   AI work you've paid for survive it.
-- **How long do unlisted files stay?** The three above are still served but no
-  longer listed. Whether that lasts indefinitely is Podbean's policy, not
-  something we can measure from outside.
-- **The older backlog.** Everything before September 2024 was already out of
-  reach of the feed. If you want it in here, it's a one-time job through
-  Podbean's back-end, and it gets no easier with time.
+- **How long do files outside RSS stay?** The three above are still served and
+  remain on Podbean's public archive pages. Whether that lasts indefinitely is
+  Podbean's policy, not something we can measure from outside.
+- **The older backlog.** Everything before September 2024 is out of reach of
+  the RSS feed, but a 26 August audit found the complete published catalogue on
+  Podbean's public archive pages. Bringing it in is now a one-time recovery we
+  can do without Podbean credentials.
 
-Nothing here needs doing this week. The first question is the one that decides
-the rest.
+The complete backfill was requested on 26 August 2026 and is now the next
+archive task. The first question above still decides whether Podbean or LHF is
+the long-term home of the recordings themselves.
 
 ---
 

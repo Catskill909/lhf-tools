@@ -1,4 +1,4 @@
-# LHF Digital Asset Manager — working notes
+# Labor Heritage Media Archive — working notes
 
 Read `HANDOFF.md` first. This file is only the things that are easy to break
 without knowing them.
@@ -222,11 +222,13 @@ action, a missing decision, or permission the tools cannot obtain.
   globally** (`GONE_FROM_FEED`) — the feeds are read in sequence so the two
   shows are always stamped seconds apart, and a feed answering 304 is not
   restamped at all. `tests/test-ingest.py` covers both.
-- **The archive is no longer disposable.** Both shows sit at Podbean's
-  100-episode feed cap, so the database is the only reachable copy of anything
-  that rotates out. "Just re-scrape it" stopped being true in August 2026 —
-  **three episodes have already been lost this way**, and survive only in a
-  backup on Paul's machine. See `HANDOFF.md` → *Backups*.
+- **The archive is not disposable.** RSS is capped at 100 episodes per channel.
+  A 26 August 2026 audit found a separate public-page recovery route for the
+  complete published backlog, correcting the earlier claim that three rotated
+  episodes survived only in a laptop backup. That website surface is
+  undocumented and does not reproduce corrections or derived catalogue data,
+  so backups still matter. See `HANDOFF.md` → *Backups* and
+  `docs/feed-backfill-investigation.md`.
 
 ## The recurring bug class
 
@@ -260,6 +262,8 @@ node tests/test-keyboard.mjs        # pure: the keyboard reaches what you see
 node tests/test-overflow.mjs        # pure: data-shaped text can't outgrow the phone
 node tests/test-touch.mjs           # pure: phone transcript/guard + tablet pointer + hover safety
 python3 tests/test-ingest.py        # pure: feed stamping + rotated-out detection
+python3 tests/test-backfill.py      # pure: public-page parsing + RSS identity reconciliation
+python3 tests/test-server.py        # pure: default search returns the complete archive
 node tests/verify-clips.mjs 8000    # live: needs the server running + network
 ```
 

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-LHF Digital Asset Manager — take a consistent snapshot of the archive.
+Labor Heritage Media Archive — take a consistent snapshot of the archive.
 
     python3 backup.py                       # snapshot to data/backups/
     python3 backup.py --dest /mnt/nas/lhf   # snapshot somewhere else
@@ -24,13 +24,12 @@ server is one copy of the database for a few seconds, and nothing persists.
 Verification happens before a single byte is sent, so a failed backup produces
 no output at all rather than a truncated file that looks plausible.
 
-WHY THIS EXISTS, in one paragraph. Podbean serves only the most recent 100
-episodes per show. Both shows are at exactly that number, and `ingest` never
-deletes an episode — so the moment either show publishes again, the database
-holds a recording the feed no longer offers, and no amount of re-scraping will
-bring it back. Until now the database was disposable: `refresh.py` could
-rebuild it from the feeds in 143 seconds. That has stopped being true, silently,
-with nothing in the interface to mark the change. See HANDOFF.md, "Backups".
+WHY THIS EXISTS, in one paragraph. Podbean serves only the most recent 100 RSS
+episodes per channel. The public-page backfill can recover the published
+history, but that website surface is undocumented and cannot reproduce our
+stored transcripts, corrections, feed-retention state or derived catalogue
+data. A verified database backup remains the only exact recovery of the app's
+state. See HANDOFF.md, "Backups".
 
 WHY NOT `cp`. The database runs in WAL mode with a live writer (the refresh
 loop) on the same file. Copying `lhf.sqlite` with `cp`, `rsync` or a volume

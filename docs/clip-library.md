@@ -525,12 +525,11 @@ same file safe"*, and the refresh container is a writer to that volume today.
 - **`POST` and `DELETE` only, with a size cap.**
 
 **The volume needs a backup before anything irreplaceable goes in it — and the
-archive already qualifies.** An earlier draft of this document said "the archive
-can be re-scraped; saved clips cannot". That is no longer true. Measured on
-9 August 2026, both shows hold **exactly 100 episodes**, which is Podbean's feed
-cap, and `episodes` rows are never deleted. The next episode of each show
-therefore pushes the oldest out of the feed while the database keeps it, and from
-that moment the volume is the only copy of something. Both shows are weekly.
+archive already qualifies.** RSS is capped at 100 episodes per channel and
+`episodes` rows are never deleted. A 26 August 2026 audit found a separate
+public-page recovery route for the complete published backlog, but it is an
+undocumented website surface and cannot reproduce corrections or derived
+catalogue data. Saved clips remain uniquely irreplaceable browser data.
 
 `HANDOFF.md` carries the numbers and the WAL-safe backup command
 (`sqlite3 /data/lhf.sqlite ".backup /somewhere/else.sqlite"` — a plain file copy

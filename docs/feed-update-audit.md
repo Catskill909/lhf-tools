@@ -1,5 +1,12 @@
 # Feed update audit — 13 August 2026
 
+> **Correction, 26 August 2026:** this audit correctly measured the RSS cap and
+> the missing production rows, but its claim that the laptop backup was the only
+> recovery source was wrong. Podbean's server-rendered public `/page/N/` archive
+> exposes all 785 published episodes, including the three rotated out of RSS.
+> See `docs/feed-backfill-investigation.md`. The text below is retained as the
+> dated record of what was known and fixed on 13 August.
+
 Written after production showed 9 August as its newest episode while Podbean
 carried one from 13 August.
 

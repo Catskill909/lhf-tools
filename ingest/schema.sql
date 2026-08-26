@@ -1,4 +1,4 @@
--- LHF Digital Asset Manager — schema
+-- Labor Heritage Media Archive — schema
 -- SQLite + FTS5. Everything keys off the RSS <guid>, which is stable
 -- across Podbean edits (title and audio URL are not).
 
@@ -34,8 +34,8 @@ CREATE TABLE IF NOT EXISTS episodes (
     description_text TEXT,              -- stripped, for search + extraction
     is_encore        INTEGER DEFAULT 0, -- detected "(Encore)" / "Encore:" in title
 
-    -- Podcast 2.0 <podcast:transcript> — 145 of 200 episodes publish a .srt
-    -- straight from the producers' editing workflow. Free and timestamped.
+    -- Podbean-published transcript URL, from Podcast 2.0 RSS or the public
+    -- archive page. These are producer exports: free and timestamped.
     transcript_url    TEXT,
     transcript_type   TEXT,                     -- application/srt | application/json
 
@@ -48,10 +48,10 @@ CREATE TABLE IF NOT EXISTS episodes (
     updated_at    TEXT DEFAULT (datetime('now')),
 
     -- Stamped every time this episode is seen in the feed, and by nothing else.
-    -- Podbean serves only the most recent 100 per show, and both shows are at
-    -- that number, so from here on one episode rotates out of reach each week
-    -- while this row keeps it. An episode whose stamp stops advancing has left
-    -- the feed — which is how the archive knows what only it still holds.
+    -- Podbean serves only the most recent 100 per channel. An episode whose
+    -- stamp stops advancing has left RSS while this row keeps it. Historical
+    -- public-page backfills are deliberately NULL because RSS never saw them
+    -- in this database.
     --
     -- updated_at cannot answer that question: transcripts.py writes to it too,
     -- so it means "something changed" rather than "the feed still has this".

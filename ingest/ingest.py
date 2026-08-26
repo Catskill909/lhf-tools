@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-LHF Digital Asset Manager — RSS ingest.
+Labor Heritage Media Archive — RSS ingest.
 
 Pulls both Podbean feeds into SQLite. Idempotent: keys on the RSS <guid>,
 so re-running updates existing rows rather than duplicating them.
@@ -51,7 +51,8 @@ SHOWS = [
 USER_AGENT = "LHF-Podcast-Archive/0.1 (+ingest)"
 
 # "This episode was not stamped by its show's most recent pass", i.e. the feed
-# no longer carries it and this database is the only copy we can reach.
+# no longer carries it. The database retains it independently of RSS; the
+# separate public-page backfill can also recover published historical entries.
 #
 # **Per show, not globally.** The feeds are read one after the other, so the two
 # shows are stamped seconds apart; a global MAX puts whichever was read first
@@ -292,11 +293,30 @@ def upsert_episode(conn, show_id, item, seen_at):
         "seen_at": seen_at,
     }
 
-    existing = conn.execute("SELECT id FROM episodes WHERE guid = ?", (guid,)).fetchone()
+    by_guid = conn.execute(
+        "SELECT id, guid FROM episodes WHERE guid = ?", (guid,)).fetchone()
+    by_url = None
+    if row["episode_url"]:
+        # The historical public-page backfill has no RSS GUID, so those rows
+        # use a synthetic Podbean id until RSS sees the same permalink. Matching
+        # by the stable episode page lets RSS claim that row instead of creating
+        # a duplicate. The normal path still keys on GUID first.
+        by_url = conn.execute(
+            """SELECT id, guid FROM episodes
+               WHERE RTRIM(episode_url, '/') = RTRIM(?, '/')
+               LIMIT 1""", (row["episode_url"],)).fetchone()
+    if by_guid and by_url and by_guid["id"] != by_url["id"]:
+        raise ValueError(
+            f"episode identity conflict: GUID {guid!r} is row {by_guid['id']} "
+            f"but URL {row['episode_url']!r} is row {by_url['id']}"
+        )
+    existing = by_guid or by_url
     if existing:
+        row["existing_id"] = existing["id"]
         conn.execute(
             """
             UPDATE episodes SET
+                guid = :guid,
                 show_id = :show_id, title = :title, published_at = :published_at,
                 duration_sec = :duration_sec, episode_url = :episode_url,
                 audio_url = :audio_url, image_url = :image_url,
@@ -310,7 +330,7 @@ def upsert_episode(conn, show_id, item, seen_at):
                 -- it. Set on every pass, so the stamp of an episode that has
                 -- rotated out simply stops moving.
                 last_seen_in_feed = :seen_at
-            WHERE guid = :guid
+            WHERE id = :existing_id
             """,
             row,
         )
@@ -437,14 +457,14 @@ def stats(conn):
     ).fetchone()["h"]
     print(f"ALL: {total} episodes, {hours} hours of audio")
 
-    # Reported here because it is the number that decides whether the archive is
-    # a convenience or the only copy — and nothing else in the app surfaces it.
+    # Reported here because it shows how much this database retains beyond RSS,
+    # and nothing else in the app surfaces it.
     # See GONE_FROM_FEED for why the comparison is per show.
     gone = conn.execute(
         f"SELECT COUNT(*) c FROM episodes WHERE {GONE_FROM_FEED}").fetchone()["c"]
     if gone:
-        print(f"\n{gone} episode(s) no longer in the feed — this database is "
-              f"the only copy we can reach.")
+        print(f"\n{gone} episode(s) no longer in the RSS feed — retained in "
+              f"this database.")
         for r in conn.execute(
             f"""SELECT title, date(last_seen_in_feed) AS last
                FROM episodes

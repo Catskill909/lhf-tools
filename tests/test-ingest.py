@@ -8,10 +8,9 @@ This one is Python because the thing under test is, and the alternative was
 leaving the bug it covers untested.
 
 **What it is really defending.** `last_seen_in_feed` is the only record of
-which episodes the feed still carries, and once a show passes Podbean's
-100-episode cap it is what tells anyone that this database has become the only
-copy of something. A wrong answer here is not a cosmetic reporting bug — it is
-the difference between noticing that and not.
+which episodes the feed still carries. Once a channel passes Podbean's
+100-episode cap it is what distinguishes live RSS entries from the history this
+database retains. A wrong answer here is not a cosmetic reporting bug.
 
 Both tests below reproduce a *class*, not the instance that was shipped:
 

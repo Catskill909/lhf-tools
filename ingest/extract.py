@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-LHF Digital Asset Manager — AI extraction (Tier 2). The one AI step.
+Labor Heritage Media Archive — AI extraction (Tier 2). The one AI step.
 
 Everything else in this pipeline reads structure the producers already made.
 This reads the words themselves, because three things in the original brief

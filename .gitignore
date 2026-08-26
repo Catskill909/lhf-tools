@@ -7,3 +7,6 @@ secrets/
 *.sqlite-wal
 *.sqlite-shm
 .DS_Store
+
+# Internal ops runbook - server details, do not publish (repo is public)
+cooify-volume-fix.md
